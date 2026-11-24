@@ -23,7 +23,6 @@ import org.objectweb.asm.Opcodes;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -173,56 +172,42 @@ public abstract class MixinServerGamePacketListenerImpl implements IEServerPlayN
     }
     
     /**
-     * @reason make PlayerPositionLookS2CPacket contain dimension data and do some special handling
-     * @author qouteall
+     * Quasar MC: 26.x's teleport takes a PositionMoveRotation, and vanilla's body (pending-teleport id, position,
+     * packet) is kept. The original @Overwrite only added the removed-player guard, logging and the awaiting-position
+     * dimension; those now wrap vanilla. The packet's dimension is not serialized in 26.x (same-dimension only).
      */
-    @Overwrite
-    @IPVanillaCopy
-    public void teleport(
-        double x, double y, double z, float yaw, float pitch,
-        Set<Relative> relativeAttrs
+    @Inject(
+        method = "teleport(Lnet/minecraft/world/entity/PositionMoveRotation;Ljava/util/Set;)V",
+        at = @At("HEAD"), cancellable = true
+    )
+    private void ip_onTeleportHead(
+        net.minecraft.world.entity.PositionMoveRotation destination, Set<Relative> relatives, CallbackInfo ci
     ) {
         // it may request teleport while this.player is marked removed during respawn
-        
         if (player.getRemovalReason() != null) {
             LOGGER.error(
                 "[ImmPtl] Tries to send player pos packet to a removed player {}",
                 player, new Throwable()
             );
+            ci.cancel();
             return;
         }
-        
         if (IPConfig.getConfig().serverTeleportLogging) {
             LOGGER.info(
-                "Teleporting player {} to {} {} {} {}",
-                player, player.level().dimension().identifier(), x, y, z
+                "Teleporting player {} to {} {}",
+                player, player.level().dimension().identifier(), destination.position()
             );
         }
-        
-        double xBase = relativeAttrs.contains(Relative.X) ? this.player.getX() : 0.0;
-        double yBase = relativeAttrs.contains(Relative.Y) ? this.player.getY() : 0.0;
-        double zBase = relativeAttrs.contains(Relative.Z) ? this.player.getZ() : 0.0;
-        float yRotBase = relativeAttrs.contains(Relative.Y_ROT) ? this.player.getYRot() : 0.0f;
-        float xRotBase = relativeAttrs.contains(Relative.X_ROT) ? this.player.getXRot() : 0.0f;
-        
-        this.awaitingPositionFromClient = new Vec3(x, y, z);
+    }
+    
+    @Inject(
+        method = "teleport(Lnet/minecraft/world/entity/PositionMoveRotation;Ljava/util/Set;)V",
+        at = @At("RETURN")
+    )
+    private void ip_onTeleportReturn(
+        net.minecraft.world.entity.PositionMoveRotation destination, Set<Relative> relatives, CallbackInfo ci
+    ) {
         this.ip_dimOfAwaitingPosition = player.level().dimension();
-        if (++this.awaitingTeleport == Integer.MAX_VALUE) {
-            this.awaitingTeleport = 0;
-        }
-        
-        this.awaitingTeleportTime = this.tickCount;
-        this.player.absSnapTo(x, y, z, yaw, pitch);
-        ClientboundPlayerPositionPacket lookPacket = new ClientboundPlayerPositionPacket(
-            this.awaitingTeleport,
-            new net.minecraft.world.entity.PositionMoveRotation(
-                new Vec3(x - xBase, y - yBase, z - zBase), Vec3.ZERO, yaw - yRotBase, pitch - xRotBase),
-            relativeAttrs
-        );
-        
-        ((IEPlayerPositionLookS2CPacket) (Object) lookPacket).ip_setPlayerDimension(player.level().dimension());
-        
-        this.player.connection.send(lookPacket);
     }
     
     @Inject(
