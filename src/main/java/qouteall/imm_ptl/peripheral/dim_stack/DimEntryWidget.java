@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 
 // QUASAR STUB: generated no-op stand-in; the original lives in src/parked (render rewrite pending).
 
-public class DimEntryWidget extends ContainerObjectSelectionList.Entry<DimEntryWidget> {
+public class DimEntryWidget {
 
     private static Logger LOGGER;
     public enum ArrowType {

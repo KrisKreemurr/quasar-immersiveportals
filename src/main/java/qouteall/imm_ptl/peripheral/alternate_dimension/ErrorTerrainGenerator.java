@@ -51,8 +51,7 @@ public class ErrorTerrainGenerator {
     private BlockState defaultFluid;
     private LoadingCache<ChunkPos, RegionErrorTerrainGenerator> cache;
     public ErrorTerrainGenerator(
-        BiomeSource biomeSource, ChunkGenerator delegate
-    ) { super(biomeSource, delegate); }
+        BiomeSource biomeSource, ChunkGenerator delegate) {}
 
     protected @NotNull MapCodec<? extends ChunkGenerator> codec() { return null; }
 
