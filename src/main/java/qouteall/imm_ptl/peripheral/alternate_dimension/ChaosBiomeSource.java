@@ -21,7 +21,7 @@ import java.util.stream.Stream;
 
 // QUASAR STUB: generated no-op stand-in; the original lives in src/parked (render rewrite pending).
 
-public class ChaosBiomeSource extends BiomeSource {
+public class ChaosBiomeSource {
 
     public static String[] vanillaBiomes;
     public static MapCodec<ChaosBiomeSource> MAP_CODEC;

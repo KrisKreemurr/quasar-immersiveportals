@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 // QUASAR STUB: generated no-op stand-in; the original lives in src/parked (render rewrite pending).
 
-public class ErrorTerrainGenerator extends DelegatedChunkGenerator {
+public class ErrorTerrainGenerator {
 
     public static MapCodec<ErrorTerrainGenerator> MAP_CODEC;
     public static ErrorTerrainGenerator create(
@@ -60,7 +60,6 @@ public class ErrorTerrainGenerator extends DelegatedChunkGenerator {
 
     public void doPopulateNoise(ChunkAccess chunk) {}
 
-    protected ErrorTerrainGenerator() {}
 
 }
 
