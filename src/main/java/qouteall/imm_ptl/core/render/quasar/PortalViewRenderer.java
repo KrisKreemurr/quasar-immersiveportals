@@ -73,6 +73,8 @@ public final class PortalViewRenderer {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     static final int MAX_PORTALS = 2;
+    /** portal view resolution relative to the screen (setting later; scales with on-screen size in milestone 2) */
+    static final float RESOLUTION_SCALE = 0.5f;
     private static final double MAX_DISTANCE = 64;
 
     /** portals drawn with a live view last frame (the placeholder outline skips these) */
@@ -190,7 +192,10 @@ public final class PortalViewRenderer {
             // only the part of the screen the portal covers: its NDC rectangle (x0, y0, x1, y1)
             float[] rect = screenRect(mainViewProj, main.pos, portal);
             if (rect == null) continue; // off screen
-            Target t = target(i, device, w, h);
+            // half resolution (a quarter of the pixels, clears and shading); the composite maps by screen fraction, so
+            // the image size does not change the picture's placement
+            Target t = target(i, device, Math.max(1, Math.round(w * RESOLUTION_SCALE)),
+                Math.max(1, Math.round(h * RESOLUTION_SCALE)));
             
             CameraRenderState virtual = virtualCamera(main, portal, rect);
             if (virtual == null) continue;
@@ -505,7 +510,7 @@ public final class PortalViewRenderer {
             .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
             .build();
         sampler = RenderSystem.getDevice().createSampler(AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE,
-            FilterMode.NEAREST, FilterMode.NEAREST, 1, OptionalDouble.empty());
+            FilterMode.LINEAR, FilterMode.LINEAR, 1, OptionalDouble.empty());
     }
 
     // ------------------------------------------------------------------
