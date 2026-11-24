@@ -36,6 +36,9 @@ public final class PortalPlaceholderOutline {
             if (!(entity instanceof Portal portal) || entity.isRemoved()) {
                 continue;
             }
+            if (PortalViewRenderer.drawnLastFrame.contains(portal.getId())) {
+                continue; // shown as a live view
+            }
             Vec3 o = portal.getOriginPos();
             if (o.distanceToSqr(cam) > MAX_DIST_SQ) {
                 continue;

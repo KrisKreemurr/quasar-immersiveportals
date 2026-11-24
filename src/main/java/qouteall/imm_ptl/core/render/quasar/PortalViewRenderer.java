@@ -1,0 +1,354 @@
+package qouteall.imm_ptl.core.render.quasar;
+
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.logging.LogUtils;
+import com.mojang.renderpearl.api.GpuFormat;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.device.GpuDevice;
+import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
+import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.CompareOp;
+import com.mojang.renderpearl.api.pipeline.DepthStencilState;
+import com.mojang.renderpearl.api.pipeline.PolygonMode;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.UniformType;
+import com.mojang.renderpearl.api.textures.AddressMode;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTexture;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.culling.Frustum;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
+import org.lwjgl.system.MemoryStack;
+import org.slf4j.Logger;
+import qouteall.imm_ptl.core.portal.Portal;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Quasar MC portal rendering, milestone 1: a live view through same-dimension portals.
+ *
+ * <p>Runs from Quasar Meshelium's after-opaque hook (right after the main opaque terrain, no render pass open). For
+ * each of the nearest {@link #MAX_PORTALS} visible portals the player stands in front of:</p>
+ * <ol>
+ *   <li>a virtual camera is placed on the far side (the portal transform applied to the main camera);</li>
+ *   <li>its projection gets an oblique near plane lying on the destination portal, so nothing between the virtual
+ *       camera and the destination portal is drawn (Lengyel's oblique clipping, in the reverse-Z convention 26.x
+ *       uses);</li>
+ *   <li>Meshelium draws the resident opaque terrain for that camera into this portal's color/depth images (no
+ *       re-meshing: the same GPU terrain the main view uses);</li>
+ *   <li>the portal surface is drawn into the main image with a depth test, sampling the portal image at the same
+ *       screen position.</li>
+ * </ol>
+ * Not yet: translucent terrain, entities, sky/clouds (the background is a flat sky colour), the far panorama,
+ * update-rate/resolution scaling, nested portals.
+ */
+public final class PortalViewRenderer {
+    private static final Logger LOGGER = LogUtils.getLogger();
+
+    static final int MAX_PORTALS = 2;
+    private static final double MAX_DISTANCE = 64;
+
+    /** portals drawn with a live view last frame (the placeholder outline skips these) */
+    static final Set<Integer> drawnLastFrame = ConcurrentHashMap.newKeySet();
+    private static final Set<Integer> drawnThisFrame = new java.util.HashSet<>();
+
+    private static Method mainCameraMethod;
+    private static Method drawTerrainMethod;
+    private static boolean failed;
+
+    private static final Target[] targets = new Target[MAX_PORTALS];
+    private static RenderPipeline compositePipeline;
+    private static GpuSampler sampler;
+
+    private PortalViewRenderer() {}
+
+    public static void init() {
+        try {
+            ClassLoader cl = PortalViewRenderer.class.getClassLoader();
+            Class<?> hook = Class.forName("com.deds.meshelium.quasar.QuasarPortalHook", true, cl);
+            mainCameraMethod = hook.getMethod("mainCamera");
+            drawTerrainMethod = hook.getMethod("drawTerrain", CameraRenderState.class, GpuTextureView.class,
+                GpuTextureView.class, int.class, int.class);
+            Field after = hook.getField("afterOpaque");
+            after.set(null, (Runnable) PortalViewRenderer::renderAll);
+            LOGGER.info("[Quasar Portals] live portal views on (Quasar Meshelium found)");
+        }
+        catch (Throwable t) {
+            LOGGER.info("[Quasar Portals] Quasar Meshelium's portal hook not found; portals use the outline stand-in ({})",
+                t.toString());
+        }
+    }
+
+    private static void renderAll() {
+        drawnThisFrame.clear();
+        try {
+            if (!failed) {
+                renderPortals();
+            }
+        }
+        catch (Throwable t) {
+            failed = true;
+            LOGGER.error("[Quasar Portals] portal view rendering failed; falling back to outlines", t);
+        }
+        drawnLastFrame.clear();
+        drawnLastFrame.addAll(drawnThisFrame);
+    }
+
+    private static void renderPortals() throws Exception {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) {
+            return;
+        }
+        CameraRenderState main = (CameraRenderState) mainCameraMethod.invoke(null);
+        if (main == null || !main.initialized || main.pos == null || main.cullFrustum == null) {
+            return;
+        }
+        Vec3 camPos = main.pos;
+
+        List<Portal> portals = new ArrayList<>();
+        for (Entity e : mc.level.entitiesForRendering()) {
+            if (!(e instanceof Portal portal) || e.isRemoved()) continue;
+            if (portal.getDestDim() != mc.level.dimension()) continue;
+            if (portal.getOriginPos().distanceToSqr(camPos) > MAX_DISTANCE * MAX_DISTANCE) continue;
+            if (!portal.isInFrontOfPortal(camPos)) continue;
+            if (!main.cullFrustum.isVisible(portal.getBoundingBox().inflate(0.1))) continue;
+            portals.add(portal);
+        }
+        if (portals.isEmpty()) {
+            return;
+        }
+        portals.sort(Comparator.comparingDouble(p -> p.getDistanceToNearestPointInPortal(camPos)));
+
+        RenderTarget mainTarget = mc.gameRenderer.mainRenderTarget();
+        int w = mainTarget.width, h = mainTarget.height;
+        GpuTextureView mainColor = mainTarget.getColorTextureView();
+        GpuTextureView mainDepth = mainTarget.getDepthTextureView();
+        if (mainColor == null || mainDepth == null || w <= 0 || h <= 0) {
+            return;
+        }
+
+        GpuDevice device = RenderSystem.getDevice();
+        CommandEncoder encoder = device.createCommandEncoder();
+
+        int n = Math.min(MAX_PORTALS, portals.size());
+        for (int i = 0; i < n; i++) {
+            Portal portal = portals.get(i);
+            Target t = target(i, device, w, h);
+
+            CameraRenderState virtual = virtualCamera(main, portal);
+            if (virtual == null) continue;
+
+            // flat sky colour for now (the sky, clouds and far panorama come in later milestones)
+            encoder.clearColorAndDepthTextures(t.color, new Vector4f(0.53f, 0.71f, 1.0f, 1.0f), t.depth, 0.0);
+            boolean drawn = (Boolean) drawTerrainMethod.invoke(null, virtual, t.colorView, t.depthView, w, h);
+            if (!drawn) continue;
+
+            composite(encoder, main, portal, t, mainColor, mainDepth, w, h);
+            drawnThisFrame.add(portal.getId());
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // virtual camera
+    // ------------------------------------------------------------------
+
+    private static CameraRenderState virtualCamera(CameraRenderState main, Portal portal) {
+        Vec3 camPos = main.pos;
+        Vec3 vPos = portal.transformPoint(camPos);
+
+        // view rotation: directions arriving through the portal are rotated by R, so V' = V * R^-1
+        Matrix4f view = new Matrix4f(main.viewRotationMatrix);
+        if (portal.getRotation() != null) {
+            Quaternionf r = portal.getRotation().toMcQuaternion();
+            view.rotate(new Quaternionf(r).conjugate());
+        }
+
+        // clip plane on the destination portal, in camera-relative view space: visible side = content side
+        Vec3 n = portal.getContentDirection().normalize();
+        Vec3 q = portal.getDestPos().subtract(vPos);
+        float d = (float) -(n.dot(q));
+        if (d >= 0) {
+            return null; // the virtual camera is not behind the destination portal (player not in front)
+        }
+        Vector3f nv = view.transformDirection(new Vector3f((float) n.x, (float) n.y, (float) n.z));
+        Vector4f clip = new Vector4f(nv.x, nv.y, nv.z, d);
+
+        Matrix4f proj = obliqueReverseZ(main.projectionMatrix, clip);
+        if (proj == null) {
+            return null;
+        }
+
+        CameraRenderState vc = new CameraRenderState();
+        vc.pos = vPos;
+        vc.blockPos = BlockPos.containing(vPos);
+        vc.initialized = true;
+        vc.xRot = main.xRot;
+        vc.yRot = main.yRot;
+        vc.orientation = main.orientation;
+        vc.fogType = main.fogType;
+        vc.fogData = main.fogData;
+        vc.depthFar = main.depthFar;
+        vc.hudFov = main.hudFov;
+        vc.isFirstPerson = main.isFirstPerson;
+        vc.viewRotationMatrix = view;
+        vc.projectionMatrix = proj;
+        Frustum frustum = new Frustum(view, proj);
+        frustum.prepare(vPos.x, vPos.y, vPos.z);
+        vc.cullFrustum = frustum;
+        return vc;
+    }
+
+    /**
+     * Oblique near plane (Lengyel) for 26.x's reverse-Z projection: convert to the standard 0..1 depth form
+     * (row2_std = row3 - row2), replace the near plane with {@code clipPlane} (view space, visible side positive,
+     * camera on the negative side), convert back.
+     */
+    static Matrix4f obliqueReverseZ(Matrix4f projection, Vector4f clipPlane) {
+        Matrix4f p = new Matrix4f(projection);
+        Vector4f r2 = p.getRow(2, new Vector4f());
+        Vector4f r3 = p.getRow(3, new Vector4f());
+        Matrix4f std = new Matrix4f(p);
+        std.setRow(2, new Vector4f(r3).sub(r2));
+        Matrix4f inv = new Matrix4f(std).invert();
+        // the plane in clip space picks the far corner on the visible side
+        Vector4f planeClip = new Matrix4f(inv).transpose().transform(new Vector4f(clipPlane));
+        Vector4f qClip = new Vector4f(Math.signum(planeClip.x), Math.signum(planeClip.y), 1f, 1f);
+        Vector4f q = inv.transform(qClip);
+        float dot = clipPlane.dot(q);
+        if (!(Math.abs(dot) > 1e-12f) || !Float.isFinite(dot)) {
+            return null;
+        }
+        Vector4f c = new Vector4f(clipPlane).mul(1f / dot);
+        Matrix4f out = new Matrix4f(p);
+        out.setRow(2, new Vector4f(r3).sub(c));
+        return out;
+    }
+
+    // ------------------------------------------------------------------
+    // composite
+    // ------------------------------------------------------------------
+
+    private static void composite(CommandEncoder encoder, CameraRenderState main, Portal portal, Target t,
+                                  GpuTextureView mainColor, GpuTextureView mainDepth, int w, int h) {
+        ensurePipeline();
+        Vec3 cam = main.pos;
+        Vec3 o = portal.getOriginPos().subtract(cam);
+        Vec3 aw = portal.getAxisW().scale(portal.getWidth() / 2);
+        Vec3 ah = portal.getAxisH().scale(portal.getHeight() / 2);
+        Vec3 a = o.subtract(aw).subtract(ah);
+        Vec3 b = o.add(aw).subtract(ah);
+        Vec3 c = o.add(aw).add(ah);
+        Vec3 d = o.subtract(aw).add(ah);
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            ByteBuffer vb = stack.malloc(6 * 3 * 4);
+            putVec(vb, a); putVec(vb, b); putVec(vb, c);
+            putVec(vb, a); putVec(vb, c); putVec(vb, d);
+            vb.flip();
+            ByteBuffer ub = stack.calloc(80);
+            Matrix4f viewProj = new Matrix4f(main.projectionMatrix).mul(main.viewRotationMatrix);
+            viewProj.get(0, ub);
+            ub.putFloat(64, (float) w);
+            ub.putFloat(68, (float) h);
+
+            GpuBufferSlice vertices = encoder.transientMemory().uploadGpu(vb, 16, GpuBuffer.USAGE_VERTEX);
+            GpuBufferSlice uniforms = encoder.transientMemory().uploadGpu(ub, 256, GpuBuffer.USAGE_UNIFORM);
+
+            try (RenderPass pass = encoder.createRenderPass(() -> "quasar portal composite",
+                mainColor, Optional.empty(), mainDepth, OptionalDouble.empty())) {
+                pass.setPipeline(RenderSystem.getCompiledPipeline(compositePipeline));
+                pass.setUniform("PortalColor", t.colorView, sampler);
+                pass.setUniform("PortalUniforms", uniforms);
+                pass.setVertexBuffer(0, vertices);
+                pass.draw(6, 1, 0, 0);
+            }
+        }
+    }
+
+    private static void putVec(ByteBuffer b, Vec3 v) {
+        b.putFloat((float) v.x).putFloat((float) v.y).putFloat((float) v.z);
+    }
+
+    private static void ensurePipeline() {
+        if (compositePipeline != null) {
+            return;
+        }
+        compositePipeline = RenderPipeline.builder()
+            .withLocation(Identifier.parse("immersive_portals:pipeline/portal_composite"))
+            .withVertexShader(Identifier.parse("immersive_portals:portal_composite"))
+            .withFragmentShader(Identifier.parse("immersive_portals:portal_composite"))
+            .withBindGroupLayout(BindGroupLayout.builder()
+                .withUniform("PortalColor", UniformType.COMBINED_IMAGE_SAMPLER)
+                .withUniform("PortalUniforms", UniformType.UNIFORM_BUFFER)
+                .build())
+            .withCull(false)
+            .withPolygonMode(PolygonMode.FILL)
+            // 26.x is reverse-Z: nearer = larger; write the surface's depth so later passes are hidden behind it
+            .withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, true))
+            .withColorTargetState(new ColorTargetState(Optional.empty(), GpuFormat.RGBA8_UNORM,
+                ColorTargetState.WRITE_ALL))
+            .withVertexBinding(0, VertexFormat.builder(0).addAttribute("Position", GpuFormat.RGB32_FLOAT).build())
+            .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
+            .build();
+        sampler = RenderSystem.getDevice().createSampler(AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE,
+            FilterMode.NEAREST, FilterMode.NEAREST, 1, OptionalDouble.empty());
+    }
+
+    // ------------------------------------------------------------------
+    // per-portal images
+    // ------------------------------------------------------------------
+
+    private static final class Target {
+        GpuTexture color, depth;
+        GpuTextureView colorView, depthView;
+        int width, height;
+    }
+
+    private static Target target(int slot, GpuDevice device, int w, int h) {
+        Target t = targets[slot];
+        if (t != null && t.width == w && t.height == h) {
+            return t;
+        }
+        if (t != null) {
+            t.colorView.close();
+            t.depthView.close();
+            t.color.close();
+            t.depth.close();
+        }
+        t = new Target();
+        int usage = GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST;
+        t.color = device.createTexture("quasar_portal_color_" + slot, usage, GpuFormat.RGBA8_UNORM, w, h, 1, 1);
+        t.depth = device.createTexture("quasar_portal_depth_" + slot, usage, GpuFormat.D32_FLOAT, w, h, 1, 1);
+        t.colorView = device.createTextureView(t.color);
+        t.depthView = device.createTextureView(t.depth);
+        t.width = w;
+        t.height = h;
+        targets[slot] = t;
+        return t;
+    }
+}

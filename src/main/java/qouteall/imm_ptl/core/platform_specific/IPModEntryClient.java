@@ -63,6 +63,8 @@ public class IPModEntryClient {
         
         // Quasar MC: visible stand-in for portals until the real portal rendering is built
         qouteall.imm_ptl.core.render.quasar.PortalPlaceholderOutline.init();
+        // Quasar MC: live portal views through Quasar Meshelium (falls back to the outline without it)
+        qouteall.imm_ptl.core.render.quasar.PortalViewRenderer.init();
 
         // Quasar MC: renderers are registered by IPModEntry; no Sodium/Iris in the pack.
 
