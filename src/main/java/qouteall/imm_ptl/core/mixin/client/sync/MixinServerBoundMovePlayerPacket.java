@@ -18,8 +18,10 @@ public class MixinServerBoundMovePlayerPacket {
     )
     private void onConstruct(
         double x, double y, double z, float yaw, float pitch, boolean onGround,
-        boolean changePosition, boolean changeLook, CallbackInfo ci
+        boolean horizontalCollision, boolean changePosition, boolean changeLook, CallbackInfo ci
     ) {
+        // Quasar MC: 26.x added horizontalCollision to this constructor.
+        if (Minecraft.getInstance().player == null) return;
         ResourceKey<Level> dimension = Minecraft.getInstance().player.level().dimension();
         ((IEPlayerMoveC2SPacket) this).ip_setPlayerDimension(dimension);
     }
