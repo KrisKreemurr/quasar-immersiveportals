@@ -19,6 +19,20 @@ public final class WandPreviewRendering {
     
     public static void init() {
         NeoForge.EVENT_BUS.addListener(WandPreviewRendering::onFrame);
+        // the wand's on-screen instructions
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.RenderGuiEvent.Post e) ->
+            qouteall.q_misc_util.CustomTextOverlay.render(e.getGuiGraphics()));
+        // left click with the wand (was a mixin into Minecraft.startAttack): wand action instead of attacking
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered e) -> {
+            if (!e.isAttack()) return;
+            LocalPlayer player = Minecraft.getInstance().player;
+            if (player == null || PortalWandItem.instance == null) return;
+            ItemStack stack = player.getMainHandItem();
+            if (stack.getItem() != PortalWandItem.instance) return;
+            PortalWandItemClient.onClientLeftClick(player, stack);
+            e.setSwingHand(false);
+            e.setCanceled(true);
+        });
     }
     
     private static void onFrame(RenderFrameEvent.Pre event) {
