@@ -483,8 +483,12 @@ public final class PortalViewRenderer {
         
         // the picture uses the full-screen projection (the composite is pixel for pixel); only culling is narrowed
         // to the portal's screen rectangle, so terrain that cannot appear inside the portal is never drawn
-        Matrix4f proj = obliqueReverseZ(main.projectionMatrix, clip);
-        Matrix4f cullProj = obliqueReverseZ(sub, clip);
+        // how far the portal view must reach before its (tilted) far plane may cut: the portal render distance,
+        // or the main view's distance when unlimited, with margin for the diagonal and height
+        float reach = (renderDistance > 0 ? renderDistance : Math.max(8, Minecraft.getInstance().options.getEffectiveRenderDistance()))
+            * 16f * 1.75f + 64f;
+        Matrix4f proj = obliqueReverseZ(main.projectionMatrix, clip, reach);
+        Matrix4f cullProj = obliqueReverseZ(sub, clip, reach);
         if (proj == null || cullProj == null) {
             return null;
         }
@@ -515,7 +519,7 @@ public final class PortalViewRenderer {
      * (row2_std = row3 - row2), replace the near plane with {@code clipPlane} (view space, visible side positive,
      * camera on the negative side), convert back.
      */
-    static Matrix4f obliqueReverseZ(Matrix4f projection, Vector4f clipPlane) {
+    static Matrix4f obliqueReverseZ(Matrix4f projection, Vector4f clipPlane, float reach) {
         Matrix4f p = new Matrix4f(projection);
         Vector4f r2 = p.getRow(2, new Vector4f());
         Vector4f r3 = p.getRow(3, new Vector4f());
@@ -531,6 +535,23 @@ public final class PortalViewRenderer {
             return null;
         }
         Vector4f c = new Vector4f(clipPlane).mul(1f / dot);
+        // Lengyel's scale puts the new far plane through a frustum corner at infinity, which is fine for a portal
+        // seen head-on; at a grazing angle that plane swings in and cuts the distant view (washed-out sky with
+        // specks in a mirror seen along the wall). Any positive scale keeps the near plane on the portal, so shrink
+        // c until nothing within `reach` is beyond the far plane (standard depth c.P <= w for the four corner rays).
+        Matrix4f projInv = new Matrix4f(p).invert();
+        float maxRatio = 0f;
+        for (int i = 0; i < 4; i++) {
+            Vector4f corner = projInv.transform(new Vector4f((i & 1) == 0 ? -1f : 1f, (i & 2) == 0 ? -1f : 1f, 0.5f, 1f));
+            Vector3f dir = new Vector3f(corner.x / corner.w, corner.y / corner.w, corner.z / corner.w);
+            if (!(dir.z < 0f)) continue;
+            dir.normalize().mul(reach);
+            float ratio = (c.x * dir.x + c.y * dir.y + c.z * dir.z + c.w) / -dir.z;
+            if (Float.isFinite(ratio)) maxRatio = Math.max(maxRatio, ratio);
+        }
+        if (maxRatio > 0.999f) {
+            c.mul(0.999f / maxRatio);
+        }
         Matrix4f out = new Matrix4f(p);
         out.setRow(2, new Vector4f(r3).sub(c));
         return out;
