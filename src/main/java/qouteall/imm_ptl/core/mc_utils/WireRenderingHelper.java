@@ -28,6 +28,11 @@ import java.util.function.IntSupplier;
 /** Quasar MC: restored from v6.0.7; draws through {@link WireSink} (26.x gizmos) instead of vertex buffers. */
 public class WireRenderingHelper {
     
+    private static void rotatePose(PoseStack stack, org.joml.Quaternionf q) {
+        stack.last().pose().rotate(q);
+        stack.last().normal().rotate(q);
+    }
+    
     /** the 12 edges of a box (replaces the removed LevelRenderer.renderLineBox) */
     private static void lineBox(PoseStack matrixStack, WireSink sink,
                                 double x0, double y0, double z0, double x1, double y1, double z1,
@@ -66,7 +71,7 @@ public class WireRenderingHelper {
         
         double periodLen = 100;
         
-        matrixStack.mulPose(rotation.toMcQuaternion());
+        rotatePose(matrixStack, rotation.toMcQuaternion());
         Matrix4f matrix = matrixStack.last().pose();
         
         float alpha = ((color >> 24) & 0xff) / 255f;
@@ -152,7 +157,7 @@ public class WireRenderingHelper {
             planeCenter.z - cameraPos.z
         );
         
-        matrixStack.mulPose(
+        rotatePose(matrixStack, 
             DQuaternion.rotationByDegrees(normal, CHelper.getSmoothCycles(211) * 360)
                 .toMcQuaternion()
         );
@@ -344,7 +349,7 @@ public class WireRenderingHelper {
             center.z - cameraPos.z
         );
         
-        matrixStack.mulPose(rotation.toMcQuaternion());
+        rotatePose(matrixStack, rotation.toMcQuaternion());
         
         matrixStack.scale((float) scale, (float) scale, (float) scale);
         
@@ -552,7 +557,7 @@ public class WireRenderingHelper {
             sphere.center().z - cameraPos.z
         );
         
-        matrixStack.mulPose(sphereOrientation.toMcQuaternion());
+        rotatePose(matrixStack, sphereOrientation.toMcQuaternion());
         matrixStack.scale((float) sphere.radius(), (float) sphere.radius(), (float) sphere.radius());
         
         Matrix4f matrix = matrixStack.last().pose();

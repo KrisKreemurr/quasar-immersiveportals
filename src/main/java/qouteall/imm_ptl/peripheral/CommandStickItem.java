@@ -76,14 +76,11 @@ public class CommandStickItem extends Item {
         
         public static Data deserialize(CompoundTag tag) {
             return new Data(
-                tag.getString("command"),
-                tag.getString("nameTranslationKey"),
-                tag.getList(
-                        "descriptionTranslationKeys",
-                        StringTag.valueOf("").getId()
-                    )
+                tag.getStringOr("command", ""),
+                tag.getStringOr("nameTranslationKey", ""),
+                tag.getListOrEmpty("descriptionTranslationKeys")
                     .stream()
-                    .map(tag1 -> ((StringTag) tag1).getAsString())
+                    .map(tag1 -> tag1.asString().orElse(""))
                     .collect(Collectors.toList())
             );
         }
@@ -185,14 +182,14 @@ public class CommandStickItem extends Item {
     }
     
     @Override
-    public @NotNull String getDescriptionId(ItemStack stack) {
+    public @NotNull Component getName(ItemStack stack) {
         Data data = stack.get(COMPONENT_TYPE);
 
         if (data == null) {
-            return "";
+            return super.getName(stack);
         }
 
-        return data.nameTranslationKey;
+        return Component.translatable(data.nameTranslationKey);
     }
     
     public static void sendMessage(Player player, Component message) {
