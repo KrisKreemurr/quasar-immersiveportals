@@ -1,7 +1,6 @@
 // QUASAR STUB: real code parked in src/parked (rendering is replaced for Quasar MC).
 package qouteall.imm_ptl.core.render.context_management;
 
-import com.mojang.blaze3d.vertex.VertexBuffer;
 import de.nick1st.imm_ptl.events.ClientCleanupEvent;
 import de.nick1st.imm_ptl.events.DimensionEvents;
 import net.minecraft.resources.ResourceKey;
@@ -21,7 +20,6 @@ public class CloudContext {
     public int lastCloudsBlockZ;
     public ResourceKey<Level> dimension;
     public Vec3 cloudColor;
-    public VertexBuffer cloudsBuffer;
     public static ArrayList<CloudContext> contexts;
     public static void init() {}
 

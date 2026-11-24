@@ -18,7 +18,7 @@ import java.util.Set;
 public class WorldInfoSender {
     public static void init() {
         NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class, event -> {
-            event.getServer().getProfiler().push("portal_send_world_info");
+            net.minecraft.util.profiling.Profiler.get().push("portal_send_world_info");
             if (McHelper.getServerGameTime() % 100 == 42) {
                 for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
                     Set<ResourceKey<Level>> visibleDimensions = ImmPtlChunkTracking.getVisibleDimensions(player);
@@ -40,7 +40,7 @@ public class WorldInfoSender {
 
                 }
             }
-            event.getServer().getProfiler().pop();
+            net.minecraft.util.profiling.Profiler.get().pop();
 
         });
     }

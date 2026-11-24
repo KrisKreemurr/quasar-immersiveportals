@@ -1,5 +1,6 @@
 package qouteall.imm_ptl.core.commands;
 
+import net.minecraft.server.permissions.Permissions;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
@@ -11,7 +12,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.commands.CommandBuildContext;
@@ -124,7 +125,7 @@ public class PortalCommand {
         
         LiteralArgumentBuilder<CommandSourceStack> global =
             Commands.literal("global")
-                .requires(commandSource -> commandSource.hasPermission(2));
+                .requires(commandSource -> commandSource.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER));
         registerGlobalPortalCommands(global);
         builder.then(global);
         
@@ -151,7 +152,7 @@ public class PortalCommand {
             }
         }
         
-        return commandSource.hasPermission(2);
+        return commandSource.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER);
     }
     
     private static void registerGlobalPortalCommands(
@@ -610,7 +611,7 @@ public class PortalCommand {
                             Direction facing = Direction.getNearest(
                                 viewVector.x, viewVector.y, viewVector.z
                             );
-                            Vec3 offset = Vec3.atLowerCornerOf(facing.getNormal()).scale(distance);
+                            Vec3 offset = Vec3.atLowerCornerOf(facing.getUnitVec3i()).scale(distance);
                             portal.setPos(
                                 portal.getX() + offset.x,
                                 portal.getY() + offset.y,
@@ -641,7 +642,7 @@ public class PortalCommand {
                             Direction facing = Direction.getNearest(
                                 viewVector.x, viewVector.y, viewVector.z
                             );
-                            Vec3 offset = Vec3.atLowerCornerOf(facing.getNormal()).scale(distance);
+                            Vec3 offset = Vec3.atLowerCornerOf(facing.getUnitVec3i()).scale(distance);
                             
                             portal.setDestination(portal.getDestPos().add(
                                 portal.transformLocalVecNonScale(offset)
@@ -897,7 +898,7 @@ public class PortalCommand {
         );
         
         builder.then(Commands.literal("add_command_on_teleported")
-            .requires(serverCommandSource -> serverCommandSource.hasPermission(2))
+            .requires(serverCommandSource -> serverCommandSource.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
             .then(Commands.argument("subCommand", SubCommandArgumentType.instance)
                 .executes(context -> processPortalTargetedCommand(context, portal -> {
                     String subCommand = SubCommandArgumentType.get(context, "subCommand");
@@ -912,7 +913,7 @@ public class PortalCommand {
         );
         
         builder.then(Commands.literal("remove_command_on_teleported_at")
-            .requires(serverCommandSource -> serverCommandSource.hasPermission(2))
+            .requires(serverCommandSource -> serverCommandSource.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
             .then(Commands.argument("indexStartingFromZero", IntegerArgumentType.integer(0, 100))
                 .executes(context -> processPortalTargetedCommand(context, portal -> {
                     if (portal.getCommandsOnTeleported() == null) {
@@ -936,7 +937,7 @@ public class PortalCommand {
         // The code of command "set_command_on_teleported_at" is fully written by GitHub Copilot!!!!!!!!
         // The AI is so smart!!!!
         builder.then(Commands.literal("set_command_on_teleported_at")
-            .requires(serverCommandSource -> serverCommandSource.hasPermission(2))
+            .requires(serverCommandSource -> serverCommandSource.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
             .then(Commands.argument("indexStartingFromZero", IntegerArgumentType.integer(0, 100))
                 .then(Commands.argument("subCommand", SubCommandArgumentType.instance)
                     .executes(context -> processPortalTargetedCommand(context, portal -> {
@@ -962,7 +963,7 @@ public class PortalCommand {
         );
         
         builder.then(Commands.literal("clear_commands_on_teleported")
-            .requires(serverCommandSource -> serverCommandSource.hasPermission(2))
+            .requires(serverCommandSource -> serverCommandSource.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
             .executes(context -> processPortalTargetedCommand(context, portal -> {
                 portal.setCommandsOnTeleported(null);
                 portal.reloadAndSyncToClient();
@@ -1059,7 +1060,7 @@ public class PortalCommand {
         Portal portal, CompoundTag newNbt
     ) {
         if (newNbt.contains("commandsOnTeleported")) {
-            if (!context.getSource().hasPermission(2)) {
+            if (!context.getSource().permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
                 context.getSource().sendFailure(Component.literal(
                     "You do not have the permission to set commandsOnTeleported"
                 ));
@@ -1098,7 +1099,7 @@ public class PortalCommand {
         
         AABB portalBox = new AABB(0, 0, 0, 0, 0, 0);
         for (Direction direction : Direction.values()) {
-            IntBox outerSurface = boxArea.getSurfaceLayer(direction).getMoved(direction.getNormal());
+            IntBox outerSurface = boxArea.getSurfaceLayer(direction).getMoved(direction.getUnitVec3i());
             AABB collisionBox = McHelper.getWallBox(world, outerSurface);
             if (collisionBox == null) {
                 collisionBox = outerSurface.toRealNumberBox();
@@ -1338,7 +1339,7 @@ public class PortalCommand {
         );
         
         builder.then(Commands.literal("tp")
-            .requires(commandSource -> commandSource.hasPermission(2))
+            .requires(commandSource -> commandSource.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
             .then(Commands.argument("from", EntityArgument.entities())
                 .then(Commands.argument("to", EntityArgument.entity())
                     .executes(context -> {
@@ -1781,7 +1782,7 @@ public class PortalCommand {
                             Vec3 toPos = Vec3Argument.getVec3(context, "toPos");
                             Direction.Axis axis = AxisArgumentType.getAxis(context, "axis");
                             Vec3 axisVec = Vec3.atLowerCornerOf(
-                                Direction.fromAxisAndDirection(axis, Direction.AxisDirection.POSITIVE).getNormal()
+                                Direction.fromAxisAndDirection(axis, Direction.AxisDirection.POSITIVE).getUnitVec3i()
                             );
                             
                             Vec3 delta = toPos.subtract(fromPos);
@@ -1818,7 +1819,7 @@ public class PortalCommand {
         
         builder.then(Commands
             .literal("dimension_stack")
-            .requires(commandSource -> commandSource.hasPermission(2))
+            .requires(commandSource -> commandSource.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
             .executes(context -> {
                 ServerPlayer player = context.getSource().getPlayerOrException();
                 
@@ -1840,7 +1841,7 @@ public class PortalCommand {
         
         builder.then(Commands
             .literal("create_command_stick")
-            .requires(serverCommandSource -> serverCommandSource.hasPermission(2))
+            .requires(serverCommandSource -> serverCommandSource.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
             .then(Commands.argument("command", SubCommandArgumentType.instance)
                 .executes(context -> {
                     PortalCommand.createCommandStickCommandSignal.emit(
@@ -1857,9 +1858,9 @@ public class PortalCommand {
         Vec3 boxSize = Helper.getBoxSize(box);
         Vec3 boxCenter = box.getCenter();
         for (Direction face : Direction.values()) {
-            Vec3 facingVec = Vec3.atLowerCornerOf(face.getNormal());
+            Vec3 facingVec = Vec3.atLowerCornerOf(face.getUnitVec3i());
             for (Direction sideDirection : Helper.getAnotherFourDirections(face.getAxis())) {
-                Vec3 sideDirectionVec = Vec3.atLowerCornerOf(sideDirection.getNormal());
+                Vec3 sideDirectionVec = Vec3.atLowerCornerOf(sideDirection.getUnitVec3i());
                 Vec3 edgeCenter = facingVec.scale(0.5)
                     .add(sideDirectionVec.scale(0.5))
                     .multiply(boxSize)
@@ -2453,7 +2454,7 @@ public class PortalCommand {
     
     private static void registerEulerCommands(LiteralArgumentBuilder<CommandSourceStack> builder) {
         builder.then(Commands.literal("make_portal")
-            .requires(s -> s.hasPermission(2))
+            .requires(s -> s.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
             .then(Commands.argument("origin", Vec3Argument.vec3(false))
                 .then(Commands.argument("rotation", RotationArgument.rotation())
                     .then(Commands.argument("width", DoubleArgumentType.doubleArg(0))
@@ -2523,7 +2524,7 @@ public class PortalCommand {
         );
         
         builder.then(Commands.literal("set_this_side")
-            .requires(s -> s.hasPermission(2))
+            .requires(s -> s.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
             .then(Commands.argument("origin", Vec3Argument.vec3(false))
                 .then(Commands.argument("rotation", RotationArgument.rotation())
                     .then(Commands.argument("width", DoubleArgumentType.doubleArg(0))

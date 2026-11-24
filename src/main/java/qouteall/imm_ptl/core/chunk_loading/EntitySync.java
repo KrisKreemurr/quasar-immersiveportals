@@ -22,7 +22,7 @@ public class EntitySync {
      * regarding the players in all dimensions
      */
     public static void update(MinecraftServer server) {
-        server.getProfiler().push("ip_entity_tracking_update");
+        net.minecraft.util.profiling.Profiler.get().push("ip_entity_tracking_update");
         
         for (ServerLevel world : server.getAllLevels()) {
             PacketRedirection.withForceRedirect(
@@ -41,11 +41,11 @@ public class EntitySync {
             );
         }
         
-        server.getProfiler().pop();
+        net.minecraft.util.profiling.Profiler.get().pop();
     }
     
     public static void tick(MinecraftServer server) {
-        server.getProfiler().push("ip_entity_tracking_tick");
+        net.minecraft.util.profiling.Profiler.get().push("ip_entity_tracking_tick");
         
         for (ServerLevel world : server.getAllLevels()) {
             PacketRedirection.withForceRedirect(
@@ -59,7 +59,7 @@ public class EntitySync {
                     for (ChunkMap.TrackedEntity trackedEntity : entityTrackerMap.values()) {
                         IETrackedEntity ieTrackedEntity = (IETrackedEntity) trackedEntity;
                         
-                        long chunkPos = ieTrackedEntity.ip_getEntity().chunkPosition().toLong();
+                        long chunkPos = ieTrackedEntity.ip_getEntity().chunkPosition().pack();
                         if (distanceManager.inEntityTickingRange(chunkPos)) {
                             ieTrackedEntity.ip_sendChanges();
                         }
@@ -70,7 +70,7 @@ public class EntitySync {
             
         }
         
-        server.getProfiler().pop();
+        net.minecraft.util.profiling.Profiler.get().pop();
     }
     
     private static void forceRemoveDimension(ServerLevel world) {

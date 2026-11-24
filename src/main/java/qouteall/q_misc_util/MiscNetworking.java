@@ -12,7 +12,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientCommonPacketListener;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
@@ -28,20 +28,20 @@ import qouteall.q_misc_util.dimension.DimensionIntId;
 public class MiscNetworking {
     private static final Logger LOGGER = LogUtils.getLogger();
     
-    public static final ResourceLocation id_stcRemote =
-        ResourceLocation.fromNamespaceAndPath("q_misc_util", "remote_stc");
-    public static final ResourceLocation id_ctsRemote =
-            ResourceLocation.fromNamespaceAndPath("q_misc_util", "remote_cts");
+    public static final Identifier id_stcRemote =
+        Identifier.fromNamespaceAndPath("q_misc_util", "remote_stc");
+    public static final Identifier id_ctsRemote =
+            Identifier.fromNamespaceAndPath("q_misc_util", "remote_cts");
 
-    public static final CustomPacketPayload.Type<CustomPacketPayload> TYPE_STC_REMOTE = new CustomPacketPayload.Type<>(ResourceLocation.parse("q_misc_util:remote_stc"));
-    public static final CustomPacketPayload.Type<CustomPacketPayload> TYPE_CTS_REMOTE = new CustomPacketPayload.Type<>(ResourceLocation.parse("q_misc_util:remote_cts"));
+    public static final CustomPacketPayload.Type<CustomPacketPayload> TYPE_STC_REMOTE = new CustomPacketPayload.Type<>(Identifier.parse("q_misc_util:remote_stc"));
+    public static final CustomPacketPayload.Type<CustomPacketPayload> TYPE_CTS_REMOTE = new CustomPacketPayload.Type<>(Identifier.parse("q_misc_util:remote_cts"));
 
     public static record DimIdSyncPacket(
         CompoundTag dimIntIdTag,
         CompoundTag dimTypeTag
     ) implements CustomPacketPayload {
         public static final CustomPacketPayload.Type<DimIdSyncPacket> TYPE =
-                new Type<>(ResourceLocation.parse("imm_ptl:dim_int_id_sync"));
+                new Type<>(Identifier.parse("imm_ptl:dim_int_id_sync"));
 
         public static final StreamCodec<FriendlyByteBuf, DimIdSyncPacket> CODEC =
                 StreamCodec.of(
@@ -60,18 +60,18 @@ public class MiscNetworking {
                 ResourceKey<Level> dimId = world.dimension();
                 
                 DimensionType dimType = world.dimensionType();
-                ResourceLocation dimTypeId = dimensionTypes.getKey(dimType);
+                Identifier dimTypeId = dimensionTypes.getKey(dimType);
                 
                 if (dimTypeId == null) {
-                    LOGGER.error("Cannot find dimension type for {}", dimId.location());
+                    LOGGER.error("Cannot find dimension type for {}", dimId.identifier());
                     LOGGER.error(
                         "Registered dimension types {}", dimensionTypes.keySet()
                     );
-                    dimTypeId = BuiltinDimensionTypes.OVERWORLD.location();
+                    dimTypeId = BuiltinDimensionTypes.OVERWORLD.identifier();
                 }
                 
                 dimIdToDimTypeIdTag.putString(
-                    dimId.location().toString(),
+                    dimId.identifier().toString(),
                     dimTypeId.toString()
                 );
             }
@@ -109,12 +109,12 @@ public class MiscNetworking {
             ImmutableMap.Builder<ResourceKey<Level>, ResourceKey<DimensionType>> builder =
                 new ImmutableMap.Builder<>();
             
-            for (String key : dimTypeTag.getAllKeys()) {
+            for (String key : dimTypeTag.keySet()) {
                 ResourceKey<Level> dimId = ResourceKey.create(
                     Registries.DIMENSION,
                     McHelper.newResourceLocation(key)
                 );
-                String dimTypeId = dimTypeTag.getString(key);
+                String dimTypeId = dimTypeTag.getStringOr(key, "");
                 ResourceKey<DimensionType> dimType = ResourceKey.create(
                     Registries.DIMENSION_TYPE,
                     McHelper.newResourceLocation(dimTypeId)

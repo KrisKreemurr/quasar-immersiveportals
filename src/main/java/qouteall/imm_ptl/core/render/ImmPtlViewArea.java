@@ -73,7 +73,6 @@ public class ImmPtlViewArea extends ViewArea {
             Level world,
             int r,
             LevelRenderer worldRenderer
-    ) { super(sectionBuilder, world, r, worldRenderer); }
 
     protected void createSections(SectionRenderDispatcher sectionBuilder_1) {}
 
@@ -120,8 +119,6 @@ public class ImmPtlViewArea extends ViewArea {
             BlockPos sectionOrigin, RenderSection[] sections
     ) { return null; }
 
-    @Nullable
-    protected RenderSection getRenderSectionAt(BlockPos pos) { return null; }
 
     @Nullable
     public RenderSection rawFetch(int cx, int cy, int cz, long timeMark) { return null; }
@@ -129,7 +126,6 @@ public class ImmPtlViewArea extends ViewArea {
     @Nullable
     public RenderSection rawGet(int cx, int cy, int cz) { return null; }
 
-    protected ImmPtlViewArea() {}
 
 }
 

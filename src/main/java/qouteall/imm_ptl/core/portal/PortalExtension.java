@@ -91,38 +91,38 @@ public class PortalExtension {
     
     private void readFromNbt(CompoundTag compoundTag) {
         if (compoundTag.contains("motionAffinity")) {
-            motionAffinity = compoundTag.getDouble("motionAffinity");
+            motionAffinity = compoundTag.getDoubleOr("motionAffinity", 0D);
         }
         else {
             motionAffinity = 0;
         }
         if (compoundTag.contains("adjustPositionAfterTeleport")) {
-            adjustPositionAfterTeleport = compoundTag.getBoolean("adjustPositionAfterTeleport");
+            adjustPositionAfterTeleport = compoundTag.getBooleanOr("adjustPositionAfterTeleport", false);
         }
         else {
             adjustPositionAfterTeleport = true;
         }
         
         if (compoundTag.contains("bindCluster")) {
-            bindCluster = compoundTag.getBoolean("bindCluster");
+            bindCluster = compoundTag.getBooleanOr("bindCluster", false);
         }
         else {
             bindCluster = true;
         }
         
-        if (compoundTag.hasUUID("reversePortalId")) {
+        if (compoundTag.contains("reversePortalId")) {
             reversePortalId = compoundTag.getUUID("reversePortalId");
         }
         else {
             reversePortalId = null;
         }
-        if (compoundTag.hasUUID("flippedPortalId")) {
+        if (compoundTag.contains("flippedPortalId")) {
             flippedPortalId = compoundTag.getUUID("flippedPortalId");
         }
         else {
             flippedPortalId = null;
         }
-        if (compoundTag.hasUUID("parallelPortalId")) {
+        if (compoundTag.contains("parallelPortalId")) {
             parallelPortalId = compoundTag.getUUID("parallelPortalId");
         }
         else {

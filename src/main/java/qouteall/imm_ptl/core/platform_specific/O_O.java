@@ -4,7 +4,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.client.multiplayer.ClientChunkCache;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -211,7 +211,7 @@ public class O_O {
     }
     
     @Nullable
-    public static ResourceLocation getModIconLocation(String modid) {
+    public static Identifier getModIconLocation(String modid) {
         // TODO @Nick1st - Fix this
         return null;
 //        String path = FabricLoader.getInstance().getModContainer(modid)

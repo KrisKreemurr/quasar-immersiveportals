@@ -41,7 +41,7 @@ public class CrossPortalSound {
             return null;
         }
         
-        soundWorld.getProfiler().push("cross_portal_sound");
+        net.minecraft.util.profiling.Profiler.get().push("cross_portal_sound");
         
         double soundRadius = Math.min(64, Math.max(VOLUME_RADIUS_MULT * soundVol, MIN_SOUND_RADIUS));
         Vec3 playerCameraPos = RenderStates.originalPlayerPos.add(
@@ -84,7 +84,7 @@ public class CrossPortalSound {
             }
         ).orElse(null);
         
-        soundWorld.getProfiler().pop();
+        net.minecraft.util.profiling.Profiler.get().pop();
         
         return result;
     }

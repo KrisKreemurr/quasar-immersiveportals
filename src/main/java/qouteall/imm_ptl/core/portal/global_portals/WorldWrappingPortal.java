@@ -5,7 +5,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.Tuple;
+import qouteall.q_misc_util.my_util.Tuple;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -37,10 +37,10 @@ public class WorldWrappingPortal extends GlobalTrackedPortal {
         super.readAdditionalSaveData(compoundTag);
         
         if (compoundTag.contains("isInward")) {
-            isInward = compoundTag.getBoolean("isInward");
+            isInward = compoundTag.getBooleanOr("isInward", false);
         }
         if (compoundTag.contains("zoneId")) {
-            zoneId = compoundTag.getInt("zoneId");
+            zoneId = compoundTag.getIntOr("zoneId", 0);
         }
     }
     

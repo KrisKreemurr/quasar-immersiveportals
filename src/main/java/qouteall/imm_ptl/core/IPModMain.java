@@ -4,7 +4,7 @@ import com.mojang.logging.LogUtils;
 import de.nick1st.imm_ptl.networking.Payloads;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Block;
@@ -163,7 +163,7 @@ public class IPModMain {
         registerBlocks(registerHelper::register);
     }
 
-    public static void registerBlocks(BiConsumer<ResourceLocation, PortalPlaceholderBlock> regFunc) {
+    public static void registerBlocks(BiConsumer<Identifier, PortalPlaceholderBlock> regFunc) {
         regFunc.accept(
             McHelper.newResourceLocation("immersive_portals", "nether_portal_block"),
             PortalPlaceholderBlock.instance
@@ -174,7 +174,7 @@ public class IPModMain {
         registerEntityTypes(registerHelper::register);
     }
 
-    public static void registerEntityTypes(BiConsumer<ResourceLocation, EntityType<?>> regFunc) {
+    public static void registerEntityTypes(BiConsumer<Identifier, EntityType<?>> regFunc) {
 
         regFunc.accept(
             McHelper.newResourceLocation("immersive_portals", "portal"),

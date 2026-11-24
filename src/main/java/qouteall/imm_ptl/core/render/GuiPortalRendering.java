@@ -2,7 +2,6 @@
 package qouteall.imm_ptl.core.render;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.logging.LogUtils;
 import de.nick1st.imm_ptl.events.ClientCleanupEvent;
 import net.minecraft.client.Minecraft;

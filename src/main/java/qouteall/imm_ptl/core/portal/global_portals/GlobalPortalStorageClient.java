@@ -51,6 +51,6 @@ public final class GlobalPortalStorageClient {
 
         ((IEClientWorld) world).ip_setGlobalPortals(newPortals);
 
-        Helper.log("Global Portals Updated " + dimension.location());
+        Helper.log("Global Portals Updated " + dimension.identifier());
     }
 }

@@ -11,7 +11,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.network.ConfigurationTask;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 import net.neoforged.bus.api.IEventBus;
@@ -92,7 +92,7 @@ public class ImmPtlNetworkConfig {
     public static record S2CConfigStartPacket(
         ModVersion versionFromServer
     ) implements CustomPacketPayload {
-        public static final CustomPacketPayload.Type<S2CConfigStartPacket> TYPE = new Type<>(ResourceLocation.parse("iportal:config_packet"));
+        public static final CustomPacketPayload.Type<S2CConfigStartPacket> TYPE = new Type<>(Identifier.parse("iportal:config_packet"));
 
         public static final StreamCodec<FriendlyByteBuf, S2CConfigStartPacket> CODEC = StreamCodec.of(
                 (b, p) -> p.write(b), S2CConfigStartPacket::read
@@ -130,7 +130,7 @@ public class ImmPtlNetworkConfig {
         ModVersion versionFromClient,
         boolean clientTolerantVersionMismatch
     ) implements CustomPacketPayload {
-        public static final CustomPacketPayload.Type<C2SConfigCompletePacket> TYPE = new Type<>(ResourceLocation.parse("iportal:configure_complete"));
+        public static final CustomPacketPayload.Type<C2SConfigCompletePacket> TYPE = new Type<>(Identifier.parse("iportal:configure_complete"));
         public static final StreamCodec<FriendlyByteBuf, C2SConfigCompletePacket> CODEC = StreamCodec.of(
                 (b, p) -> p.write(b), C2SConfigCompletePacket::read
         );

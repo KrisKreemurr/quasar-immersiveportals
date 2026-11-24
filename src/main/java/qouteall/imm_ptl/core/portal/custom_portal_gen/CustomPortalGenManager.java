@@ -79,7 +79,7 @@ public class CustomPortalGenManager {
         
         for (var entry : legacyRegistry.entrySet()) {
             manager.addEntry(server, entry.getKey(), entry.getValue());
-//            ResourceLocation location = entry.getKey().location();
+//            Identifier location = entry.getKey().location();
 //            String text = """
 //                [Immersive Portals]
 //                Custom portal generation config %s comes from legacy location
@@ -106,7 +106,7 @@ public class CustomPortalGenManager {
         ResourceKey<CustomPortalGeneration> key,
         CustomPortalGeneration gen
     ) {
-        gen.identifier = key.location();
+        gen.identifier = key.identifier();
         
         CustomPortalGeneration.InitializationResult r1 = gen.initAndCheck(server);
         if (!(r1 instanceof CustomPortalGeneration.InitializationOk)) {
@@ -114,7 +114,7 @@ public class CustomPortalGenManager {
             return;
         }
         
-        LOGGER.info("Loaded Custom Portal Generation {}", key.location());
+        LOGGER.info("Loaded Custom Portal Generation {}", key.identifier());
         
         load(gen);
         
@@ -122,7 +122,7 @@ public class CustomPortalGenManager {
             CustomPortalGeneration reverse = gen.getReverse();
             
             if (reverse != null) {
-                reverse.identifier = key.location();
+                reverse.identifier = key.identifier();
                 CustomPortalGeneration.InitializationResult r2 = reverse.initAndCheck(server);
                 if (!(r2 instanceof CustomPortalGeneration.InitializationOk)) {
                     LOGGER.info(
@@ -206,7 +206,7 @@ public class CustomPortalGenManager {
             return;
         }
         
-        ServerTaskList.of(entity.getServer()).addTask(() -> {
+        ServerTaskList.of(entity.level().getServer()).addTask(() -> {
             for (CustomPortalGeneration gen : gens) {
                 boolean result = gen.perform(
                     ((ServerLevel) entity.level()),
@@ -237,7 +237,7 @@ public class CustomPortalGenManager {
         if (playerPosBeforeTravel.containsKey(uuid)) {
             WithDim<Vec3> startCoord = playerPosBeforeTravel.get(uuid);
             
-            ServerLevel startWorld = player.server.getLevel(startCoord.dimension());
+            ServerLevel startWorld = player.level().getServer().getLevel(startCoord.dimension());
             if (startWorld == null) {
                 LOGGER.error("Cannot find world {}", startCoord.dimension());
                 return;

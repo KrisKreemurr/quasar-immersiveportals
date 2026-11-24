@@ -82,6 +82,6 @@ public abstract class MixinChunkMap_C implements IEChunkMap {
      */
     @Overwrite
     public List<ServerPlayer> getPlayers(ChunkPos pos, boolean boundaryOnly) {
-        return ImmPtlChunkTracking.getPlayersViewingChunk(level.dimension(), pos.x, pos.z, boundaryOnly);
+        return ImmPtlChunkTracking.getPlayersViewingChunk(level.dimension(), pos.x(), pos.z(), boundaryOnly);
     }
 }

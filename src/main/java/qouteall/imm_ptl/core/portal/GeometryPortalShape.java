@@ -26,7 +26,7 @@ public class GeometryPortalShape {
         
         for (int i = 0; i < triangleNum; i++) {
             mesh.addTriangle(
-                tag.getDouble(i * 6 + 0),
+                tag.getDoubleOr(i * 6 + 0, 0D),
                 tag.getDouble(i * 6 + 1),
                 tag.getDouble(i * 6 + 2),
                 tag.getDouble(i * 6 + 3),

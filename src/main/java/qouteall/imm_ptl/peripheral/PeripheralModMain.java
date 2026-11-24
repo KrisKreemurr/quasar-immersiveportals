@@ -3,7 +3,7 @@ package qouteall.imm_ptl.peripheral;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -38,7 +38,7 @@ public class PeripheralModMain {
                 
                 CommandStickItem.addIntoCreativeTag(entries);
                 
-                entries.accept(BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("immersive_portals", "portal_helper")));
+                entries.accept(BuiltInRegistries.ITEM.get(Identifier.fromNamespaceAndPath("immersive_portals", "portal_helper")));
             })
             .build();
     
@@ -73,7 +73,7 @@ public class PeripheralModMain {
 
     }
     
-    public static void registerItems(BiConsumer<ResourceLocation, Item> regFunc) {
+    public static void registerItems(BiConsumer<Identifier, Item> regFunc) {
         regFunc.accept(
             McHelper.newResourceLocation("immersive_portals", "portal_helper"),
                 new PortalHelperItem(PeripheralModMain.portalHelperBlock, new Item.Properties())
@@ -94,7 +94,7 @@ public class PeripheralModMain {
         PortalWandItem.instance = portalWandItem;
     }
     
-    public static void registerBlocks(BiConsumer<ResourceLocation, Block> regFunc) {
+    public static void registerBlocks(BiConsumer<Identifier, Block> regFunc) {
         Block block = new Block(BlockBehaviour.Properties.of().noOcclusion().isRedstoneConductor((a, b, c) -> false));
         regFunc.accept(
             McHelper.newResourceLocation("immersive_portals", "portal_helper"),
@@ -104,7 +104,7 @@ public class PeripheralModMain {
     }
 
     public static void registerChunkGenerators(
-        BiConsumer<ResourceLocation, MapCodec<? extends ChunkGenerator>> regFunc
+        BiConsumer<Identifier, MapCodec<? extends ChunkGenerator>> regFunc
     ) {
         regFunc.accept(
             McHelper.newResourceLocation("immersive_portals:error_terrain_generator"),
@@ -117,7 +117,7 @@ public class PeripheralModMain {
     }
 
     public static void registerBiomeSources(
-        BiConsumer<ResourceLocation, MapCodec<? extends BiomeSource>> regFunc
+        BiConsumer<Identifier, MapCodec<? extends BiomeSource>> regFunc
     ) {
         regFunc.accept(
             McHelper.newResourceLocation("immersive_portals:chaos_biome_source"),
@@ -126,7 +126,7 @@ public class PeripheralModMain {
     }
 
     public static void registerCreativeTabs(
-        BiConsumer<ResourceLocation, CreativeModeTab> regFunc
+        BiConsumer<Identifier, CreativeModeTab> regFunc
     ) {
         regFunc.accept(
             McHelper.newResourceLocation("immersive_portals", "general"),

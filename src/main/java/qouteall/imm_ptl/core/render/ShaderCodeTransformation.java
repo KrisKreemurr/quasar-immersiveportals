@@ -1,9 +1,7 @@
 // QUASAR STUB: real code parked in src/parked (rendering is replaced for Quasar MC).
 package qouteall.imm_ptl.core.render;
 
-import com.mojang.blaze3d.shaders.Program;
 import com.mojang.logging.LogUtils;
-import me.shedaniel.cloth.clothconfig.shadowed.org.yaml.snakeyaml.Yaml;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import qouteall.imm_ptl.core.IPGlobal;
@@ -22,7 +20,6 @@ public class ShaderCodeTransformation {
         vs, fs;
     }
 
-    private static boolean matches(ShaderType me, Program.Type type) { return false; }
 
     public static class ConfigsObj {
 
@@ -48,10 +45,7 @@ public class ShaderCodeTransformation {
     private static List<Config> configs;
     public static void init() {}
 
-    public static String transform(Program.Type type, String shaderId, String inputCode) { return null; }
 
-    @Nullable
-    private static Config getConfig(Program.Type type, String shaderId) { return null; }
 
     public static boolean shouldAddUniform(String shaderName) { return false; }
 

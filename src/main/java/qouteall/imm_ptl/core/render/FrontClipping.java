@@ -1,11 +1,9 @@
 // QUASAR STUB: real code parked in src/parked (rendering is replaced for Quasar MC).
 package qouteall.imm_ptl.core.render;
 
-import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;

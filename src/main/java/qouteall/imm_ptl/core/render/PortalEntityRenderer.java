@@ -3,11 +3,8 @@ package qouteall.imm_ptl.core.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import qouteall.imm_ptl.core.IPCGlobal;
@@ -28,11 +25,9 @@ public class PortalEntityRenderer extends EntityRenderer<Portal> {
         float yaw,
         float partialTick,
         PoseStack matrixStack,
-        MultiBufferSource bufferSource,
         int light
     ) {}
 
-    public ResourceLocation getTextureLocation(Portal portal) { return null; }
 
     protected PortalEntityRenderer() {}
 

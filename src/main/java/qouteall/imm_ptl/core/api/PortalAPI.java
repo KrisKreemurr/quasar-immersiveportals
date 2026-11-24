@@ -7,7 +7,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Tuple;
+import qouteall.q_misc_util.my_util.Tuple;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
@@ -181,7 +181,7 @@ public class PortalAPI {
         McHelper.sendToTrackers(
             entity,
             PacketRedirection.createRedirectedMessage(
-                entity.getServer(),
+                entity.level().getServer(),
                 entity.level().dimension(),
                 packet
             )

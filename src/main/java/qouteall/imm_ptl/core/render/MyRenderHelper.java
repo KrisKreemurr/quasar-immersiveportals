@@ -2,19 +2,12 @@
 package qouteall.imm_ptl.core.render;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceProvider;
 import net.minecraft.util.Mth;
@@ -55,17 +48,13 @@ import static org.lwjgl.opengl.GL11.glReadPixels;
 public class MyRenderHelper {
 
     public static Minecraft client;
-    public static SignalBiArged<ResourceProvider, Consumer<ShaderInstance>> loadShaderSignal;
     public static void init() {}
 
     private static ResourceProvider getResourceFactory(ResourceProvider resourceManager) { return null; }
 
-    public static class DrawFbInAreaShader extends ShaderInstance {
+    public static class DrawFbInAreaShader {
 
-        public Uniform uniformW;
-        public Uniform uniformH;
         public DrawFbInAreaShader(
-            ResourceProvider factory, String name, VertexFormat format
         ) throws IOException { super(factory, name, format); }
 
         void loadWidthHeight(int w, int h) {}
@@ -75,8 +64,6 @@ public class MyRenderHelper {
     }
 
     public static DrawFbInAreaShader drawFbInAreaShader;
-    public static ShaderInstance portalAreaShader;
-    public static ShaderInstance blitScreenNoBlendShader;
     public static void drawPortalAreaWithFramebuffer(
         Portal portal,
         RenderTarget textureProvider,

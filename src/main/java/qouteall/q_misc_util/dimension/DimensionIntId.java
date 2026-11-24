@@ -3,7 +3,7 @@ package qouteall.q_misc_util.dimension;
 import com.mojang.logging.LogUtils;
 import de.nick1st.imm_ptl.events.ClientExitEvent;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,7 +22,7 @@ import java.util.HashSet;
 
 public class DimensionIntId {
     private static final Logger LOGGER = LogUtils.getLogger();
-//    public static final ResourceLocation DYNAMIC_UPDATE_EVENT_EARLY_PHASE =
+//    public static final Identifier DYNAMIC_UPDATE_EVENT_EARLY_PHASE =
 //        McHelper.newResourceLocation("iportal:early_phase");
     
     public static DimIntIdMap clientRecord;

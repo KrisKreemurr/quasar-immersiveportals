@@ -98,7 +98,7 @@ public class PortalPlaceholderBlock extends Block {
         if (!worldAccess.isClientSide()) {
             if (worldAccess instanceof Level world) {
 
-                world.getProfiler().push("portal_placeholder");
+                net.minecraft.util.profiling.Profiler.get().push("portal_placeholder");
                 
                 Direction.Axis axis = thisState.getValue(AXIS);
                 if (direction.getAxis() != axis) {
@@ -115,7 +115,7 @@ public class PortalPlaceholderBlock extends Block {
                     );
                 }
                 
-                world.getProfiler().pop();
+                net.minecraft.util.profiling.Profiler.get().pop();
             }
         }
         

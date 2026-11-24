@@ -163,12 +163,12 @@ public class ServerTeleportationManager {
             return;
         }
 
-        Portal portal = findPortal(player.server, dimensionBefore, portalId);
+        Portal portal = findPortal(player.level().getServer(), dimensionBefore, portalId);
 
         if (portal == null) {
             LOGGER.error(
                 "Unable to find portal {} in {} to teleport {}",
-                portalId, dimensionBefore.location(), player
+                portalId, dimensionBefore.identifier(), player
             );
             return;
         }
@@ -209,7 +209,7 @@ public class ServerTeleportationManager {
         else {
             LOGGER.error(
                 "Player {} {} {} cannot teleport through portal {}\nReason: {}",
-                player, player.level().dimension().location(), player.position(),
+                player, player.level().dimension().identifier(), player.position(),
                 portal, failReason
             );
             teleportEntityGeneral(player, player.position(), ((ServerLevel) player.level()));
@@ -227,7 +227,7 @@ public class ServerTeleportationManager {
         ServerLevel originalWorld = server.getLevel(dimensionBefore);
 
         if (originalWorld == null) {
-            LOGGER.error("Missing world {} when finding portal", dimensionBefore.location());
+            LOGGER.error("Missing world {} when finding portal", dimensionBefore.identifier());
             return null;
         }
 
@@ -326,8 +326,8 @@ public class ServerTeleportationManager {
         ResourceKey<Level> dimensionTo,
         Vec3 newEyePos
     ) {
-        MinecraftServer server = player.server;
-        server.getProfiler().push("portal_teleport");
+        MinecraftServer server = player.level().getServer();
+        net.minecraft.util.profiling.Profiler.get().push("portal_teleport");
         
         ServerLevel fromWorld = (ServerLevel) player.level();
         ServerLevel toWorld = server.getLevel(dimensionTo);
@@ -349,7 +349,7 @@ public class ServerTeleportationManager {
             player, newEyePos, newEyePos, 1
         );
         
-        server.getProfiler().pop();
+        net.minecraft.util.profiling.Profiler.get().pop();
     }
 
     public void forceTeleportPlayer(
@@ -367,17 +367,17 @@ public class ServerTeleportationManager {
         if (IPConfig.getConfig().serverTeleportLogging) {
             LOGGER.info(
                 "Force teleporting {} to {} {}",
-                player, dimensionTo.location(), newPos
+                player, dimensionTo.identifier(), newPos
             );
         }
 
         ServerLevel fromWorld = (ServerLevel) player.level();
-        ServerLevel toWorld = player.server.getLevel(dimensionTo);
+        ServerLevel toWorld = player.level().getServer().getLevel(dimensionTo);
 
         if (toWorld == null) {
             LOGGER.error(
                 "Cannot teleport player {} to non-existing dimension {}",
-                player, dimensionTo.location()
+                player, dimensionTo.identifier()
             );
             return;
         }
@@ -462,9 +462,9 @@ public class ServerTeleportationManager {
             LOGGER.info(
                 "{} :: ({} {} {} {})->({} {} {} {})",
                 player.getName().getContents(),
-                fromWorld.dimension().location(),
+                fromWorld.dimension().identifier(),
                 oldPos.x(), oldPos.y(), oldPos.z(),
-                toWorld.dimension().location(),
+                toWorld.dimension().identifier(),
                 (int) player.getX(), (int) player.getY(), (int) player.getZ()
             );
         }
@@ -618,7 +618,7 @@ public class ServerTeleportationManager {
             return entity;
         }
         
-        MinecraftServer server = entity.getServer();
+        MinecraftServer server = entity.level().getServer();
         Validate.notNull(server, "server is null");
 
         ServerLevel fromWorld = (ServerLevel) entity.level();
@@ -627,7 +627,7 @@ public class ServerTeleportationManager {
         if (toWorld == null) {
             LOGGER.error(
                 "Invalid dest dimension {} to teleport entity {} to",
-                toDimension.location(), entity
+                toDimension.identifier(), entity
             );
             return entity;
         }
@@ -721,7 +721,7 @@ public class ServerTeleportationManager {
     
     public static Entity teleportEntityGeneral(Entity entity, Vec3 targetPos, ServerLevel targetWorld) {
         if (entity instanceof ServerPlayer serverPlayer) {
-            of(serverPlayer.server).forceTeleportPlayer(
+            of(serverPlayer.level().getServer()).forceTeleportPlayer(
                 serverPlayer, targetWorld.dimension(), targetPos
             );
             return entity;
@@ -785,7 +785,7 @@ public class ServerTeleportationManager {
         UUID chaserId = chaser.getUUID();
         ServerLevel destWorld = ((ServerLevel) portal.getDestinationWorld());
         
-        ServerTaskList.of(player.server).addTask(MyTaskList.withRetryNumberLimit(
+        ServerTaskList.of(player.level().getServer()).addTask(MyTaskList.withRetryNumberLimit(
             140,
             () -> {
                 if (chaser.isRemoved()) {
@@ -833,7 +833,7 @@ public class ServerTeleportationManager {
                 );
                 
                 player.sendSystemMessage(Component.literal(
-                    "Teleported to spawn pos because dimension %s had been removed".formatted(world.dimension().location())
+                    "Teleported to spawn pos because dimension %s had been removed".formatted(world.dimension().identifier())
                 ));
             }
         }

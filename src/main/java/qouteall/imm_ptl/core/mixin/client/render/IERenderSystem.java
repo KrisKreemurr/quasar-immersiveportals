@@ -11,8 +11,6 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface IERenderSystem {
 public static Matrix4fStack ip_getModelViewStack() {}
 
-    @Mutable
-public static void ip_setModelViewStack(Matrix4fStack arg) { return null; }
 
 }
 

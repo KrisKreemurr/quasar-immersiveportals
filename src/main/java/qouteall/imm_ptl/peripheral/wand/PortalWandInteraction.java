@@ -1,5 +1,6 @@
 package qouteall.imm_ptl.peripheral.wand;
 
+import net.minecraft.server.permissions.Permissions;
 import com.mojang.logging.LogUtils;
 import de.nick1st.imm_ptl.events.ServerCleanupEvent;
 import net.minecraft.nbt.CompoundTag;
@@ -416,7 +417,7 @@ public class PortalWandInteraction {
     }
     
     private static void handleFinishDrag(ServerPlayer player) {
-        DraggingSession session = of(player.server).draggingSessionMap.remove(player);
+        DraggingSession session = of(player.level().getServer()).draggingSessionMap.remove(player);
         
         if (session == null) {
             return;
@@ -430,7 +431,7 @@ public class PortalWandInteraction {
     }
     
     private static void handleUndoDrag(ServerPlayer player) {
-        PortalWandInteraction portalWandInteraction = of(player.server);
+        PortalWandInteraction portalWandInteraction = of(player.level().getServer());
         DraggingSession session = portalWandInteraction.draggingSessionMap.get(player);
         
         if (session == null) {
@@ -455,7 +456,7 @@ public class PortalWandInteraction {
     private static void handleDraggingRequest(
         ServerPlayer player, UUID portalId, Vec3 cursorPos, DraggingInfo draggingInfo, Portal portal
     ) {
-        PortalWandInteraction portalWandInteraction = of(player.server);
+        PortalWandInteraction portalWandInteraction = of(player.level().getServer());
 
         DraggingSession session = portalWandInteraction.draggingSessionMap.get(player);
         
@@ -527,7 +528,7 @@ public class PortalWandInteraction {
     }
     
     private static boolean canPlayerUsePortalWand(ServerPlayer player) {
-        return player.hasPermissions(2)
+        return player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)
             || (IPGlobal.easeCreativePermission && player.isCreative())
             || (IPConfig.getConfig().portalWandUsableOnSurvivalMode
             && player.gameMode.getGameModeForPlayer() == GameType.SURVIVAL);
@@ -549,7 +550,7 @@ public class PortalWandInteraction {
     }
     
     public static boolean isDragging(ServerPlayer player) {
-        return of(player.server).draggingSessionMap.containsKey(player);
+        return of(player.level().getServer()).draggingSessionMap.containsKey(player);
     }
     
     @Nullable
