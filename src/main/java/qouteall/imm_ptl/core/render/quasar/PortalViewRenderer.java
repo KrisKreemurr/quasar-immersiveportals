@@ -81,7 +81,7 @@ public final class PortalViewRenderer {
     /** redraw each portal view at most every Nth frame, re-pasting the last picture in between (setting later) */
     static volatile int maxUpdateEvery = 4;
     /** ...but never fewer than this many redraws a second: slower frame rates redraw more often, 60 FPS every frame */
-    static final double MIN_UPDATES_PER_SECOND = 60.0;
+    static volatile int minUpdatesPerSecond = 60;
     private static long viewFrame;
     private static long lastHookNanos;
     private static double avgFrameSeconds = 1.0 / 60.0;
@@ -150,7 +150,7 @@ public final class PortalViewRenderer {
         }
         lastHookNanos = t0;
         updateEvery = Math.max(1, Math.min(maxUpdateEvery,
-            (int) Math.floor(1.0 / (MIN_UPDATES_PER_SECOND * avgFrameSeconds))));
+            (int) Math.floor(1.0 / (Math.max(1, minUpdatesPerSecond) * avgFrameSeconds))));
         try {
             if (!failed) {
                 renderPortals();
@@ -176,7 +176,7 @@ public final class PortalViewRenderer {
         }
         Vec3 camPos = main.pos;
         if (renderDistanceField != null) {
-            renderDistanceField.setInt(null, renderDistance);
+            renderDistanceField.setInt(null, renderDistance <= 0 ? Integer.MAX_VALUE : renderDistance);
         }
 
         List<Portal> portals = new ArrayList<>();
@@ -499,7 +499,8 @@ public final class PortalViewRenderer {
                                   float[] rect, boolean mirrored, GpuTextureView mainColor, GpuTextureView mainDepth, int w, int h) {
         ensurePipeline();
         Vec3 cam = main.pos;
-        Vec3 o = portal.getOriginPos().subtract(cam);
+        // 3 mm toward the viewer: mirrors sit exactly on the glass face, so the picture would z-fight with it
+        Vec3 o = portal.getOriginPos().subtract(cam).add(portal.getNormal().scale(0.003));
         Vec3 aw = portal.getAxisW().scale(portal.getWidth() / 2);
         Vec3 ah = portal.getAxisH().scale(portal.getHeight() / 2);
         Vec3 a = o.subtract(aw).subtract(ah);

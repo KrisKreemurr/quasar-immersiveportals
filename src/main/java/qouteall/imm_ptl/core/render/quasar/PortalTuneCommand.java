@@ -11,7 +11,7 @@ import qouteall.imm_ptl.core.CHelper;
 /**
  * Quasar MC: client command to tune portal views live (values reset on restart; defaults move to config later).
  * <pre>
- * /quasarportals                  show current values
+ * /quasarportals                  show current values (changes are saved, same as Video Settings → Portals)
  * /quasarportals update 1..8      redraw at most every Nth frame (adaptive, never under 60/s)
  * /quasarportals res 0.1..1.0     portal view resolution relative to the screen
  * /quasarportals distance 0..64   portal render distance in chunks (0 = unlimited)
@@ -47,6 +47,7 @@ public final class PortalTuneCommand {
     }
     
     private static int show() {
+        PortalSettings.save();
         CHelper.printChat(Component.literal(String.format(java.util.Locale.ROOT,
             "[Quasar Portals] update: at most every %d frames (60/s floor), res: %.2f, distance: %s, live: %d",
             PortalViewRenderer.maxUpdateEvery, PortalViewRenderer.resolutionScale,
