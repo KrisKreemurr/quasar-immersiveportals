@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.api.PortalAPI;
 import qouteall.imm_ptl.core.ducks.IEWorld;
-import qouteall.imm_ptl.core.mixin.common.entity_sync.MixinServerGamePacketListenerImpl_Redirect;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -96,7 +95,7 @@ public class PacketRedirection {
     
     /**
      * If it's not null, all sent packets will be wrapped into redirected packet
-     * {@link MixinServerGamePacketListenerImpl_Redirect}
+     * MixinServerGamePacketListenerImpl_Redirect (parked)
      */
     @Nullable
     public static ResourceKey<Level> getForceRedirectDimension() {
