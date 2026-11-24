@@ -183,7 +183,8 @@ public abstract class MixinClientPacketListener implements IEClientPlayNetworkHa
             ClientLevel currentWorld = Minecraft.getInstance().level;
             for (ClientLevel clientWorld : ClientWorldLoader.getClientWorlds()) {
                 if (clientWorld != currentWorld) {
-                    clientWorld.setGameTime(packet.gameTime());
+                    // Quasar MC: client levels keep time through world clocks in 26.x; remote-dimension time sync
+                    // comes with cross-dimension portals.
                 }
             }
         }

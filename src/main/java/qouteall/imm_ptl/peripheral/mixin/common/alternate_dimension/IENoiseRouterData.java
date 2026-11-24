@@ -13,10 +13,10 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 
 // QUASAR STUB: generated no-op stand-in; the original lives in src/parked (render rewrite pending).
 public interface IENoiseRouterData {
-static NoiseRouter ip_end(HolderGetter<DensityFunction> holderGetter) {}
-static DensityFunction ip_slideEndLike(DensityFunction densityFunction, int i, int j) {}
-static DensityFunction ip_getFunction(HolderGetter<DensityFunction> holderGetter, ResourceKey<DensityFunction> resourceKey) {}
-static ResourceKey<DensityFunction> get_BASE_3D_NOISE_END() {}
+static NoiseRouter ip_end(HolderGetter<DensityFunction> holderGetter) { return null; }
+static DensityFunction ip_slideEndLike(DensityFunction densityFunction, int i, int j) { return null; }
+static DensityFunction ip_getFunction(HolderGetter<DensityFunction> holderGetter, ResourceKey<DensityFunction> resourceKey) { return null; }
+static ResourceKey<DensityFunction> get_BASE_3D_NOISE_END() { return null; }
 
 }
 
