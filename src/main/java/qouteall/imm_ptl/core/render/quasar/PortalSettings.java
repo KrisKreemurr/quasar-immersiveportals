@@ -22,6 +22,8 @@ public final class PortalSettings {
     public static volatile boolean translucent = true;
     /** mobs, players and items through portals, and how far (chunks) from the portal camera */
     public static volatile boolean entities = true;
+    /** particles (smoke, splashes, crits...) through portals */
+    public static volatile boolean particles = true;
     /** skip redrawing portals hidden behind walls/terrain (the game's chunk visibility search) */
     public static volatile boolean occlusion = true;
     /** far LOD terrain through the nearest portals (needs Quasar Horizons) */
@@ -52,6 +54,7 @@ public final class PortalSettings {
             farResolution = clamp(p, "farResolution", DEFAULT_FAR_RESOLUTION, 64, 1024);
             farTerrain = !"false".equalsIgnoreCase(p.getProperty("farTerrain", "true").trim());
             occlusion = !"false".equalsIgnoreCase(p.getProperty("hideBehindWalls", "true").trim());
+            particles = !"false".equalsIgnoreCase(p.getProperty("particles", "true").trim());
             entities = !"false".equalsIgnoreCase(p.getProperty("entities", "true").trim());
             entityDistance = clamp(p, "entityDistance", DEFAULT_ENTITY_DISTANCE, 1, 16);
             translucent = !"false".equalsIgnoreCase(p.getProperty("waterAndGlass", "true").trim());
@@ -74,6 +77,7 @@ public final class PortalSettings {
         p.setProperty("farResolution", Integer.toString(farResolution));
         p.setProperty("farTerrain", Boolean.toString(farTerrain));
         p.setProperty("hideBehindWalls", Boolean.toString(occlusion));
+        p.setProperty("particles", Boolean.toString(particles));
         p.setProperty("entities", Boolean.toString(entities));
         p.setProperty("entityDistance", Integer.toString(entityDistance));
         p.setProperty("waterAndGlass", Boolean.toString(translucent));
@@ -104,6 +108,7 @@ public final class PortalSettings {
         clouds = true;
         translucent = true;
         entities = true;
+        particles = true;
         occlusion = true;
         farTerrain = true;
         farResolution = DEFAULT_FAR_RESOLUTION;

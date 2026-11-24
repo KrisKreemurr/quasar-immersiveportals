@@ -44,6 +44,23 @@ public final class PortalEntities {
     private static final Map<Entity, EntityRenderState> frameStates = new IdentityHashMap<>();
     static int lastCount;
     
+    /** a vanilla Camera placed at the portal camera: particles are made camera-relative and billboarded from it */
+    private static final class PortalParticleCamera extends net.minecraft.client.Camera {
+        void setTo(CameraRenderState virtual) {
+            setPosition(virtual.pos);
+            // world -> view rotation, without a mirror's left-right flip (billboards only need to face the camera)
+            org.joml.Matrix3f m = new org.joml.Matrix3f();
+            virtual.viewRotationMatrix.get3x3(m);
+            if (m.determinant() < 0f) {
+                m = new org.joml.Matrix3f().scaling(-1f, 1f, 1f).mul(m);
+            }
+            rotation().setFromNormalized(m).conjugate();
+        }
+    }
+    private static PortalParticleCamera particleCamera;
+    private static final net.minecraft.client.renderer.state.level.ParticlesRenderState particleState =
+        new net.minecraft.client.renderer.state.level.ParticlesRenderState();
+    
     private PortalEntities() {}
     
     /** called once per frame before any portal draws */
@@ -92,7 +109,18 @@ public final class PortalEntities {
                 n++;
             }
             lastCount += n;
-            if (n == 0) return;
+            boolean hasParticles = false;
+            if (PortalSettings.particles) {
+                if (particleCamera == null) particleCamera = new PortalParticleCamera();
+                particleCamera.setTo(virtual);
+                particleState.reset();
+                mc.particleEngine.extract(particleState, virtual.cullFrustum, particleCamera, partialTick);
+                if (!particleState.particles.isEmpty()) {
+                    particleState.submit(storage, virtual);
+                    hasParticles = true;
+                }
+            }
+            if (n == 0 && !hasParticles) return;
             usedThisFrame = true;
             
             Matrix4fStack modelView = RenderSystem.getModelViewStack();
