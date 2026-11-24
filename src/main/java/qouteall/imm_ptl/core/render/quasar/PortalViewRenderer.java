@@ -95,6 +95,8 @@ public final class PortalViewRenderer {
     private static Method mainCameraMethod;
     private static Method drawTerrainMethod;
     private static Method lastSectionsMethod;
+    private static Method drawTranslucentMethod;
+    private static Method lastTranslucentMethod;
     private static Field renderDistanceField;
     private static boolean failed;
 
@@ -111,6 +113,14 @@ public final class PortalViewRenderer {
             mainCameraMethod = hook.getMethod("mainCamera");
             drawTerrainMethod = hook.getMethod("drawTerrain", CameraRenderState.class, GpuTextureView.class,
                 GpuTextureView.class, int.class, int.class);
+            try {
+                drawTranslucentMethod = hook.getMethod("drawTranslucent", CameraRenderState.class,
+                    GpuTextureView.class, GpuTextureView.class, int.class, int.class);
+                lastTranslucentMethod = hook.getMethod("lastTranslucentSections");
+            }
+            catch (NoSuchMethodException ignored) {
+                // older Quasar Meshelium: no water/glass through portals
+            }
             try {
                 lastSectionsMethod = hook.getMethod("lastSections");
             }
@@ -249,6 +259,10 @@ public final class PortalViewRenderer {
                     if (fog != null) RenderSystem.setShaderFog(fog);
                     drawn = (Boolean) drawTerrainMethod.invoke(null, virtual, t.colorView, t.depthView,
                         t.width, t.height);
+                    if (drawn && PortalSettings.translucent && drawTranslucentMethod != null) {
+                        drawTranslucentMethod.invoke(null, virtual, t.colorView, t.depthView, t.width, t.height);
+                        frameSections += (Integer) lastTranslucentMethod.invoke(null);
+                    }
                     if (drawn && PortalSettings.clouds) {
                         long tc = System.nanoTime();
                         PortalClouds.draw(encoder, main, virtual, t.colorView, t.depthView);

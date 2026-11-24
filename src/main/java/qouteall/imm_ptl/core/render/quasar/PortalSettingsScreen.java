@@ -53,6 +53,11 @@ public class PortalSettingsScreen extends Screen {
             () -> Math.min(32, PortalViewRenderer.renderDistance), v -> PortalViewRenderer.renderDistance = v,
             v -> v == 0 ? Component.translatable("quasar_portals.options.distance.unlimited")
                 : Component.translatable("quasar_portals.options.distance.value", v)));
+        rows.addChild(Button.builder(translucentLabel(), b -> {
+            PortalSettings.translucent = !PortalSettings.translucent;
+            PortalSettings.save();
+            b.setMessage(translucentLabel());
+        }).tooltip(Tooltip.create(Component.translatable("quasar_portals.options.water_glass.tooltip"))).width(WIDTH).build());
         rows.addChild(Button.builder(cloudsLabel(), b -> {
             PortalSettings.clouds = !PortalSettings.clouds;
             PortalSettings.save();
@@ -86,6 +91,11 @@ public class PortalSettingsScreen extends Screen {
     public void onClose() {
         PortalSettings.save();
         minecraft.gui.setScreen(parent);
+    }
+    
+    private static Component translucentLabel() {
+        return CommonComponents.optionNameValue(Component.translatable("quasar_portals.options.water_glass"),
+            PortalSettings.translucent ? CommonComponents.OPTION_ON : CommonComponents.OPTION_OFF);
     }
     
     private static Component cloudsLabel() {

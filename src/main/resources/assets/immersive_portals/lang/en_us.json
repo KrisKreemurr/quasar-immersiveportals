@@ -307,5 +307,7 @@
   "quasar_portals.options.outlines": "Portal Outlines",
   "quasar_portals.options.outlines.tooltip": "The purple outline shown on portals that have no live view (beyond Live Portals, too far away, or views turned off). Off hides them completely.",
   "quasar_portals.options.clouds": "Clouds Through Portals",
-  "quasar_portals.options.clouds.tooltip": "Show clouds in portal views and mirrors. Reuses the clouds already built for your view, so it is cheap. Follows your Clouds video setting."
+  "quasar_portals.options.clouds.tooltip": "Show clouds in portal views and mirrors. Reuses the clouds already built for your view, so it is cheap. Follows your Clouds video setting.",
+  "quasar_portals.options.water_glass": "Water & Glass Through Portals",
+  "quasar_portals.options.water_glass.tooltip": "Show water, glass, ice and other see-through blocks in portal views and mirrors. Costs a little more where there is a lot of water in view."
 }

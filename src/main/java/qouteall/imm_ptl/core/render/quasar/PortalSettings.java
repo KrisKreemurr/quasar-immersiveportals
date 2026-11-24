@@ -18,6 +18,8 @@ public final class PortalSettings {
     
     /** clouds through portals (Video Settings → Portals → Clouds Through Portals) */
     public static volatile boolean clouds = true;
+    /** water, glass and other translucent blocks through portals */
+    public static volatile boolean translucent = true;
 
     private PortalSettings() {}
     
@@ -36,6 +38,7 @@ public final class PortalSettings {
             PortalViewRenderer.resolutionScale = clamp(p, "resolutionPercent", DEFAULT_RES, 10, 100) / 100f;
             PortalViewRenderer.maxUpdateEvery = clamp(p, "maxUpdateEvery", DEFAULT_UPDATE_EVERY, 1, 8);
             PortalViewRenderer.minUpdatesPerSecond = clamp(p, "minUpdatesPerSecond", DEFAULT_MIN_RATE, 20, 240);
+            translucent = !"false".equalsIgnoreCase(p.getProperty("waterAndGlass", "true").trim());
             clouds = !"false".equalsIgnoreCase(p.getProperty("clouds", "true").trim());
             PortalPlaceholderOutline.enabled = !"false".equalsIgnoreCase(p.getProperty("outlines", "true").trim());
         }
@@ -52,6 +55,7 @@ public final class PortalSettings {
         p.setProperty("resolutionPercent", Integer.toString(resolutionPercent()));
         p.setProperty("maxUpdateEvery", Integer.toString(PortalViewRenderer.maxUpdateEvery));
         p.setProperty("minUpdatesPerSecond", Integer.toString(PortalViewRenderer.minUpdatesPerSecond));
+        p.setProperty("waterAndGlass", Boolean.toString(translucent));
         p.setProperty("clouds", Boolean.toString(clouds));
         p.setProperty("outlines", Boolean.toString(PortalPlaceholderOutline.enabled));
         try {
@@ -77,6 +81,7 @@ public final class PortalSettings {
         PortalViewRenderer.minUpdatesPerSecond = DEFAULT_MIN_RATE;
         PortalPlaceholderOutline.enabled = true;
         clouds = true;
+        translucent = true;
         save();
     }
     
