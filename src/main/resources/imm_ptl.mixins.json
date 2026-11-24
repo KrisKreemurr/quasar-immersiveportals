@@ -68,6 +68,8 @@
     "client.MixinGameRenderer_PreRender",
     "client.accessor.IEClientLevel_Accessor",
     "client.accessor.IEClientLevelData",
+    "client.accessor.IELevelRenderer_QuasarSky",
+    "client.MixinSkyRenderer_QuasarPortal",
     "client.collisions.MixinLocalPlayer",
     "client.debug.MixinClientPacketListener_Debug",
     "client.interaction.MixinItem_Interaction_Client",

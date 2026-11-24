@@ -137,6 +137,7 @@ public final class PortalViewRenderer {
         drawnThisFrame.clear();
         lastPixels = 0;
         frameTerrainNs = 0;
+        frameSkyNs = 0;
         frameSections = 0;
         frameCoverage = 0;
         long t0 = System.nanoTime();
@@ -162,7 +163,7 @@ public final class PortalViewRenderer {
         }
         drawnLastFrame.clear();
         drawnLastFrame.addAll(drawnThisFrame);
-        Stats.frame(System.nanoTime() - t0, frameTerrainNs, drawnThisFrame.size(), frameSections, frameCoverage);
+        Stats.frame(System.nanoTime() - t0, frameTerrainNs, frameSkyNs, drawnThisFrame.size(), frameSections, frameCoverage);
     }
 
     private static void renderPortals() throws Exception {
@@ -234,11 +235,24 @@ public final class PortalViewRenderer {
                 CameraRenderState virtual = virtualCamera(main, portal, rect);
                 if (virtual == null) continue;
                 
-                // flat sky colour for now (the sky, clouds and far panorama come in later milestones)
-                encoder.clearColorAndDepthTextures(t.color, new Vector4f(0.53f, 0.71f, 1.0f, 1.0f), t.depth, 0.0);
+                // background = fog colour, then vanilla's sky from the portal camera, then terrain with fog that
+                // ends at the portal render distance (clouds and the far panorama come later)
+                encoder.clearColorAndDepthTextures(t.color, PortalSky.background(main), t.depth, 0.0);
+                long ts = System.nanoTime();
+                PortalSky.drawSky(virtual, t.colorView, t.depthView);
+                frameSkyNs += System.nanoTime() - ts;
                 long tt = System.nanoTime();
-                boolean drawn = (Boolean) drawTerrainMethod.invoke(null, virtual, t.colorView, t.depthView,
-                    t.width, t.height);
+                GpuBufferSlice mainFog = RenderSystem.getShaderFog();
+                GpuBufferSlice fog = PortalSky.portalFog(encoder, main, renderDistance);
+                boolean drawn;
+                try {
+                    if (fog != null) RenderSystem.setShaderFog(fog);
+                    drawn = (Boolean) drawTerrainMethod.invoke(null, virtual, t.colorView, t.depthView,
+                        t.width, t.height);
+                }
+                finally {
+                    RenderSystem.setShaderFog(mainFog);
+                }
                 frameTerrainNs += System.nanoTime() - tt;
                 t.portalId = portal.getId();
                 t.valid = drawn;
@@ -258,6 +272,7 @@ public final class PortalViewRenderer {
 
     static long lastPixels;
     private static long frameTerrainNs;
+    private static long frameSkyNs;
     /** whether the camera just built is a mirror view (its picture is drawn flipped) */
     private static boolean lastMirrored;
     private static int frameSections;
@@ -280,7 +295,7 @@ public final class PortalViewRenderer {
         private static long frameNo;
         private static final long[] slotFrame = new long[RING];
         
-        private static long sumCpu, sumTerrain, sumGpu, sumSections, frames, gpuFrames, liveFrames;
+        private static long sumCpu, sumTerrain, sumSky, sumGpu, sumSections, frames, gpuFrames, liveFrames;
         private static double sumCoverage;
         private static int maxLive;
         private static long windowStart = System.nanoTime();
@@ -328,10 +343,11 @@ public final class PortalViewRenderer {
             }
         }
         
-        static void frame(long cpuNs, long terrainNs, int live, int sections, float coverage) {
+        static void frame(long cpuNs, long terrainNs, long skyNs, int live, int sections, float coverage) {
             frames++;
             sumCpu += cpuNs;
             sumTerrain += terrainNs;
+            sumSky += skyNs;
             sumSections += sections;
             sumCoverage += coverage;
             if (live > 0) liveFrames++;
@@ -344,12 +360,12 @@ public final class PortalViewRenderer {
             else {
                 double f = frames;
                 line = String.format(java.util.Locale.ROOT,
-                    "Portals: %d live (every %d), CPU %.3f ms (terrain %.3f), GPU %s, %d sections, %.0f%% of screen",
-                    maxLive, updateEvery, sumCpu / f / 1e6, sumTerrain / f / 1e6,
+                    "Portals: %d live (every %d), CPU %.3f ms (terrain %.3f, sky %.3f), GPU %s, %d sections, %.0f%% of screen",
+                    maxLive, updateEvery, sumCpu / f / 1e6, sumTerrain / f / 1e6, sumSky / f / 1e6,
                     gpuFrames > 0 ? String.format(java.util.Locale.ROOT, "%.3f ms", sumGpu / (double) gpuFrames / 1e6) : "n/a",
                     Math.round(sumSections / f), sumCoverage / f * 100);
             }
-            sumCpu = sumTerrain = sumGpu = sumSections = frames = gpuFrames = liveFrames = 0;
+            sumCpu = sumTerrain = sumSky = sumGpu = sumSections = frames = gpuFrames = liveFrames = 0;
             sumCoverage = 0;
             maxLive = 0;
             windowStart = now;
