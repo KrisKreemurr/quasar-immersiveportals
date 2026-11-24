@@ -249,6 +249,12 @@ public final class PortalViewRenderer {
                     if (fog != null) RenderSystem.setShaderFog(fog);
                     drawn = (Boolean) drawTerrainMethod.invoke(null, virtual, t.colorView, t.depthView,
                         t.width, t.height);
+                    if (drawn && PortalSettings.clouds) {
+                        long tc = System.nanoTime();
+                        PortalClouds.draw(encoder, main, virtual, t.colorView, t.depthView);
+                        frameSkyNs += System.nanoTime() - tc;
+                        tt += System.nanoTime() - tc; // clouds count under sky, not terrain
+                    }
                 }
                 finally {
                     RenderSystem.setShaderFog(mainFog);
@@ -360,7 +366,7 @@ public final class PortalViewRenderer {
             else {
                 double f = frames;
                 line = String.format(java.util.Locale.ROOT,
-                    "Portals: %d live (every %d), CPU %.3f ms (terrain %.3f, sky %.3f), GPU %s, %d sections, %.0f%% of screen",
+                    "Portals: %d live (every %d), CPU %.3f ms (terrain %.3f, sky+clouds %.3f), GPU %s, %d sections, %.0f%% of screen",
                     maxLive, updateEvery, sumCpu / f / 1e6, sumTerrain / f / 1e6, sumSky / f / 1e6,
                     gpuFrames > 0 ? String.format(java.util.Locale.ROOT, "%.3f ms", sumGpu / (double) gpuFrames / 1e6) : "n/a",
                     Math.round(sumSections / f), sumCoverage / f * 100);

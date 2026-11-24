@@ -305,5 +305,7 @@
   "quasar_portals.options.distance.tooltip": "How far you can see through a portal. Shorter is cheaper.",
   "quasar_portals.options.reset": "Reset to Defaults",
   "quasar_portals.options.outlines": "Portal Outlines",
-  "quasar_portals.options.outlines.tooltip": "The purple outline shown on portals that have no live view (beyond Live Portals, too far away, or views turned off). Off hides them completely."
+  "quasar_portals.options.outlines.tooltip": "The purple outline shown on portals that have no live view (beyond Live Portals, too far away, or views turned off). Off hides them completely.",
+  "quasar_portals.options.clouds": "Clouds Through Portals",
+  "quasar_portals.options.clouds.tooltip": "Show clouds in portal views and mirrors. Reuses the clouds already built for your view, so it is cheap. Follows your Clouds video setting."
 }

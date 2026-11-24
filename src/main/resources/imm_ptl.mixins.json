@@ -70,6 +70,8 @@
     "client.accessor.IEClientLevelData",
     "client.accessor.IELevelRenderer_QuasarSky",
     "client.MixinSkyRenderer_QuasarPortal",
+    "client.MixinCloudRenderer_QuasarPortal",
+    "client.accessor.IECloudRenderer_Quasar",
     "client.collisions.MixinLocalPlayer",
     "client.debug.MixinClientPacketListener_Debug",
     "client.interaction.MixinItem_Interaction_Client",

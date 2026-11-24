@@ -16,6 +16,9 @@ public final class PortalSettings {
     public static final int DEFAULT_LIVE = 3, DEFAULT_DISTANCE = 8, DEFAULT_RES = 50,
         DEFAULT_UPDATE_EVERY = 4, DEFAULT_MIN_RATE = 60;
     
+    /** clouds through portals (Video Settings → Portals → Clouds Through Portals) */
+    public static volatile boolean clouds = true;
+
     private PortalSettings() {}
     
     private static Path file() {
@@ -33,6 +36,7 @@ public final class PortalSettings {
             PortalViewRenderer.resolutionScale = clamp(p, "resolutionPercent", DEFAULT_RES, 10, 100) / 100f;
             PortalViewRenderer.maxUpdateEvery = clamp(p, "maxUpdateEvery", DEFAULT_UPDATE_EVERY, 1, 8);
             PortalViewRenderer.minUpdatesPerSecond = clamp(p, "minUpdatesPerSecond", DEFAULT_MIN_RATE, 20, 240);
+            clouds = !"false".equalsIgnoreCase(p.getProperty("clouds", "true").trim());
             PortalPlaceholderOutline.enabled = !"false".equalsIgnoreCase(p.getProperty("outlines", "true").trim());
         }
         catch (Exception e) {
@@ -48,6 +52,7 @@ public final class PortalSettings {
         p.setProperty("resolutionPercent", Integer.toString(resolutionPercent()));
         p.setProperty("maxUpdateEvery", Integer.toString(PortalViewRenderer.maxUpdateEvery));
         p.setProperty("minUpdatesPerSecond", Integer.toString(PortalViewRenderer.minUpdatesPerSecond));
+        p.setProperty("clouds", Boolean.toString(clouds));
         p.setProperty("outlines", Boolean.toString(PortalPlaceholderOutline.enabled));
         try {
             Files.createDirectories(f.getParent());
@@ -71,6 +76,7 @@ public final class PortalSettings {
         PortalViewRenderer.maxUpdateEvery = DEFAULT_UPDATE_EVERY;
         PortalViewRenderer.minUpdatesPerSecond = DEFAULT_MIN_RATE;
         PortalPlaceholderOutline.enabled = true;
+        clouds = true;
         save();
     }
     
