@@ -75,6 +75,10 @@ public final class PortalViewRenderer {
     static final int MAX_PORTALS = 2;
     /** portal view resolution relative to the screen (setting later; scales with on-screen size in milestone 2) */
     static final float RESOLUTION_SCALE = 0.5f;
+    /** redraw each portal view every Nth frame and re-paste the last picture in between (test value; setting +
+     *  a ~60 updates/s floor come with the cheap-portals batch) */
+    static final int UPDATE_EVERY = 4;
+    private static long viewFrame;
     private static final double MAX_DISTANCE = 64;
 
     /** portals drawn with a live view last frame (the placeholder outline skips these) */
@@ -122,6 +126,7 @@ public final class PortalViewRenderer {
         frameSections = 0;
         frameCoverage = 0;
         long t0 = System.nanoTime();
+        viewFrame++;
         try {
             if (!failed) {
                 renderPortals();
@@ -197,22 +202,28 @@ public final class PortalViewRenderer {
             Target t = target(i, device, Math.max(1, Math.round(w * RESOLUTION_SCALE)),
                 Math.max(1, Math.round(h * RESOLUTION_SCALE)));
             
-            CameraRenderState virtual = virtualCamera(main, portal, rect);
-            if (virtual == null) continue;
-            
-            // flat sky colour for now (the sky, clouds and far panorama come in later milestones)
-            encoder.clearColorAndDepthTextures(t.color, new Vector4f(0.53f, 0.71f, 1.0f, 1.0f), t.depth, 0.0);
-            long tt = System.nanoTime();
-            boolean drawn = (Boolean) drawTerrainMethod.invoke(null, virtual, t.colorView, t.depthView,
-                t.width, t.height);
-            frameTerrainNs += System.nanoTime() - tt;
-            if (!drawn) continue;
-            if (lastSectionsMethod != null) {
-                frameSections += (Integer) lastSectionsMethod.invoke(null);
+            boolean update = !t.valid || t.portalId != portal.getId() || (viewFrame + i) % UPDATE_EVERY == 0;
+            if (update) {
+                CameraRenderState virtual = virtualCamera(main, portal, rect);
+                if (virtual == null) continue;
+                
+                // flat sky colour for now (the sky, clouds and far panorama come in later milestones)
+                encoder.clearColorAndDepthTextures(t.color, new Vector4f(0.53f, 0.71f, 1.0f, 1.0f), t.depth, 0.0);
+                long tt = System.nanoTime();
+                boolean drawn = (Boolean) drawTerrainMethod.invoke(null, virtual, t.colorView, t.depthView,
+                    t.width, t.height);
+                frameTerrainNs += System.nanoTime() - tt;
+                t.portalId = portal.getId();
+                t.valid = drawn;
+                t.mirrored = lastMirrored;
+                if (!drawn) continue;
+                if (lastSectionsMethod != null) {
+                    frameSections += (Integer) lastSectionsMethod.invoke(null);
+                }
             }
             frameCoverage += (rect[2] - rect[0]) * (rect[3] - rect[1]) / 4f;
             
-            composite(encoder, main, portal, t, rect, lastMirrored, mainColor, mainDepth, w, h);
+            composite(encoder, main, portal, t, rect, t.mirrored, mainColor, mainDepth, w, h);
             drawnThisFrame.add(portal.getId());
             lastPixels += (long) t.width * t.height;
         }
@@ -536,6 +547,10 @@ public final class PortalViewRenderer {
         GpuTexture color, depth;
         GpuTextureView colorView, depthView;
         int width, height;
+        /** which portal the picture belongs to, whether it holds a picture, and whether that was a mirror view */
+        int portalId = Integer.MIN_VALUE;
+        boolean valid;
+        boolean mirrored;
     }
 
     private static Target target(int slot, GpuDevice device, int w, int h) {
