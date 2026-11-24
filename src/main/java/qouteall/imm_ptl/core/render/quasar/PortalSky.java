@@ -31,13 +31,12 @@ import java.nio.ByteOrder;
  * </ul>
  */
 public final class PortalSky {
-    static volatile GpuTextureView overrideColor;
-    static volatile GpuTextureView overrideDepth;
+    public static volatile GpuTextureView overrideColor;
+    public static volatile GpuTextureView overrideDepth;
     private static boolean skyFailed;
     
     private PortalSky() {}
     
-    public static GpuTextureView overrideColorView() { return overrideColor; }
     
     /** the colour to clear a portal view to: this frame's fog colour */
     static Vector4f background(CameraRenderState main) {
