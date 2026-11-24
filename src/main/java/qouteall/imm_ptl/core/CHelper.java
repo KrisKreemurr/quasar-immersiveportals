@@ -110,7 +110,7 @@ public class CHelper {
                 }
                 client.gui.setScreen(parent);
             },
-            link, true
+            java.net.URI.create(link), true
         ));
     }
     

@@ -212,7 +212,7 @@ public class ImmPtlNetworkConfig {
 
                         LOGGER.warn(
                                 "Neo detected that client does not install ImmPtl. {} {}",
-                                gameProfile.getName(), gameProfile.getId()
+                                gameProfile.name(), gameProfile.id()
                         );
                     }
                 }

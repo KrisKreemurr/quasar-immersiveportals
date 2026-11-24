@@ -9,7 +9,6 @@ import net.neoforged.neoforge.common.NeoForge;
 import qouteall.imm_ptl.core.collision.CollisionHelper;
 import qouteall.imm_ptl.core.commands.ClientDebugCommand;
 import qouteall.imm_ptl.core.compat.IPFlywheelCompat;
-import qouteall.imm_ptl.core.compat.sodium_compatibility.SodiumInterface;
 import qouteall.imm_ptl.core.miscellaneous.DubiousThings;
 import qouteall.imm_ptl.core.miscellaneous.GcMonitor;
 import qouteall.imm_ptl.core.network.ImmPtlNetworkConfig;
@@ -42,7 +41,7 @@ public class IPModMainClient {
             () -> Minecraft.getInstance().level == null,
             MyTaskList.oneShotTask(() -> {
                 if (IPMcHelper.isNvidiaVideocard()) {
-                    if (!SodiumInterface.invoker.isSodiumPresent()) {
+                    if (true) {
                         CHelper.printChat(
                             Component.translatable("imm_ptl.nvidia_warning")
                                 .withStyle(ChatFormatting.RED)

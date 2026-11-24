@@ -3,7 +3,7 @@ package qouteall.imm_ptl.core.platform_specific.mixin.common;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.portal.DimensionTransition;
+import net.minecraft.world.level.portal.TeleportTransition;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -16,9 +16,9 @@ import qouteall.imm_ptl.core.portal.custom_portal_gen.CustomPortalGenManager;
 
 @Mixin(ServerPlayer.class)
 public class MixinServerPlayerEntity_MA {
-    @Inject(method = "changeDimension", at = @At("HEAD"))
+    @Inject(method = "teleport(Lnet/minecraft/world/level/portal/TeleportTransition;)Lnet/minecraft/server/level/ServerPlayer;", at = @At("HEAD"))
     private void onChangeDimensionByVanilla(
-        DimensionTransition dimensionTransition, CallbackInfoReturnable<Entity> cir
+        TeleportTransition dimensionTransition, CallbackInfoReturnable<ServerPlayer> cir
     ) {
         ServerPlayer this_ = (ServerPlayer) (Object) this;
         onBeforeDimensionTravel(this_);

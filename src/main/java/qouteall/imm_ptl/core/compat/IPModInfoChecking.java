@@ -19,7 +19,6 @@ import qouteall.imm_ptl.core.CHelper;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.IPMcHelper;
 import qouteall.imm_ptl.core.McHelper;
-import qouteall.imm_ptl.core.compat.iris_compatibility.IrisInterface;
 import qouteall.imm_ptl.core.mc_utils.ServerTaskList;
 import qouteall.imm_ptl.core.platform_specific.IPConfig;
 import qouteall.imm_ptl.core.platform_specific.O_O;
@@ -381,7 +380,7 @@ public class IPModInfoChecking {
             return;
         }
 
-        String shaderpackName = IrisInterface.invoker.getShaderpackName();
+        String shaderpackName = null; // Quasar MC: no Iris
         if (!Objects.equals(lastShaderpackName, shaderpackName)) {
             lastShaderpackName = shaderpackName;
 

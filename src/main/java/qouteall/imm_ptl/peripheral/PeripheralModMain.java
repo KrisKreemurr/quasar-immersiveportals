@@ -38,7 +38,7 @@ public class PeripheralModMain {
                 
                 CommandStickItem.addIntoCreativeTag(entries);
                 
-                entries.accept(BuiltInRegistries.ITEM.get(Identifier.fromNamespaceAndPath("immersive_portals", "portal_helper")));
+                entries.accept(BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("immersive_portals", "portal_helper")));
             })
             .build();
     
@@ -106,23 +106,13 @@ public class PeripheralModMain {
     public static void registerChunkGenerators(
         BiConsumer<Identifier, MapCodec<? extends ChunkGenerator>> regFunc
     ) {
-        regFunc.accept(
-            McHelper.newResourceLocation("immersive_portals:error_terrain_generator"),
-            ErrorTerrainGenerator.MAP_CODEC
-        );
-        regFunc.accept(
-            McHelper.newResourceLocation("immersive_portals:normal_skyland_generator"),
-            NormalSkylandGenerator.MAP_CODEC
-        );
+        // Quasar MC: alternate-dimension generators are parked.
     }
 
     public static void registerBiomeSources(
         BiConsumer<Identifier, MapCodec<? extends BiomeSource>> regFunc
     ) {
-        regFunc.accept(
-            McHelper.newResourceLocation("immersive_portals:chaos_biome_source"),
-            ChaosBiomeSource.MAP_CODEC
-        );
+        // Quasar MC: alternate-dimension biome source is parked.
     }
 
     public static void registerCreativeTabs(

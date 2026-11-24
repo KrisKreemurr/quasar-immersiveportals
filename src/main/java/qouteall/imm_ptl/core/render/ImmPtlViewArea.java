@@ -35,7 +35,7 @@ import java.util.function.LongConsumer;
 // QUASAR STUB: generated no-op stand-in; the original lives in src/parked (render rewrite pending).
 
 @OnlyIn(Dist.CLIENT)
-public class ImmPtlViewArea extends ViewArea {
+public class ImmPtlViewArea {
 
     public static class Column {
 
@@ -68,7 +68,6 @@ public class ImmPtlViewArea extends ViewArea {
     private boolean isAlive;
     public static void init() {}
 
-    public ImmPtlViewArea() {}
 
     protected void createSections(SectionRenderDispatcher sectionBuilder_1) {}
 

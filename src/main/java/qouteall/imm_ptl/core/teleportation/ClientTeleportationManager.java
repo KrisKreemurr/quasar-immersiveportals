@@ -478,9 +478,7 @@ public class ClientTeleportationManager {
         toWorld.addEntity(player);
         ((IEAbstractClientPlayer) player).ip_setClientLevel(toWorld);
         
-        IEGameRenderer gameRenderer = (IEGameRenderer) Minecraft.getInstance().gameRenderer;
-        gameRenderer.ip_setLightmapTextureManager(ClientWorldLoader
-            .getDimensionRenderHelper(toDimension).lightmapTexture);
+        // Quasar MC: per-dimension lightmaps belonged to the parked renderer.
         
         client.level = toWorld;
         ((IEMinecraftClient) client).ip_setWorldRenderer(
@@ -492,7 +490,6 @@ public class ClientTeleportationManager {
             ((IEParticleManager) client.particleEngine).ip_setWorld(toWorld);
         }
         
-        client.getBlockEntityRenderDispatcher().setLevel(toWorld);
         
         if (vehicle != null) {
             Vec3 offset = McHelper.getVehicleOffsetFromPassenger(vehicle, player);
@@ -706,10 +703,7 @@ public class ClientTeleportationManager {
             
             // both of them are important for Minecart
             entity.setPos(pos);
-            entity.lerpTo(
-                pos.x, pos.y, pos.z,
-                entity.getYRot(), entity.getXRot(),
-                0
+            entity.moveOrInterpolateTo(pos, entity.getYRot(), entity.getXRot()
             );
             entity.setPos(pos);
         }

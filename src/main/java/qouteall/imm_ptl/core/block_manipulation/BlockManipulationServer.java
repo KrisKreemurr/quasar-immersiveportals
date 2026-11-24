@@ -233,9 +233,9 @@ public class BlockManipulationServer {
         if (isAttackingAction(action)) {
             player.gameMode.handleBlockBreakAction(
                 blockPos, action, packet.getDirection(),
-                world.getMaxY(), packet.sequence()
+                world.getMaxY(), packet.getSequence()
             );
-            player.connection.ackBlockChangesUpTo(packet.sequence());
+            player.connection.ackBlockChangesUpTo(packet.getSequence());
         }
     }
     

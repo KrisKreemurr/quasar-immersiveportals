@@ -26,6 +26,10 @@ public class IPModEntry {
                 registerEvent.register(BuiltInRegistries.ENTITY_TYPE.key(), IPModMain::registerEntityTypesForge));
         modEventBus.addListener(RegisterEvent.class, registerEvent ->
                 registerEvent.register(BuiltInRegistries.BLOCK. key(), IPModMain::registerBlocksForge));
+        modEventBus.addListener(RegisterEvent.class, registerEvent ->
+                registerEvent.register(net.minecraft.core.registries.Registries.TICKET_TYPE, helper -> helper.register(
+                        net.minecraft.resources.Identifier.fromNamespaceAndPath("immersive_portals", "imm_ptl"),
+                        qouteall.imm_ptl.core.chunk_loading.ImmPtlChunkTickets.TICKET_TYPE)));
         modEventBus.addListener(EntityRenderersEvent.RegisterRenderers.class, IPModEntryClient::initPortalRenderers);
         modEventBus.addListener(FMLDedicatedServerSetupEvent.class, event -> new IPModEntryDedicatedServer().onInitializeServer());
 

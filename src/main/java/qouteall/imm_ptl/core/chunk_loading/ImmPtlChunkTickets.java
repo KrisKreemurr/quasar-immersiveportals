@@ -11,14 +11,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ChunkResult;
-import net.minecraft.server.level.ChunkTaskPriorityQueue;
-import net.minecraft.server.level.ChunkTaskPriorityQueueSorter;
-import net.minecraft.server.level.DistanceManager;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.Ticket;
 import net.minecraft.server.level.TicketType;
-import net.minecraft.util.SortedArraySet;
-import net.minecraft.util.thread.ProcessorMailbox;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.neoforged.neoforge.common.NeoForge;
@@ -26,7 +20,6 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.ducks.IEChunkMap;
-import qouteall.imm_ptl.core.ducks.IEDistanceManager;
 import qouteall.imm_ptl.core.ducks.IEServerChunkCache;
 import qouteall.imm_ptl.core.ducks.IEWorld;
 import qouteall.imm_ptl.core.platform_specific.IPConfig;
@@ -34,10 +27,8 @@ import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.my_util.RateStat;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.WeakHashMap;
-import java.util.concurrent.Executor;
 
 /**
  * Each {@link ImmPtlChunkTickets} manages ImmPtl chunk ticket for one dimension.
@@ -61,8 +52,10 @@ import java.util.concurrent.Executor;
 public class ImmPtlChunkTickets {
     private static final Logger LOGGER = LogUtils.getLogger();
     
-    public static final TicketType<ChunkPos> TICKET_TYPE =
-        TicketType.create("imm_ptl", Comparator.comparingLong(ChunkPos::toLong));
+    // Quasar MC: 26.x ticket types are registered records (no comparator, no per-ticket key). Registered as
+    // immersive_portals:imm_ptl in IPModEntry. Loading + simulation, no timeout, not saved.
+    public static final TicketType TICKET_TYPE =
+        new TicketType(TicketType.NO_TIMEOUT, TicketType.FLAG_LOADING | TicketType.FLAG_SIMULATION);
     
     // for debugging
     @SuppressWarnings("FieldMayBeFinal")
@@ -184,8 +177,6 @@ public class ImmPtlChunkTickets {
             return;
         }
         
-        DistanceManager distanceManager = getDistanceManager(world);
-        Executor mainThreadExecutor = ((qouteall.imm_ptl.core.mixin.common.chunk_sync.IEDistanceManager) distanceManager).ip_getMainThreadExecutor();
         
         // clear the already loaded chunks
         waitingForLoading.removeIf((long chunkPos) -> {
@@ -221,7 +212,7 @@ public class ImmPtlChunkTickets {
                     
                     long chunkPos = queue.removeFirstLong();
                     if (chunkPosToTicketInfo.containsKey(chunkPos)) {
-                        addTicket(distanceManager, chunkPos);
+                        addTicket(world, chunkPos);
                         
                         waitingForLoading.add(chunkPos);
                     }
@@ -233,15 +224,13 @@ public class ImmPtlChunkTickets {
         }
     }
     
-    private static void addTicket(DistanceManager distanceManager, long chunkPos) {
+    private static void addTicket(ServerLevel world, long chunkPos) {
         if (!IPConfig.getConfig().enableImmPtlChunkLoading) {
             return;
         }
         
         ChunkPos chunkPosObj = ChunkPos.unpack(chunkPos);
-        distanceManager.addRegionTicket(
-            TICKET_TYPE, chunkPosObj, getLoadingRadius(), chunkPosObj
-        );
+        world.getChunkSource().addTicketWithRadius(TICKET_TYPE, chunkPosObj, getLoadingRadius());
         
         if (enableDebugRateStat) {
             debugRateStat.hit();
@@ -252,8 +241,6 @@ public class ImmPtlChunkTickets {
         ServerLevel world,
         LongPredicate shouldKeepLoadingFunc
     ) {
-        DistanceManager distanceManager = getDistanceManager(world);
-        
         chunkPosToTicketInfo.long2ObjectEntrySet().removeIf(e -> {
             long chunkPos = e.getLongKey();
             ChunkTicketInfo ticketInfo = e.getValue();
@@ -268,9 +255,7 @@ public class ImmPtlChunkTickets {
                 
                 if (!pendingTicketAdding) {
                     ChunkPos chunkPosObj = ChunkPos.unpack(chunkPos);
-                    distanceManager.removeRegionTicket(
-                        TICKET_TYPE, chunkPosObj, getLoadingRadius(), chunkPosObj
-                    );
+                    world.getChunkSource().removeTicketWithRadius(TICKET_TYPE, chunkPosObj, getLoadingRadius());
                 }
                 return true;
             }
@@ -295,20 +280,11 @@ public class ImmPtlChunkTickets {
     }
     
     private static void removeAllTicketsInWorld(ServerLevel world, ImmPtlChunkTickets dimTicketManager) {
-        DistanceManager ticketManager = getDistanceManager(world);
-        
+        // Quasar MC: tickets are added with getLoadingRadius() at the time; remove with both possible radii.
         dimTicketManager.chunkPosToTicketInfo.keySet().forEach((long pos) -> {
-            SortedArraySet<Ticket<?>> tickets = ((IEDistanceManager) getDistanceManager(world))
-                .portal_getTicketSet(pos);
-            
-            // avoid removing ticket when iterating the ticket set
-            List<Ticket<?>> toRemove = tickets.stream()
-                .filter(t -> t.getType() == TICKET_TYPE).toList();
-            
             ChunkPos chunkPos = ChunkPos.unpack(pos);
-            for (Ticket<?> ticket : toRemove) {
-                ticketManager.removeRegionTicket(TICKET_TYPE, chunkPos, ticket.getTicketLevel(), chunkPos);
-            }
+            world.getChunkSource().removeTicketWithRadius(TICKET_TYPE, chunkPos, 1);
+            world.getChunkSource().removeTicketWithRadius(TICKET_TYPE, chunkPos, 2);
         });
         
         dimTicketManager.isValid = false;
@@ -327,9 +303,6 @@ public class ImmPtlChunkTickets {
         return ((IEChunkMap) (world.getChunkSource()).chunkMap).ip_getChunkHolder(chunkPos);
     }
     
-    public static DistanceManager getDistanceManager(ServerLevel world) {
-        return ((IEServerChunkCache) world.getChunkSource()).ip_getDistanceManager();
-    }
     
     private static void cleanup(ServerCleanupEvent event) {
         MinecraftServer server = event.server;

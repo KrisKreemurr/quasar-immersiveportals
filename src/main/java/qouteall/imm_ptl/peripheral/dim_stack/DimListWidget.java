@@ -10,7 +10,7 @@ import qouteall.q_misc_util.Helper;
 
 // QUASAR STUB: generated no-op stand-in; the original lives in src/parked (render rewrite pending).
 
-public class DimListWidget extends AbstractSelectionList<DimEntryWidget> {
+public class DimListWidget {
 
     public static int ROW_WIDTH;
     public interface DraggingCallback {

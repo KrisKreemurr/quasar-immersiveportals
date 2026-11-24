@@ -11,9 +11,6 @@ import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.IPMcHelper;
 import qouteall.imm_ptl.core.IPModMainClient;
 import qouteall.imm_ptl.core.compat.IPModInfoChecking;
-import qouteall.imm_ptl.core.compat.iris_compatibility.ExperimentalIrisPortalRenderer;
-import qouteall.imm_ptl.core.compat.iris_compatibility.IrisInterface;
-import qouteall.imm_ptl.core.compat.sodium_compatibility.SodiumInterface;
 import qouteall.imm_ptl.core.portal.BreakableMirror;
 import qouteall.imm_ptl.core.portal.EndPortalEntity;
 import qouteall.imm_ptl.core.portal.LoadingIndicatorEntity;
@@ -24,8 +21,6 @@ import qouteall.imm_ptl.core.portal.global_portals.VerticalConnectingPortal;
 import qouteall.imm_ptl.core.portal.global_portals.WorldWrappingPortal;
 import qouteall.imm_ptl.core.portal.nether_portal.GeneralBreakablePortal;
 import qouteall.imm_ptl.core.portal.nether_portal.NetherPortalEntity;
-import qouteall.imm_ptl.core.render.LoadingIndicatorRenderer;
-import qouteall.imm_ptl.core.render.PortalEntityRenderer;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.my_util.MyTaskList;
 
@@ -51,13 +46,14 @@ public class IPModEntryClient {
         }).forEach(
             entityType -> event.registerEntityRenderer(
                 entityType,
-                (EntityRendererProvider) PortalEntityRenderer::new
+                // Quasar MC: portal views are drawn by Quasar Meshelium; the entity itself draws nothing.
+                (EntityRendererProvider) net.minecraft.client.renderer.entity.NoopRenderer::new
             )
         );
         
         event.registerEntityRenderer(
             LoadingIndicatorEntity.entityType,
-            LoadingIndicatorRenderer::new
+            net.minecraft.client.renderer.entity.NoopRenderer::new
         );
         
     }
@@ -65,47 +61,8 @@ public class IPModEntryClient {
     public void onInitializeClient(IEventBus modEventBus) {
         IPModMainClient.init();
 
-        modEventBus.addListener(EntityRenderersEvent.RegisterRenderers.class, IPModEntryClient::initPortalRenderers);
-        
-        boolean isSodiumPresent =
-            ModList.get().isLoaded("embeddium") || ModList.get().isLoaded("sodium");
-        if (isSodiumPresent) {
-            Helper.log("Sodium is present");
-            
-            SodiumInterface.invoker = new SodiumInterface.OnSodiumPresent();
-            
-            // Sodium compat is pretty ok now. No warning needed.
-//            IPGlobal.clientTaskList.addTask(MyTaskList.oneShotTask(() -> {
-//                if (IPGlobal.enableWarning) {
-//                    CHelper.printChat(
-//                        Component.translatable("imm_ptl.sodium_warning")
-//                            .append(IPMcHelper.getDisableWarningText())
-//                    );
-//                }
-//            }));
-        }
-        else {
-            Helper.log("Sodium is not present");
-        }
-        
-        if (ModList.get().isLoaded("iris")) {
-            Helper.log("Iris is present");
-            IrisInterface.invoker = new IrisInterface.OnIrisPresent();
-            ExperimentalIrisPortalRenderer.init();
-            
-            IPGlobal.CLIENT_TASK_LIST.addTask(MyTaskList.oneShotTask(() -> {
-                if (IPConfig.getConfig().shouldDisplayWarning("iris")) {
-                    CHelper.printChat(
-                        Component.translatable("imm_ptl.iris_warning")
-                            .append(IPMcHelper.getDisableWarningText("iris"))
-                    );
-                }
-            }));
-        }
-        else {
-            Helper.log("Iris is not present");
-        }
-        
+        // Quasar MC: renderers are registered by IPModEntry; no Sodium/Iris in the pack.
+
         IPModInfoChecking.initClient();
     }
     

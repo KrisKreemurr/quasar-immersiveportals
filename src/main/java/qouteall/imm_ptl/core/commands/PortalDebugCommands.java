@@ -44,7 +44,6 @@ import qouteall.imm_ptl.core.chunk_loading.ChunkVisibility;
 import qouteall.imm_ptl.core.chunk_loading.ImmPtlChunkTickets;
 import qouteall.imm_ptl.core.chunk_loading.ImmPtlChunkTracking;
 import qouteall.imm_ptl.core.chunk_loading.PlayerChunkLoading;
-import qouteall.imm_ptl.core.ducks.IEDistanceManager;
 import qouteall.imm_ptl.core.ducks.IEServerChunkCache;
 import qouteall.imm_ptl.core.ducks.IEServerWorld;
 import qouteall.imm_ptl.core.ducks.IEWorld;
@@ -63,7 +62,6 @@ import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static qouteall.imm_ptl.core.chunk_loading.ImmPtlChunkTickets.getDistanceManager;
 
 public class PortalDebugCommands {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -430,37 +428,8 @@ public class PortalDebugCommands {
             })
         );
         
-        builder.then(Commands.literal("report_chunk_ticket_stat")
-            .requires(serverCommandSource -> serverCommandSource.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
-            .executes(context -> {
-                ServerLevel world = context.getSource().getLevel();
-                Iterable<ChunkHolder> chunkHolders = ((IEChunkMap_Accessor) world.getChunkSource().chunkMap).ip_getChunks();
-                
-                Object2IntOpenHashMap<TicketType<?>> stat = new Object2IntOpenHashMap<>();
-                for (ChunkHolder chunkHolder : chunkHolders) {
-                    long chunkPos = chunkHolder.getPos().pack();
-                    SortedArraySet<Ticket<?>> chunkTickets =
-                        ((IEDistanceManager) getDistanceManager(world))
-                            .portal_getTicketSet(chunkPos);
-                    
-                    for (Ticket<?> ticket : chunkTickets) {
-                        stat.addTo(ticket.getType(), 1);
-                    }
-                }
-                
-                context.getSource().sendSuccess(() -> Component.literal(""), false);
-                for (Object2IntMap.Entry<TicketType<?>> entry : stat.object2IntEntrySet()) {
-                    TicketType<?> ticketType = entry.getKey();
-                    context.getSource().sendSuccess(
-                        () -> Component.literal(ticketType.toString() + " " + entry.getIntValue()),
-                        false
-                    );
-                }
-                
-                return 0;
-            })
-        );
-        
+        // Quasar MC: report_chunk_ticket_stat removed (26.x ticket storage has no per-chunk ticket set accessor here).
+
         builder.then(Commands.literal("report_per_player_chunk_loading")
             .requires(serverCommandSource -> serverCommandSource.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
             .executes(context -> {
@@ -675,8 +644,7 @@ public class PortalDebugCommands {
         
         long longChunkPos = ChunkPos.pack(chunkX, chunkZ);
         if (loaded) {
-            boolean shouldTickEntities =
-                getDistanceManager(world).inEntityTickingRange(longChunkPos);
+            boolean shouldTickEntities = world.areEntitiesLoaded(longChunkPos);
             if (shouldTickEntities) {
                 McHelper.serverLog(player, "Server chunk loaded and entity tickable");
             }
@@ -705,15 +673,6 @@ public class PortalDebugCommands {
                 )
             );
             
-            DistanceManager distanceManager =
-                ((IEServerChunkCache) world.getChunkSource()).ip_getDistanceManager();
-            SortedArraySet<Ticket<?>> tickets = ((IEDistanceManager) distanceManager).portal_getTicketSet(longChunkPos);
-            for (Ticket<?> ticket : tickets) {
-                McHelper.serverLog(
-                    player,
-                    ticket.toString()
-                );
-            }
         }
         
         McRemoteProcedureCall.tellClientToInvoke(

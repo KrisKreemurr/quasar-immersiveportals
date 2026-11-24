@@ -20,7 +20,6 @@ import org.apache.logging.log4j.Logger;
 import qouteall.imm_ptl.core.CHelper;
 import qouteall.imm_ptl.core.ClientWorldLoader;
 import qouteall.imm_ptl.core.McHelper;
-import qouteall.imm_ptl.core.compat.sodium_compatibility.SodiumInterface;
 import qouteall.imm_ptl.core.ducks.IEMinecraftClient;
 import qouteall.imm_ptl.core.miscellaneous.IPVanillaCopy;
 import qouteall.imm_ptl.core.platform_specific.O_O;
@@ -76,7 +75,6 @@ public class ImmPtlClientChunkMap extends ClientChunkCache {
             
             O_O.postClientChunkUnloadEvent(chunk);
             this.level.unload(chunk);
-            SodiumInterface.invoker.onClientChunkUnloaded(level, chunkPos.x(), chunkPos.z());
             clientChunkUnloadSignal.emit(chunk);
         }
     }
@@ -135,18 +133,14 @@ public class ImmPtlClientChunkMap extends ClientChunkCache {
     }
     
     @Override
-    public LevelChunk replaceWithPacketData(
-        int x, int z,
-        FriendlyByteBuf buf, CompoundTag nbt,
-        Consumer<ClientboundLevelChunkPacketData.BlockEntityTagOutput> consumer
-    ) {
+    public LevelChunk replaceWithPacketData(int x, int z, ClientboundLevelChunkPacketData data) {
         Validate.isTrue(Thread.currentThread() == mainThread);
         
         long chunkPosLong = ChunkPos.pack(x, z);
         LevelChunk worldChunk = chunkMapForMainThread.get(chunkPosLong);
         if (worldChunk == null) {
             worldChunk = new LevelChunk(this.level, new ChunkPos(x, z));
-            loadChunkDataFromPacket(buf, nbt, worldChunk, consumer);
+            loadChunkDataFromPacket(x, z, data, worldChunk);
             
             LevelChunk worldChunkToPut = worldChunk; // lambda can only capture effectively final variables
             modifyChunkMap(chunkMap -> {
@@ -154,12 +148,11 @@ public class ImmPtlClientChunkMap extends ClientChunkCache {
             });
         }
         else {
-            loadChunkDataFromPacket(buf, nbt, worldChunk, consumer);
+            loadChunkDataFromPacket(x, z, data, worldChunk);
         }
         
-        this.level.onChunkLoaded(new ChunkPos(x, z));
+        this.level.onChunkLoaded(worldChunk);
         O_O.postClientChunkLoadEvent(worldChunk);
-        SodiumInterface.invoker.onClientChunkLoaded(level, x, z);
         clientChunkLoadSignal.emit(worldChunk);
         
 //        LOGGER.info("load {} {} {}", level, x, z);
@@ -171,14 +164,9 @@ public class ImmPtlClientChunkMap extends ClientChunkCache {
      * {@link net.minecraft.core.IdMap#byIdOrThrow(int)}
      * {@link net.minecraft.world.level.chunk.LinearPalette#read(FriendlyByteBuf)}
      */
-    private void loadChunkDataFromPacket(
-        FriendlyByteBuf buf,
-        CompoundTag nbt,
-        LevelChunk worldChunk,
-        Consumer<ClientboundLevelChunkPacketData.BlockEntityTagOutput> consumer
-    ) {
+    private void loadChunkDataFromPacket(int x, int z, ClientboundLevelChunkPacketData data, LevelChunk worldChunk) {
         try {
-            worldChunk.replaceWithPacketData(buf, nbt, consumer);
+            worldChunk.replaceWithPacketData(x, z, data);
         }
         catch (Exception e) {
             LOGGER.error(
@@ -232,8 +220,7 @@ public class ImmPtlClientChunkMap extends ClientChunkCache {
     
     @Override
     public void onLightUpdate(LightLayer lightType, SectionPos chunkSectionPos) {
-        ClientWorldLoader.getWorldRenderer(level.dimension())
-            .setSectionDirty(chunkSectionPos.x(), chunkSectionPos.y(), chunkSectionPos.z());
+        Minecraft.getInstance().levelExtractor.setSectionDirty(chunkSectionPos.x(), chunkSectionPos.y(), chunkSectionPos.z());
     }
     
 }

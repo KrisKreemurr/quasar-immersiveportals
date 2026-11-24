@@ -1,6 +1,5 @@
 package qouteall.imm_ptl.core;
 
-import com.mojang.blaze3d.platform.GlUtil;
 import io.netty.buffer.Unpooled;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
@@ -287,10 +286,7 @@ public class IPMcHelper {
         String command
     ) {
         return component.withStyle(
-            style -> style.withClickEvent(new ClickEvent(
-                ClickEvent.Action.RUN_COMMAND,
-                command
-            )).withUnderlined(true)
+            style -> style.withClickEvent(new ClickEvent.RunCommand(command)).withUnderlined(true)
         );
     }
     
@@ -310,7 +306,7 @@ public class IPMcHelper {
     
     //@OnlyIn(Dist.CLIENT)
     public static boolean isNvidiaVideocard() {
-        return GlUtil.getVendor().toLowerCase().contains("nvidia");
+        return true; // Quasar MC: GlUtil is gone on 26.x; the pack runs on Vulkan
     }
     
     public static FriendlyByteBuf bytesToBuf(byte[] packetBytes) {

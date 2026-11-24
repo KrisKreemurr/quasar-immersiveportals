@@ -24,8 +24,6 @@ public class MixinPlayerPositionLookS2CPacket implements IEPlayerPositionLookS2C
         playerDimension = dimension;
     }
     
-    @Inject(method = "Lnet/minecraft/network/protocol/game/ClientboundPlayerPositionPacket;write(Lnet/minecraft/network/FriendlyByteBuf;)V", at = @At("RETURN"))
-    private void onWrite(FriendlyByteBuf buf, CallbackInfo ci) {
-        buf.writeResourceKey(playerDimension);
-    }
+    // Quasar MC: the packet is a record with a StreamCodec in 26.x, so the extra dimension is not written yet.
+    // Only needed for cross-dimension portals (the client treats a missing dimension as "same dimension").
 }

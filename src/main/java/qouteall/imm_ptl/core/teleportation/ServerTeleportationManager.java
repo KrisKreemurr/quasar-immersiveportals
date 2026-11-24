@@ -67,7 +67,7 @@ public class ServerTeleportationManager {
 
         NeoForge.EVENT_BUS.addListener(ServerPortalTickEvent.class, event -> {
             Portal portal = event.portal;
-            ServerTeleportationManager serverTeleportationManager = of(portal.getServer());
+            ServerTeleportationManager serverTeleportationManager = of(portal.level().getServer());
             getEntitiesToTeleport(portal).forEach(entity -> {
                 serverTeleportationManager.startTeleportingRegularEntity(portal, entity);
             });
@@ -114,7 +114,7 @@ public class ServerTeleportationManager {
         if (entity.isRemoved()) {
             return;
         }
-        if (!entity.canChangeDimensions(entity.level(), portal.getDestinationWorld())) {
+        if (!entity.canTeleport(entity.level(), portal.getDestinationWorld())) {
             return;
         }
         if (isJustTeleported(entity, 1)) {
@@ -130,7 +130,7 @@ public class ServerTeleportationManager {
         if (motion > 20) {
             return;
         }
-        ServerTaskList.of(portal.getServer()).addTask(() -> {
+        ServerTaskList.of(portal.level().getServer()).addTask(() -> {
             try {
                 teleportRegularEntity(entity, portal);
             }
@@ -748,7 +748,7 @@ public class ServerTeleportationManager {
             return entity;
         }
         
-        return (E) of(entity.getServer()).changeEntityDimension(
+        return (E) of(entity.level().getServer()).changeEntityDimension(
             entity,
             targetDim,
             targetPos.add(McHelper.getEyeOffset(entity)),
@@ -827,7 +827,7 @@ public class ServerTeleportationManager {
         for (ServerPlayer player : players) {
             if (player.level().dimension() == world.dimension()) {
                 ServerLevel overWorld = McHelper.getOverWorldOnServer();
-                BlockPos spawnPos = overWorld.getSharedSpawnPos();
+                BlockPos spawnPos = overWorld.getRespawnData().pos();
                 
                 forceTeleportPlayer(
                     player, Level.OVERWORLD, Vec3.atCenterOf(spawnPos)
