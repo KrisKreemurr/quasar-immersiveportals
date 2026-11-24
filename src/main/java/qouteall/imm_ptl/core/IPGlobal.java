@@ -1,7 +1,6 @@
 package qouteall.imm_ptl.core;
 
 import com.google.gson.Gson;
-import me.shedaniel.autoconfig.ConfigHolder;
 import net.neoforged.bus.api.Event;
 import qouteall.imm_ptl.core.platform_specific.IPConfig;
 import qouteall.q_misc_util.MiscHelper;
@@ -9,7 +8,7 @@ import qouteall.q_misc_util.my_util.MyTaskList;
 
 public class IPGlobal {
     
-    public static ConfigHolder<IPConfig> configHolder;
+    public static qouteall.imm_ptl.core.platform_specific.IPConfigHolder configHolder;
     
     public static int maxNormalPortalRadius = 32;
     
