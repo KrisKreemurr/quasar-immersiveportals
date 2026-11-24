@@ -53,6 +53,11 @@ public class PortalSettingsScreen extends Screen {
             () -> Math.min(32, PortalViewRenderer.renderDistance), v -> PortalViewRenderer.renderDistance = v,
             v -> v == 0 ? Component.translatable("quasar_portals.options.distance.unlimited")
                 : Component.translatable("quasar_portals.options.distance.value", v)));
+        rows.addChild(Button.builder(outlineLabel(), b -> {
+            PortalPlaceholderOutline.enabled = !PortalPlaceholderOutline.enabled;
+            PortalSettings.save();
+            b.setMessage(outlineLabel());
+        }).tooltip(Tooltip.create(Component.translatable("quasar_portals.options.outlines.tooltip"))).width(WIDTH).build());
         rows.addChild(Button.builder(Component.translatable("quasar_portals.options.reset"), b -> {
             PortalSettings.resetDefaults();
             rebuildWidgets();
@@ -76,6 +81,11 @@ public class PortalSettingsScreen extends Screen {
     public void onClose() {
         PortalSettings.save();
         minecraft.gui.setScreen(parent);
+    }
+    
+    private static Component outlineLabel() {
+        return CommonComponents.optionNameValue(Component.translatable("quasar_portals.options.outlines"),
+            PortalPlaceholderOutline.enabled ? CommonComponents.OPTION_ON : CommonComponents.OPTION_OFF);
     }
     
     private static AbstractSliderButton slider(String key, int min, int max, int step,

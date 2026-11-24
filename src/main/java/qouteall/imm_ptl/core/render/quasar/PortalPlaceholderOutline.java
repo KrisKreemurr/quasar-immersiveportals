@@ -26,7 +26,11 @@ public final class PortalPlaceholderOutline {
         NeoForge.EVENT_BUS.addListener(PortalPlaceholderOutline::onFrame);
     }
     
+    /** Video Settings → Portals → Portal Outlines (saved in quasar-portals.properties) */
+    public static volatile boolean enabled = true;
+
     private static void onFrame(RenderFrameEvent.Pre event) {
+        if (!enabled) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) {
             return;

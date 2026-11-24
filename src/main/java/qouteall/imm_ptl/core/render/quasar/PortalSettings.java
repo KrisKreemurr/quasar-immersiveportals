@@ -33,6 +33,7 @@ public final class PortalSettings {
             PortalViewRenderer.resolutionScale = clamp(p, "resolutionPercent", DEFAULT_RES, 10, 100) / 100f;
             PortalViewRenderer.maxUpdateEvery = clamp(p, "maxUpdateEvery", DEFAULT_UPDATE_EVERY, 1, 8);
             PortalViewRenderer.minUpdatesPerSecond = clamp(p, "minUpdatesPerSecond", DEFAULT_MIN_RATE, 20, 240);
+            PortalPlaceholderOutline.enabled = !"false".equalsIgnoreCase(p.getProperty("outlines", "true").trim());
         }
         catch (Exception e) {
             LOGGER.warn("[Quasar Portals] could not read {}", f, e);
@@ -47,6 +48,7 @@ public final class PortalSettings {
         p.setProperty("resolutionPercent", Integer.toString(resolutionPercent()));
         p.setProperty("maxUpdateEvery", Integer.toString(PortalViewRenderer.maxUpdateEvery));
         p.setProperty("minUpdatesPerSecond", Integer.toString(PortalViewRenderer.minUpdatesPerSecond));
+        p.setProperty("outlines", Boolean.toString(PortalPlaceholderOutline.enabled));
         try {
             Files.createDirectories(f.getParent());
             try (Writer w = Files.newBufferedWriter(f)) {
@@ -68,6 +70,7 @@ public final class PortalSettings {
         PortalViewRenderer.resolutionScale = DEFAULT_RES / 100f;
         PortalViewRenderer.maxUpdateEvery = DEFAULT_UPDATE_EVERY;
         PortalViewRenderer.minUpdatesPerSecond = DEFAULT_MIN_RATE;
+        PortalPlaceholderOutline.enabled = true;
         save();
     }
     
