@@ -8,8 +8,6 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
@@ -146,7 +144,6 @@ public class ClientPortalWandPortalDrag {
     private static double renderedPreCircleRadius;
     public static void render(
         PoseStack matrixStack,
-        MultiBufferSource.BufferSource bufferSource,
         double camX, double camY, double camZ
     ) {}
 

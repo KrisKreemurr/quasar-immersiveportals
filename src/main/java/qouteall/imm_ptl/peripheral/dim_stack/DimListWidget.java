@@ -2,7 +2,6 @@
 package qouteall.imm_ptl.peripheral.dim_stack;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractSelectionList;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
@@ -46,9 +45,7 @@ public class DimListWidget extends AbstractSelectionList<DimEntryWidget> {
 
     protected int getScrollbarPosition() { return 0; }
 
-    protected void renderListBackground(GuiGraphics guiGraphics) {}
 
-    protected DimListWidget() {}
 
 }
 

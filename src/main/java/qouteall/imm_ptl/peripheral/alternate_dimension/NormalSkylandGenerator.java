@@ -15,7 +15,6 @@ import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.progress.ChunkProgressListener;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.thread.BlockableEventLoop;
 import net.minecraft.world.level.StructureManager;
@@ -54,7 +53,6 @@ public class NormalSkylandGenerator extends NoiseBasedChunkGenerator {
     private RandomState delegatedRandomState;
     private HolderGetter<Biome> biomeHolderGetter;
     private HolderGetter<DensityFunction> densityFunctionHolderGetter;
-    private HolderGetter<NormalNoise.NoiseParameters> noiseParametersHolderGetter;
     private long seed;
     public NormalSkylandGenerator(
         BiomeSource biomeSource,
@@ -64,14 +62,12 @@ public class NormalSkylandGenerator extends NoiseBasedChunkGenerator {
         
         HolderGetter<Biome> biomeHolderGetter,
         HolderGetter<DensityFunction> densityFunctionHolderGetter,
-        HolderGetter<NormalNoise.NoiseParameters> noiseParametersHolderGetter,
         long seed
     ) { super(biomeSource, noiseGeneratorSettings); }
 
     public static NormalSkylandGenerator create(
         HolderGetter<Biome> biomeHolderGetter,
         HolderGetter<DensityFunction> densityFunctionHolderGetter,
-        HolderGetter<NormalNoise.NoiseParameters> noiseParametersHolderGetter,
         HolderGetter<NoiseGeneratorSettings> noiseGeneratorSettingsHolderGetter,
         HolderGetter<MultiNoiseBiomeSourceParameterList> biomeParamListLookup,
         long seed
@@ -87,7 +83,6 @@ public class NormalSkylandGenerator extends NoiseBasedChunkGenerator {
 
     public ChunkGeneratorStructureState createState(HolderLookup<StructureSet> structureSetLookup, RandomState randomState, long seed) { return null; }
 
-    protected NormalSkylandGenerator() {}
 
 }
 

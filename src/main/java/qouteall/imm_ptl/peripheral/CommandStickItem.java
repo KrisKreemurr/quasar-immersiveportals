@@ -20,7 +20,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -65,7 +64,6 @@ public class CommandStickItem extends Item {
 
     public boolean isFoil(ItemStack stack) { return false; }
 
-    public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) { return null; }
 
     private void doUse(Player player, ItemStack stack) {}
 
@@ -90,7 +88,6 @@ public class CommandStickItem extends Item {
 
     private static Data registerPortalSubCommandStick(String name, String subCommand) { return null; }
 
-    protected CommandStickItem() {}
 
 }
 

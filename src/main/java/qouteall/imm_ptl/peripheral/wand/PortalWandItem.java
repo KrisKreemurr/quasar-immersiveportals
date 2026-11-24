@@ -7,7 +7,6 @@ import de.nick1st.imm_ptl.events.ClientCleanupEvent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -17,7 +16,6 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -68,7 +66,6 @@ public class PortalWandItem extends Item {
 
     public PortalWandItem(Properties properties) { super(properties); }
 
-    public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) { return null; }
 
     private void onUseClient(Mode mode) {}
 
@@ -85,11 +82,9 @@ public class PortalWandItem extends Item {
     private static void updateDisplay(ItemStack itemStack) {}
 
     public static void clientRender(
-        net.minecraft.client.player.LocalPlayer player, ItemStack itemStack, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
         double camX, double camY, double camZ
     ) {}
 
-    protected PortalWandItem() {}
 
 }
 

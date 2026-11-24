@@ -11,7 +11,6 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.WorldGenRegion;
-import net.minecraft.util.random.WeightedRandomList;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.NoiseColumn;
@@ -51,7 +50,6 @@ public abstract class DelegatedChunkGenerator extends ChunkGenerator {
         ChunkGenerator delegate
     ) { super(biomeSource); }
 
-    public void applyCarvers(WorldGenRegion worldGenRegion, long l, RandomState randomState, BiomeManager biomeManager, StructureManager structureManager, ChunkAccess chunkAccess, GenerationStep.Carving carving) {}
 
     public void buildSurface(WorldGenRegion worldGenRegion, StructureManager structureManager, RandomState randomState, ChunkAccess chunkAccess) {}
 
@@ -79,7 +77,6 @@ public abstract class DelegatedChunkGenerator extends ChunkGenerator {
 
     public void applyBiomeDecoration(WorldGenLevel worldGenLevel, ChunkAccess chunkAccess, StructureManager structureManager) {}
 
-    public Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> getTypeNameForDataFixer() { return null; }
 
     @Nullable
     public Pair<BlockPos, Holder<Structure>> findNearestMapStructure(ServerLevel serverLevel, HolderSet<Structure> holderSet, BlockPos blockPos, int i, boolean bl) { return null; }
@@ -88,7 +85,6 @@ public abstract class DelegatedChunkGenerator extends ChunkGenerator {
 
     public BiomeSource getBiomeSource() { return null; }
 
-    public WeightedRandomList<MobSpawnSettings.SpawnerData> getMobsAt(Holder<Biome> holder, StructureManager structureManager, MobCategory mobCategory, BlockPos blockPos) { return null; }
 
     public void createReferences(WorldGenLevel worldGenLevel, StructureManager structureManager, ChunkAccess chunkAccess) {}
 
@@ -98,7 +94,6 @@ public abstract class DelegatedChunkGenerator extends ChunkGenerator {
 
     public BiomeGenerationSettings getBiomeGenerationSettings(Holder<Biome> holder) { return null; }
 
-    protected DelegatedChunkGenerator() {}
 
 }
 

@@ -3,7 +3,6 @@ package qouteall.imm_ptl.peripheral.dim_stack;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
@@ -56,7 +55,6 @@ public class DimEntryWidget extends ContainerObjectSelectionList.Entry<DimEntryW
     public @NotNull List<? extends GuiEventListener> children() { return null; }
 
     public void render(
-        @NotNull GuiGraphics guiGraphics,
         int index,
         int y,
         int x,

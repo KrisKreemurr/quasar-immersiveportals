@@ -7,8 +7,6 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
@@ -68,7 +66,6 @@ public class ClientPortalWandPortalCreation {
     private static int colorOfSecondPortalArea2;
     public static void render(
         PoseStack matrixStack,
-        MultiBufferSource.BufferSource bufferSource,
         double camX, double camY, double camZ
     ) {}
 

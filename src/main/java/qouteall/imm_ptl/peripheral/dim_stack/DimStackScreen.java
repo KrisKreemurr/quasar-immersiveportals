@@ -3,7 +3,6 @@ package qouteall.imm_ptl.peripheral.dim_stack;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -52,7 +51,6 @@ public class DimStackScreen extends Screen {
 
     private Consumer<DimEntryWidget> getElementSelectCallback() { return null; }
 
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {}
 
     public void setEnabled(boolean cond) {}
 
@@ -62,7 +60,6 @@ public class DimStackScreen extends Screen {
 
     private void onEditEntry() {}
 
-    protected DimStackScreen() {}
 
 }
 

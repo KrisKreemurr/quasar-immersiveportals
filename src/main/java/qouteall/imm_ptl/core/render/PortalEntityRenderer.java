@@ -18,7 +18,6 @@ import qouteall.imm_ptl.core.render.context_management.PortalRendering;
 @OnlyIn(Dist.CLIENT)
 public class PortalEntityRenderer {
 
-    public PortalEntityRenderer(EntityRendererProvider.Context context) { super(context); }
 
     public void render(
         Portal portal,

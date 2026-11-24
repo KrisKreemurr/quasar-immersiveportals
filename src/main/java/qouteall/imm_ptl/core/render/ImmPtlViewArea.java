@@ -71,8 +71,7 @@ public class ImmPtlViewArea extends ViewArea {
     public ImmPtlViewArea(
             SectionRenderDispatcher sectionBuilder,
             Level world,
-            int r,
-            LevelRenderer worldRenderer) {}
+            int r) {}
 
     protected void createSections(SectionRenderDispatcher sectionBuilder_1) {}
 

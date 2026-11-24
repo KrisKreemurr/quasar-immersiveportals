@@ -2,7 +2,6 @@
 package qouteall.imm_ptl.peripheral.dim_stack;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -47,9 +46,7 @@ public class DimStackEntryEditScreen extends Screen {
 
     public void onClose() {}
 
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {}
 
-    protected DimStackEntryEditScreen() {}
 
 }
 

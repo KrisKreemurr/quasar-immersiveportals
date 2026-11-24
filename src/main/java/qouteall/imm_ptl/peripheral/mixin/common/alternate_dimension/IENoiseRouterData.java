@@ -14,7 +14,6 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 // QUASAR STUB: generated no-op stand-in; the original lives in src/parked (render rewrite pending).
 public interface IENoiseRouterData {
 static NoiseRouter ip_end(HolderGetter<DensityFunction> holderGetter) {}
-static NoiseRouter ip_noNewCaves(HolderGetter<DensityFunction> holderGetter, HolderGetter<NormalNoise.NoiseParameters> holderGetter2, DensityFunction densityFunction) {}
 static DensityFunction ip_slideEndLike(DensityFunction densityFunction, int i, int j) {}
 static DensityFunction ip_getFunction(HolderGetter<DensityFunction> holderGetter, ResourceKey<DensityFunction> resourceKey) {}
 static ResourceKey<DensityFunction> get_BASE_3D_NOISE_END() {}
