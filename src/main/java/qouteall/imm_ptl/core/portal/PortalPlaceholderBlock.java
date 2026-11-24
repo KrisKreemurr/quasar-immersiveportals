@@ -49,6 +49,7 @@ public class PortalPlaceholderBlock extends Block {
     
     public static final PortalPlaceholderBlock instance = new PortalPlaceholderBlock(
         Properties.of()
+            .setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath("immersive_portals", "nether_portal_block"))) // Quasar MC: 26.x needs the id before construction
             .noCollision()
             .sound(SoundType.GLASS)
             .strength(1.0f, 0)

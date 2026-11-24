@@ -31,7 +31,7 @@ public class PeripheralModMain {
     public static Block portalHelperBlock;
 
     public static final CreativeModeTab TAB = CreativeModeTab.builder()
-            .icon(() -> new ItemStack(PortalWandItem.instance))
+            .icon(() -> new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("immersive_portals", "portal_helper")))) // Quasar MC: wand parked
             .title(Component.translatable("imm_ptl.item_group"))
             .displayItems((enabledFeatures, entries) -> {
                 PortalWandItem.addIntoCreativeTag(entries);
@@ -76,26 +76,16 @@ public class PeripheralModMain {
     public static void registerItems(BiConsumer<Identifier, Item> regFunc) {
         regFunc.accept(
             McHelper.newResourceLocation("immersive_portals", "portal_helper"),
-                new PortalHelperItem(PeripheralModMain.portalHelperBlock, new Item.Properties())
+                new PortalHelperItem(PeripheralModMain.portalHelperBlock,
+                    new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.Identifier.fromNamespaceAndPath("immersive_portals", "portal_helper"))).useBlockDescriptionPrefix())
         );
 
-        CommandStickItem commandStickItem = new CommandStickItem(new Item.Properties());
-        regFunc.accept(
-            McHelper.newResourceLocation("immersive_portals:command_stick"),
-                commandStickItem
-        );
-        CommandStickItem.instance = commandStickItem;
-
-        PortalWandItem portalWandItem = new PortalWandItem(new Item.Properties());
-        regFunc.accept(
-            McHelper.newResourceLocation("immersive_portals:portal_wand"),
-                portalWandItem
-        );
-        PortalWandItem.instance = portalWandItem;
+        // Quasar MC: command stick and portal wand are parked (not registered) until they are ported.
     }
     
     public static void registerBlocks(BiConsumer<Identifier, Block> regFunc) {
-        Block block = new Block(BlockBehaviour.Properties.of().noOcclusion().isRedstoneConductor((a, b, c) -> false));
+        Block block = new Block(BlockBehaviour.Properties.of().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath("immersive_portals", "portal_helper")))
+            .noOcclusion().isRedstoneConductor((a, b, c) -> false));
         regFunc.accept(
             McHelper.newResourceLocation("immersive_portals", "portal_helper"),
                 block
