@@ -475,6 +475,11 @@ public final class PortalViewRenderer {
         // (narrows the frustum too, so only terrain that can appear inside the portal is drawn)
         Matrix4f sub = new Matrix4f(main.projectionMatrix);
         float cx = (rect[0] + rect[2]) * 0.5f, hx = (rect[2] - rect[0]) * 0.5f;
+        if (mirrored) {
+            // a mirror's picture is rendered unflipped and flipped back in the composite, so the part of the image
+            // that lands inside the mirror is the screen rectangle mirrored left-right
+            cx = -cx;
+        }
         float cy = (rect[1] + rect[3]) * 0.5f, hy = (rect[3] - rect[1]) * 0.5f;
         Vector4f row0 = sub.getRow(0, new Vector4f()), row1 = sub.getRow(1, new Vector4f());
         Vector4f row3 = sub.getRow(3, new Vector4f());
