@@ -66,9 +66,28 @@ public class RenderStates {
     public static boolean isRenderingEntities;
     public static boolean renderedScalingPortal;
     public static boolean isRenderingPortalWeather;
+    /**
+     * Quasar MC: the state half of the original (positions, dimension, game mode, partial tick). The rendering
+     * half (fog context, view bobbing, projection, laggy detection, queries) stays parked with the renderer.
+     */
     public static void updatePreRenderInfo(
         float newPartialTick
-    ) {}
+    ) {
+        ClientWorldLoader.initializeIfNeeded();
+        Entity cameraEntity = Minecraft.getInstance().getCameraEntity();
+        if (cameraEntity == null) {
+            return;
+        }
+        originalPlayerDimension = cameraEntity.level().dimension();
+        originalPlayerPos = cameraEntity.position();
+        originalPlayerLastTickPos = McHelper.lastTickPosOf(cameraEntity);
+        PlayerInfo entry = CHelper.getClientPlayerListEntry();
+        originalGameMode = entry != null ? entry.getGameMode() : GameType.CREATIVE;
+        originalPlayerBoundingBox = cameraEntity.getBoundingBox();
+        partialTick = newPartialTick;
+        renderStartNanoTime = System.nanoTime();
+        debugText = "";
+    }
 
     private static void updateIsLaggy() {}
 
@@ -86,9 +105,9 @@ public class RenderStates {
 
     public static boolean shouldRenderParticle(Particle particle) { return false; }
 
-    public static void setPartialTick(float partialTick_) {}
+    public static void setPartialTick(float partialTick_) { partialTick = partialTick_; }
 
-    public static float getPartialTick() { return 0F; }
+    public static float getPartialTick() { return partialTick; }
 
     public static List<String> collectDebugText() { return null; }
 

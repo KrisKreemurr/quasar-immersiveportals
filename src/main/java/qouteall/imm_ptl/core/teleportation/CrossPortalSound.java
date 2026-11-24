@@ -37,8 +37,8 @@ public class CrossPortalSound {
     ) {
         Minecraft client = Minecraft.getInstance();
         
-        if (client.player == null) {
-            return null;
+        if (client.player == null || RenderStates.originalPlayerPos == null) {
+            return null; // Quasar MC: no frame rendered yet this session
         }
         
         net.minecraft.util.profiling.Profiler.get().push("cross_portal_sound");

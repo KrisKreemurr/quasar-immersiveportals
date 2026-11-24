@@ -65,6 +65,7 @@
     "client.MixinClientConnection",
     "client.MixinClientLevel",
     "client.MixinMinecraft",
+    "client.MixinGameRenderer_PreRender",
     "client.accessor.IEClientLevel_Accessor",
     "client.accessor.IEClientLevelData",
     "client.collisions.MixinLocalPlayer",
