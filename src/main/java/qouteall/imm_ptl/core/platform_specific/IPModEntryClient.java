@@ -60,6 +60,9 @@ public class IPModEntryClient {
 
     public void onInitializeClient(IEventBus modEventBus) {
         IPModMainClient.init();
+        
+        // Quasar MC: visible stand-in for portals until the real portal rendering is built
+        qouteall.imm_ptl.core.render.quasar.PortalPlaceholderOutline.init();
 
         // Quasar MC: renderers are registered by IPModEntry; no Sodium/Iris in the pack.
 
