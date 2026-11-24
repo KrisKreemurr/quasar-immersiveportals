@@ -1,7 +1,6 @@
 package qouteall.imm_ptl.core.render.quasar;
 
 import com.mojang.logging.LogUtils;
-import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 
 import java.io.Reader;
@@ -20,7 +19,7 @@ public final class PortalSettings {
     private PortalSettings() {}
     
     private static Path file() {
-        return Minecraft.getInstance().gameDirectory.toPath().resolve("config").resolve("quasar-portals.properties");
+        return net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().resolve("quasar-portals.properties"); // available during mod construction (Minecraft isn't yet)
     }
     
     public static void load() {
