@@ -1,0 +1,31 @@
+# Quasar MC: builds the NeoForge 26.3 jar on every push.
+name: Build (NeoForge 26.3)
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+      - name: Build
+        run: ./gradlew build --stacktrace 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
+      - name: Error summary
+        if: always()
+        run: |
+          echo "errors: $(grep -c ': error:' build.log || true)"
+          grep ': error:' build.log | sed -E 's/.*src\/main\/java\///; s/\.java:[0-9]+:.*//' | awk -F/ '{print $1"/"$2"/"$3"/"$4}' | sort | uniq -c | sort -rn | head -40
+      - name: Upload jar
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quasar-immersiveportals-26.3
+          path: build/libs/*.jar
