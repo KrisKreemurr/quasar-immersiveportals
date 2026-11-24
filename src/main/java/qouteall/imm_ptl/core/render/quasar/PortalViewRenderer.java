@@ -212,7 +212,7 @@ public final class PortalViewRenderer {
             }
             frameCoverage += (rect[2] - rect[0]) * (rect[3] - rect[1]) / 4f;
             
-            composite(encoder, main, portal, t, rect, mainColor, mainDepth, w, h);
+            composite(encoder, main, portal, t, rect, lastMirrored, mainColor, mainDepth, w, h);
             drawnThisFrame.add(portal.getId());
             lastPixels += (long) t.width * t.height;
         }
@@ -220,6 +220,8 @@ public final class PortalViewRenderer {
 
     static long lastPixels;
     private static long frameTerrainNs;
+    /** whether the camera just built is a mirror view (its picture is drawn flipped) */
+    private static boolean lastMirrored;
     private static int frameSections;
     private static float frameCoverage;
     
@@ -358,11 +360,22 @@ public final class PortalViewRenderer {
         Vec3 camPos = main.pos;
         Vec3 vPos = portal.transformPoint(camPos);
 
-        // view rotation: directions arriving through the portal are rotated by R, so V' = V * R^-1
-        Matrix4f view = new Matrix4f(main.viewRotationMatrix);
-        if (portal.getRotation() != null) {
-            Quaternionf r = portal.getRotation().toMcQuaternion();
-            view.rotate(new Quaternionf(r).conjugate());
+        // the portal's linear transform L (rotation, and for mirrors a reflection), read off its basis vectors:
+        // directions arriving through the portal are transformed by L, so V' = V * L^-1
+        Vec3 ex = portal.transformLocalVecNonScale(new Vec3(1, 0, 0));
+        Vec3 ey = portal.transformLocalVecNonScale(new Vec3(0, 1, 0));
+        Vec3 ez = portal.transformLocalVecNonScale(new Vec3(0, 0, 1));
+        Matrix4f l = new Matrix4f(
+            (float) ex.x, (float) ex.y, (float) ex.z, 0f,
+            (float) ey.x, (float) ey.y, (float) ey.z, 0f,
+            (float) ez.x, (float) ez.y, (float) ez.z, 0f,
+            0f, 0f, 0f, 1f);
+        boolean mirrored = l.determinant() < 0f;
+        Matrix4f view = new Matrix4f(main.viewRotationMatrix).mul(new Matrix4f(l).invert());
+        if (mirrored) {
+            // a reflection is not a camera orientation: render the unreflected view (flip view-space x, which keeps
+            // triangle winding and Meshelium's face culling valid) and flip the picture back in the composite
+            view = new Matrix4f().scaling(-1f, 1f, 1f).mul(view);
         }
 
         // clip plane on the destination portal, in camera-relative view space: visible side = content side
@@ -406,6 +419,7 @@ public final class PortalViewRenderer {
         vc.hudFov = main.hudFov;
         vc.isFirstPerson = main.isFirstPerson;
         vc.viewRotationMatrix = view;
+        lastMirrored = mirrored;
         vc.projectionMatrix = proj;
         Frustum frustum = new Frustum(view, cullProj);
         frustum.prepare(vPos.x, vPos.y, vPos.z);
@@ -444,7 +458,7 @@ public final class PortalViewRenderer {
     // ------------------------------------------------------------------
 
     private static void composite(CommandEncoder encoder, CameraRenderState main, Portal portal, Target t,
-                                  float[] rect, GpuTextureView mainColor, GpuTextureView mainDepth, int w, int h) {
+                                  float[] rect, boolean mirrored, GpuTextureView mainColor, GpuTextureView mainDepth, int w, int h) {
         ensurePipeline();
         Vec3 cam = main.pos;
         Vec3 o = portal.getOriginPos().subtract(cam);
@@ -465,6 +479,7 @@ public final class PortalViewRenderer {
             viewProj.get(0, ub);
             ub.putFloat(64, (float) w);   // main screen size
             ub.putFloat(68, (float) h);
+            ub.putFloat(72, mirrored ? 1f : 0f); // mirror: flip the picture horizontally
             ub.putFloat(80, rect[0]);     // the portal view's NDC rectangle
             ub.putFloat(84, rect[1]);
             ub.putFloat(88, rect[2]);

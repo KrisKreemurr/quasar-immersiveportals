@@ -7,7 +7,7 @@
 layout(std140) uniform PortalUniforms
 {
     mat4 uViewProj;
-    vec4 uScreen;
+    vec4 uScreen;    // xy = screen size, z = 1 for mirrors
     vec4 uRect;
 };
 
@@ -20,5 +20,8 @@ void main()
     // the view was rendered with the screen's projection rows (at a fraction of the screen's size): the same screen
     // fraction is the same texture position
     vec2 uv = gl_FragCoord.xy / uScreen.xy;
+    if (uScreen.z > 0.5) {
+        uv.x = 1.0 - uv.x; // mirror: the view was rendered unreflected
+    }
     fragColor = vec4(texture(PortalColor, uv).rgb, 1.0);
 }
