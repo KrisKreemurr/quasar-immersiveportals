@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 // QUASAR STUB: generated no-op stand-in; the original lives in src/parked (render rewrite pending).
 public interface IERenderSystem {
-public static Matrix4fStack ip_getModelViewStack() {}
+public static Matrix4fStack ip_getModelViewStack() { return null; }
 
 
 }
