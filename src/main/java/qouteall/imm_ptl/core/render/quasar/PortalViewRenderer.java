@@ -73,7 +73,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class PortalViewRenderer {
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    static final int MAX_PORTALS = 8; // slots allocated on demand
+    static final int MAX_PORTALS = 128; // slots allocated on demand (images only for slots actually used)
     /** live settings, tunable with /quasarportals (defaults become config values later) */
     static volatile int liveLimit = 3;
     static volatile int renderDistance = 8;

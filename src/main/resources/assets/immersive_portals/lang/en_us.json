@@ -289,7 +289,7 @@
   "quasar_portals.options.live": "Live Portals",
   "quasar_portals.options.live.off": "Off (outlines only)",
   "quasar_portals.options.live.value": "Nearest %s",
-  "quasar_portals.options.live.tooltip": "How many of the nearest portals show a live view. Others show an outline. Each live portal costs about 0.03 to 0.1 ms.",
+  "quasar_portals.options.live.tooltip": "How many of the nearest portals show a live view (up to 128). Others show an outline. Each live portal costs roughly 0.015 ms CPU and 0.02 ms GPU, plus video memory for its image (about 7 MB at 50% resolution, 2 MB at 25%).",
   "quasar_portals.options.update": "Portal Refresh",
   "quasar_portals.options.update.every": "Every frame",
   "quasar_portals.options.update.value": "Up to every %s frames",

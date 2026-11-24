@@ -15,7 +15,7 @@ import qouteall.imm_ptl.core.CHelper;
  * /quasarportals update 1..8      redraw at most every Nth frame (adaptive, never under 60/s)
  * /quasarportals res 0.1..1.0     portal view resolution relative to the screen
  * /quasarportals distance 0..64   portal render distance in chunks (0 = unlimited)
- * /quasarportals live 0..8        how many portals get a live view
+ * /quasarportals live 0..128       how many portals get a live view
  * </pre>
  */
 public final class PortalTuneCommand {
@@ -39,7 +39,7 @@ public final class PortalTuneCommand {
                     PortalViewRenderer.renderDistance = IntegerArgumentType.getInteger(c, "chunks");
                     return show();
                 })))
-            .then(Commands.literal("live").then(Commands.argument("portals", IntegerArgumentType.integer(0, 8))
+            .then(Commands.literal("live").then(Commands.argument("portals", IntegerArgumentType.integer(0, PortalViewRenderer.MAX_PORTALS))
                 .executes(c -> {
                     PortalViewRenderer.liveLimit = IntegerArgumentType.getInteger(c, "portals");
                     return show();
