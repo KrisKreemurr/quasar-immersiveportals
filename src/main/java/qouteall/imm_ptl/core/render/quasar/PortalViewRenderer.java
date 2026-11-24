@@ -75,10 +75,14 @@ public final class PortalViewRenderer {
     static final int MAX_PORTALS = 2;
     /** portal view resolution relative to the screen (setting later; scales with on-screen size in milestone 2) */
     static final float RESOLUTION_SCALE = 0.5f;
-    /** redraw each portal view every Nth frame and re-paste the last picture in between (test value; setting +
-     *  a ~60 updates/s floor come with the cheap-portals batch) */
-    static final int UPDATE_EVERY = 4;
+    /** redraw each portal view at most every Nth frame, re-pasting the last picture in between (setting later) */
+    static final int MAX_UPDATE_EVERY = 4;
+    /** ...but never fewer than this many redraws a second: slower frame rates redraw more often, 60 FPS every frame */
+    static final double MIN_UPDATES_PER_SECOND = 60.0;
     private static long viewFrame;
+    private static long lastHookNanos;
+    private static double avgFrameSeconds = 1.0 / 60.0;
+    private static int updateEvery = 1;
     private static final double MAX_DISTANCE = 64;
 
     /** portals drawn with a live view last frame (the placeholder outline skips these) */
@@ -127,6 +131,16 @@ public final class PortalViewRenderer {
         frameCoverage = 0;
         long t0 = System.nanoTime();
         viewFrame++;
+        // adaptive skip: N = how many frames fit in 1/60 s at the current frame rate, capped at MAX_UPDATE_EVERY
+        if (lastHookNanos != 0) {
+            double dt = (t0 - lastHookNanos) / 1e9;
+            if (dt > 0 && dt < 0.5) {
+                avgFrameSeconds += (dt - avgFrameSeconds) * 0.05;
+            }
+        }
+        lastHookNanos = t0;
+        updateEvery = Math.max(1, Math.min(MAX_UPDATE_EVERY,
+            (int) Math.floor(1.0 / (MIN_UPDATES_PER_SECOND * avgFrameSeconds))));
         try {
             if (!failed) {
                 renderPortals();
@@ -202,7 +216,7 @@ public final class PortalViewRenderer {
             Target t = target(i, device, Math.max(1, Math.round(w * RESOLUTION_SCALE)),
                 Math.max(1, Math.round(h * RESOLUTION_SCALE)));
             
-            boolean update = !t.valid || t.portalId != portal.getId() || (viewFrame + i) % UPDATE_EVERY == 0;
+            boolean update = !t.valid || t.portalId != portal.getId() || (viewFrame + i) % updateEvery == 0;
             if (update) {
                 CameraRenderState virtual = virtualCamera(main, portal, rect);
                 if (virtual == null) continue;
@@ -317,8 +331,8 @@ public final class PortalViewRenderer {
             else {
                 double f = frames;
                 line = String.format(java.util.Locale.ROOT,
-                    "Portals: %d live, CPU %.3f ms (terrain %.3f), GPU %s, %d sections, %.0f%% of screen",
-                    maxLive, sumCpu / f / 1e6, sumTerrain / f / 1e6,
+                    "Portals: %d live (every %d), CPU %.3f ms (terrain %.3f), GPU %s, %d sections, %.0f%% of screen",
+                    maxLive, updateEvery, sumCpu / f / 1e6, sumTerrain / f / 1e6,
                     gpuFrames > 0 ? String.format(java.util.Locale.ROOT, "%.3f ms", sumGpu / (double) gpuFrames / 1e6) : "n/a",
                     Math.round(sumSections / f), sumCoverage / f * 100);
             }
