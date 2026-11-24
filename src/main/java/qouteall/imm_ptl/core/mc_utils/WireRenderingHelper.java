@@ -57,7 +57,7 @@ public class WireRenderingHelper {
 
     public static void renderLockShape(
         VertexConsumer vertexConsumer, Vec3 cameraPos,
-        Vec3 center, double scale,
+        Vec3 center, double scale
     ) {}
 
     public static void renderLines(
