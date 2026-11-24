@@ -550,7 +550,7 @@ public class ServerTeleportationManager {
             passengerList.stream().map(
                 e -> changeEntityDimension(e, portal.getDestDim(), newEyePos, true)
             ).collect(Collectors.toList()).forEach(e -> {
-                e.startRiding(newEntity, true);
+                e.startRiding(newEntity, true, true);
             });
         }
         
@@ -737,7 +737,7 @@ public class ServerTeleportationManager {
         E entity, ResourceKey<Level> targetDim, Vec3 targetPos
     ) {
         if (entity.level().dimension() == targetDim) {
-            entity.moveTo(
+            entity.snapTo(
                 targetPos.x,
                 targetPos.y,
                 targetPos.z,

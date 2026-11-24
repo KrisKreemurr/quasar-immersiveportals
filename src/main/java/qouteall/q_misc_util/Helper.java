@@ -497,7 +497,7 @@ public class Helper {
         Tag term = tag.get(tagName);
         
         if (term instanceof StringTag) {
-            String id = ((StringTag) term).getAsString();
+            String id = ((StringTag) term).value();
             return dimIdToKey(id);
         }
         
@@ -613,7 +613,7 @@ public class Helper {
         return new Vec3(
             compoundTag.getDoubleOr(name + "X", 0D),
             compoundTag.getDoubleOr(name + "Y", 0D),
-            compoundTag.getDouble(name + "Z")
+            compoundTag.getDoubleOr(name + "Z", 0D)
         );
     }
     
@@ -637,7 +637,7 @@ public class Helper {
         return new BlockPos(
             compoundTag.getIntOr(name + "X", 0),
             compoundTag.getIntOr(name + "Y", 0),
-            compoundTag.getInt(name + "Z")
+            compoundTag.getIntOr(name + "Z", 0)
         );
     }
     
@@ -656,7 +656,7 @@ public class Helper {
             return new DQuaternion(
                 compoundTag.getDoubleOr(name + "X", 0D),
                 compoundTag.getDoubleOr(name + "Y", 0D),
-                compoundTag.getDouble(name + "Z"),
+                compoundTag.getDoubleOr(name + "Z", 0D),
                 compoundTag.getDouble(name + "W")
             );
         }
@@ -1448,7 +1448,7 @@ public class Helper {
                 return new Vec3(
                     listTag.getDoubleOr(0, 0D),
                     listTag.getDoubleOr(1, 0D),
-                    listTag.getDouble(2)
+                    listTag.getDoubleOr(2, 0D)
                 );
             }
         }

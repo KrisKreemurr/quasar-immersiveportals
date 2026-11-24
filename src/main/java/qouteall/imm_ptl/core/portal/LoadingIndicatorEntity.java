@@ -30,7 +30,8 @@ public class LoadingIndicatorEntity extends Entity {
                 .clientTrackingRange(96)
                 .updateInterval(20);
         builder.dimensions = EntityDimensions.fixed(1, 1);
-        return builder.build("");
+        return builder.build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE,
+            net.minecraft.resources.Identifier.fromNamespaceAndPath("immersive_portals", "loading_indicator")));
     }
     
     private static final EntityDataAccessor<Component> TEXT = SynchedEntityData.defineId(
@@ -115,11 +116,21 @@ public class LoadingIndicatorEntity extends Entity {
     }
     
     @Override
+    protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput input) {
+        readAdditionalSaveData(qouteall.q_misc_util.QuasarNbtBridge.read(input));
+    }
+
+    @Override
+    protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput output) {
+        CompoundTag tag = new CompoundTag();
+        addAdditionalSaveData(tag);
+        qouteall.q_misc_util.QuasarNbtBridge.write(output, tag);
+    }
+
     protected void readAdditionalSaveData(CompoundTag tag) {
     
     }
     
-    @Override
     protected void addAdditionalSaveData(CompoundTag tag) {
     
     }

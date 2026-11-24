@@ -79,7 +79,7 @@ public class Portal extends Entity implements
     PortalLike, IPEntityEventListenableEntity {
     private static final Logger LOGGER = LogUtils.getLogger();
     
-    public static final EntityType<Portal> ENTITY_TYPE = createPortalEntityType(Portal::new);
+    public static final EntityType<Portal> ENTITY_TYPE = createPortalEntityType("portal", Portal::new);
 
     public static class ClientPortalAcceptSyncEvent extends Event {
         public final Portal portal;
@@ -89,7 +89,7 @@ public class Portal extends Entity implements
     }
 
     public static <T extends Portal> EntityType<T> createPortalEntityType(
-        EntityType.EntityFactory<T> constructor
+        String id, EntityType.EntityFactory<T> constructor
     ) {
         EntityType.Builder<T> builder = EntityType.Builder.of(
                 constructor,
@@ -101,7 +101,8 @@ public class Portal extends Entity implements
 
         builder.dimensions = new EntityDimensions(1, 1, .85f, EntityAttachments.createDefault(1, 1), true);
 
-        return builder.build("");
+        return builder.build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE,
+            Identifier.fromNamespaceAndPath("immersive_portals", id)));
     }
     
     private static final AABB NULL_BOX =
@@ -214,6 +215,18 @@ public class Portal extends Entity implements
     }
 
     @Override
+    protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput input) {
+        readAdditionalSaveData(qouteall.q_misc_util.QuasarNbtBridge.read(input));
+    }
+
+    @Override
+    protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput output) {
+        CompoundTag tag = new CompoundTag();
+        addAdditionalSaveData(tag);
+        qouteall.q_misc_util.QuasarNbtBridge.write(output, tag);
+    }
+
+    // Quasar MC: the 1.21.1 CompoundTag save code, now called through the ValueInput/ValueOutput bridge above.
     protected void readAdditionalSaveData(CompoundTag compoundTag) {
         width = compoundTag.getDoubleOr("width", 0D);
         height = compoundTag.getDoubleOr("height", 0D);
@@ -346,7 +359,6 @@ public class Portal extends Entity implements
         updateCache();
     }
     
-    @Override
     protected void addAdditionalSaveData(CompoundTag compoundTag) {
         compoundTag.putDouble("width", width);
         compoundTag.putDouble("height", height);
@@ -935,7 +947,7 @@ public class Portal extends Entity implements
     }
     
     @Override
-    protected @NotNull AABB makeBoundingBox() {
+    protected @NotNull AABB makeBoundingBox(Vec3 quasarPos) {
         if (axisW == null) {
             // it may be called when the portal is not yet initialized
             boundingBoxCache = null;

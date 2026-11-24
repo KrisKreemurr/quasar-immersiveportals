@@ -505,12 +505,12 @@ public class IntBox {
             new BlockPos(
                 tag.getIntOr("lX", 0),
                 tag.getIntOr("lY", 0),
-                tag.getInt("lZ")
+                tag.getIntOr("lZ", 0)
             ),
             new BlockPos(
                 tag.getIntOr("hX", 0),
                 tag.getIntOr("hY", 0),
-                tag.getInt("hZ")
+                tag.getIntOr("hZ", 0)
             )
         );
     }

@@ -49,7 +49,7 @@ public class PortalPlaceholderBlock extends Block {
     
     public static final PortalPlaceholderBlock instance = new PortalPlaceholderBlock(
         Properties.of()
-            .noCollission()
+            .noCollision()
             .sound(SoundType.GLASS)
             .strength(1.0f, 0)
             .noOcclusion()

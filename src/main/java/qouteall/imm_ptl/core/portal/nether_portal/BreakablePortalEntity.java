@@ -143,7 +143,7 @@ public abstract class BreakablePortalEntity extends Portal {
     
     private BreakablePortalEntity getReversePortal() {
         
-        ServerLevel world = getServer().getLevel(getDestDim());
+        ServerLevel world = level().getServer().getLevel(getDestDim());
         Entity entity = world.getEntity(reversePortalId);
         if (entity instanceof BreakablePortalEntity) {
             return (BreakablePortalEntity) entity;
@@ -241,7 +241,7 @@ public abstract class BreakablePortalEntity extends Portal {
             reversePortal.shouldBreakPortal = true;
         }
         else {
-            ServerTaskList.of(getServer()).addTask(MyTaskList.withRetryNumberLimit(
+            ServerTaskList.of(level().getServer()).addTask(MyTaskList.withRetryNumberLimit(
                 30,
                 () -> {
                     if (this.isRemoved()) {

@@ -55,7 +55,7 @@ public class MyNbtTextFormatter
     
     @Override
     public void visitString(StringTag element) {
-        String string = StringTag.quoteAndEscape(element.getAsString());
+        String string = StringTag.quoteAndEscape(element.value());
         String string2 = string.substring(0, 1);
         MutableComponent text = Component.literal(string.substring(1, string.length() - 1)).withStyle(STRING_COLOR);
         this.result = Component.literal(string2).append(text).append(string2);

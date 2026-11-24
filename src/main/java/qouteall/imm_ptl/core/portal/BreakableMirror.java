@@ -29,7 +29,7 @@ import java.util.function.Predicate;
 public class BreakableMirror extends Mirror {
     
     public static final EntityType<BreakableMirror> ENTITY_TYPE =
-        createPortalEntityType(BreakableMirror::new);
+        createPortalEntityType("breakable_mirror", BreakableMirror::new);
     
     @Nullable
     public IntBox wallArea;
@@ -48,12 +48,12 @@ public class BreakableMirror extends Mirror {
             wallArea = new IntBox(
                 new BlockPos(
                     tag.getIntOr("boxXL", 0),
-                    tag.getInt("boxYL"),
+                    tag.getIntOr("boxYL", 0),
                     tag.getInt("boxZL")
                 ),
                 new BlockPos(
                     tag.getIntOr("boxXH", 0),
-                    tag.getInt("boxYH"),
+                    tag.getIntOr("boxYH", 0),
                     tag.getInt("boxZH")
                 )
             );
