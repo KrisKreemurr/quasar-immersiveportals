@@ -510,7 +510,7 @@ public final class PortalViewRenderer {
             .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
             .build();
         sampler = RenderSystem.getDevice().createSampler(AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE,
-            FilterMode.LINEAR, FilterMode.LINEAR, 1, OptionalDouble.empty());
+            FilterMode.NEAREST, FilterMode.NEAREST, 1, OptionalDouble.empty()); // crisp pixels (user preference)
     }
 
     // ------------------------------------------------------------------
