@@ -164,9 +164,7 @@ public final class PortalViewRenderer {
             // only the part of the screen the portal covers: its NDC rectangle (x0, y0, x1, y1)
             float[] rect = screenRect(mainViewProj, main.pos, portal);
             if (rect == null) continue; // off screen
-            int rw = Math.max(1, (int) Math.ceil((rect[2] - rect[0]) * 0.5f * w));
-            int rh = Math.max(1, (int) Math.ceil((rect[3] - rect[1]) * 0.5f * h));
-            Target t = target(i, device, rw, rh);
+            Target t = target(i, device, w, h);
             
             CameraRenderState virtual = virtualCamera(main, portal, rect);
             if (virtual == null) continue;
@@ -250,8 +248,11 @@ public final class PortalViewRenderer {
         sub.setRow(0, new Vector4f(row0).sub(new Vector4f(row3).mul(cx)).div(hx));
         sub.setRow(1, new Vector4f(row1).sub(new Vector4f(row3).mul(cy)).div(hy));
         
-        Matrix4f proj = obliqueReverseZ(sub, clip);
-        if (proj == null) {
+        // the picture uses the full-screen projection (the composite is pixel for pixel); only culling is narrowed
+        // to the portal's screen rectangle, so terrain that cannot appear inside the portal is never drawn
+        Matrix4f proj = obliqueReverseZ(main.projectionMatrix, clip);
+        Matrix4f cullProj = obliqueReverseZ(sub, clip);
+        if (proj == null || cullProj == null) {
             return null;
         }
 
@@ -269,7 +270,7 @@ public final class PortalViewRenderer {
         vc.isFirstPerson = main.isFirstPerson;
         vc.viewRotationMatrix = view;
         vc.projectionMatrix = proj;
-        Frustum frustum = new Frustum(view, proj);
+        Frustum frustum = new Frustum(view, cullProj);
         frustum.prepare(vPos.x, vPos.y, vPos.z);
         vc.cullFrustum = frustum;
         return vc;
@@ -372,7 +373,7 @@ public final class PortalViewRenderer {
             .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
             .build();
         sampler = RenderSystem.getDevice().createSampler(AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE,
-            FilterMode.LINEAR, FilterMode.LINEAR, 1, OptionalDouble.empty());
+            FilterMode.NEAREST, FilterMode.NEAREST, 1, OptionalDouble.empty());
     }
 
     // ------------------------------------------------------------------
@@ -385,15 +386,11 @@ public final class PortalViewRenderer {
         int width, height;
     }
 
-    private static Target target(int slot, GpuDevice device, int needW, int needH) {
+    private static Target target(int slot, GpuDevice device, int w, int h) {
         Target t = targets[slot];
-        // reuse while big enough and not more than about twice too big (no reallocation as the portal moves a bit)
-        if (t != null && t.width >= needW && t.height >= needH
-            && t.width <= needW * 2 + 64 && t.height <= needH * 2 + 64) {
+        if (t != null && t.width == w && t.height == h) {
             return t;
         }
-        int w = (needW + 63) / 64 * 64;
-        int h = (needH + 63) / 64 * 64;
         if (t != null) {
             t.colorView.close();
             t.depthView.close();
