@@ -51,7 +51,6 @@ import qouteall.imm_ptl.core.ducks.IEClientWorld;
 import qouteall.imm_ptl.core.ducks.IEEntity;
 import qouteall.imm_ptl.core.ducks.IEWorldRenderer;
 import qouteall.imm_ptl.core.platform_specific.IPConfig;
-import qouteall.imm_ptl.core.platform_specific.IPConfigGUI;
 import qouteall.imm_ptl.core.platform_specific.O_O;
 import qouteall.imm_ptl.core.portal.Portal;
 import qouteall.imm_ptl.core.render.ForceMainThreadRebuild;
@@ -392,7 +391,7 @@ public class ClientDebugCommand {
             .executes(context -> {
                 Minecraft.getInstance().execute(() -> {
                     ClientWorldLoader.disposeRenderHelpers();
-                    Minecraft.getInstance().levelRenderer.allChanged();
+                    Minecraft.getInstance().levelRenderer.resetLevelRenderData();
                 });
                 return 0;
             })
@@ -405,7 +404,7 @@ public class ClientDebugCommand {
                 Minecraft client = Minecraft.getInstance();
                 
                 IPGlobal.CLIENT_TASK_LIST.addTask(MyTaskList.oneShotTask(() -> {
-                    client.setScreen(IPConfigGUI.createClothConfigScreen(null));
+                    // Quasar MC: no config screen (Cloth Config is not in the pack); edit config/immersive_portals.json
                 }));
                 return 0;
             })

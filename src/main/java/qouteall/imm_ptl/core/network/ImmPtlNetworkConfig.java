@@ -193,7 +193,7 @@ public class ImmPtlNetworkConfig {
                 event.register(new ImmPtlConfigurationTask());
             }
             else {
-                if (FMLEnvironment.dist.isDedicatedServer()) {
+                if (FMLEnvironment.getDist().isDedicatedServer()) {
                     if (IPConfig.getConfig().serverRejectClientWithoutImmPtl) {
                         // cannot use translation key here
                         // because the translation does not exist on client without the mod

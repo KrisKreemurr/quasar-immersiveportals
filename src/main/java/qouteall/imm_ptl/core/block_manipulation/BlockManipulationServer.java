@@ -188,7 +188,7 @@ public class BlockManipulationServer {
             Validate.notNull(world, "missing %s", dimension.identifier());
             
             withRedirect(
-                new Context(world, packet.getHitResult()),
+                new Context(world, packet.hitResult()),
                 () -> {
                     doProcessUseItemOn(world, player, packet);
                 }
@@ -233,9 +233,9 @@ public class BlockManipulationServer {
         if (isAttackingAction(action)) {
             player.gameMode.handleBlockBreakAction(
                 blockPos, action, packet.getDirection(),
-                world.getMaxY(), packet.getSequence()
+                world.getMaxY(), packet.sequence()
             );
-            player.connection.ackBlockChangesUpTo(packet.getSequence());
+            player.connection.ackBlockChangesUpTo(packet.sequence());
         }
     }
     
@@ -252,9 +252,9 @@ public class BlockManipulationServer {
     private static void doProcessUseItemOn(
         ServerLevel world, ServerPlayer player, ServerboundUseItemOnPacket packet
     ) {
-        player.connection.ackBlockChangesUpTo(packet.getSequence());
-        InteractionHand hand = packet.getHand();
-        BlockHitResult blockHitResult = packet.getHitResult();
+        player.connection.ackBlockChangesUpTo(packet.sequence());
+        InteractionHand hand = packet.hand();
+        BlockHitResult blockHitResult = packet.hitResult();
         ResourceKey<Level> dimension = world.dimension();
         
         ItemStack itemStack = player.getItemInHand(hand);
@@ -279,8 +279,8 @@ public class BlockManipulationServer {
                 hand,
                 blockHitResult
             );
-            if (actionResult.shouldSwing()) {
-                player.swing(hand, true);
+            if (actionResult instanceof InteractionResult.Success success && success.shouldSwing()) {
+                player.swingAndResetAttackStrength(hand, itemStack.getInteractAnimation(), true);
             }
         }
         

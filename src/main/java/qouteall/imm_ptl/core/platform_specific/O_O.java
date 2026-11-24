@@ -81,7 +81,7 @@ public class O_O {
     }
     
     public static boolean isDedicatedServer() {
-        return FMLEnvironment.dist == Dist.DEDICATED_SERVER;
+        return FMLEnvironment.getDist() == Dist.DEDICATED_SERVER;
     }
     
     public static void postPortalSpawnEventForge(PortalGenInfo info) {
@@ -261,6 +261,6 @@ public class O_O {
     }
     
     public static boolean isDevEnv() {
-        return !FMLEnvironment.production;
+        return false /* Quasar MC: never a dev environment */;
     }
 }

@@ -31,7 +31,7 @@ public class PeripheralModEntry {
 
         PeripheralModMain.init();
 
-        if (FMLEnvironment.dist.isClient()) {
+        if (FMLEnvironment.getDist().isClient()) {
             new PeripheralModEntryClient().onInitializeClient();
         }
     }

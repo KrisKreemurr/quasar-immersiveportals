@@ -161,9 +161,6 @@ public class LoadingIndicatorEntity extends Entity {
     
     //@OnlyIn(Dist.CLIENT)
     private void showMessageClient() {
-        Gui inGameHud = Minecraft.getInstance().gui;
-        inGameHud.setOverlayMessage(
-            getText(), false
-        );
+        if (Minecraft.getInstance().player != null) Minecraft.getInstance().player.sendOverlayMessage(getText());
     }
 }

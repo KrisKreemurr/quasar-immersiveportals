@@ -525,16 +525,10 @@ public class CollisionHelper {
     //@OnlyIn(Dist.CLIENT)
     private static void updateClientStagnateStatus() {
         if (thisTickStagnate && lastTickStagnate) {
-            Minecraft.getInstance().gui.setOverlayMessage(
-                Component.translatable("imm_ptl.stagnate_movement"),
-                false
-            );
+            if (Minecraft.getInstance().player != null) Minecraft.getInstance().player.sendOverlayMessage(Component.translatable("imm_ptl.stagnate_movement"));
         }
         else if (!thisTickStagnate && lastTickStagnate) {
-            Minecraft.getInstance().gui.setOverlayMessage(
-                Component.literal(""),
-                false
-            );
+            if (Minecraft.getInstance().player != null) Minecraft.getInstance().player.sendOverlayMessage(Component.literal(""));
         }
         
         lastTickStagnate = thisTickStagnate;

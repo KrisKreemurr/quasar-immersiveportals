@@ -1,0 +1,99 @@
+    private static ClientLevel createSecondaryClientWorld(ResourceKey<Level> dimension) {
+        Validate.notNull(CLIENT.player, "player is null");
+        Validate.isTrue(CLIENT.isSameThread(), "not on client thread");
+        
+        Set<ResourceKey<Level>> dimIds = getServerDimensions();
+        if (!dimIds.contains(dimension)) {
+            throw new RuntimeException("Cannot create invalid client dimension " + dimension.identifier());
+        }
+        
+        isCreatingClientWorld = true;
+        
+        net.minecraft.util.profiling.Profiler.get().push("create_world");
+        
+        int chunkLoadDistance = 3; // my own chunk manager doesn't need it
+        
+        LevelRenderer worldRenderer = new LevelRenderer(
+            CLIENT,
+            CLIENT.getEntityRenderDispatcher(),
+            CLIENT.getBlockEntityRenderDispatcher(),
+            CLIENT.renderBuffers()
+        );
+        
+        ClientLevel newWorld;
+        try {
+            ClientPacketListener mainNetHandler = CLIENT.player.connection;
+            assert CLIENT.level != null;
+            Map<String, MapItemSavedData> mapData = ((IEClientLevel_Accessor) CLIENT.level).ip_getMapData();
+
+            Validate.notNull(
+                dimIdToDimTypeId, "dimension type mapping is missing"
+            );
+            ResourceKey<DimensionType> dimensionTypeKey = dimIdToDimTypeId.get(dimension);
+            
+            if (dimensionTypeKey == null) {
+                throw new IllegalStateException(
+                    "Cannot find dimension type for %s in %s"
+                        .formatted(dimension.identifier(), dimIdToDimTypeId)
+                );
+            }
+
+            ClientLevel.ClientLevelData currentProperty =
+                (ClientLevel.ClientLevelData) ((IEWorld) CLIENT.level).ip_getLevelData();
+            RegistryAccess registryManager = mainNetHandler.registryAccess();
+            int simulationDistance = CLIENT.level.getServerSimulationDistance();
+            
+            Holder<DimensionType> dimensionType = registryManager
+                .lookupOrThrow(Registries.DIMENSION_TYPE)
+                .getHolderOrThrow(dimensionTypeKey);
+            
+            // currently use a separated level data object
+            // day time is not shared between worlds
+            ClientLevel.ClientLevelData properties = new ClientLevel.ClientLevelData(
+                currentProperty.getDifficulty(),
+                currentProperty.isHardcore(),
+                ((IEClientLevelData) currentProperty).ip_getIsFlat()
+            );
+            newWorld = new ClientLevel(
+                mainNetHandler,
+                properties,
+                dimension,
+                dimensionType,
+                chunkLoadDistance,
+                simulationDistance,// seems that client world does not use this
+                CLIENT::getProfiler,
+                worldRenderer,
+                CLIENT.level.isDebug(),
+                CLIENT.level.getBiomeManager().biomeZoomSeed
+            );
+            
+            // all worlds share the same map data map
+            ((IEClientLevel_Accessor) newWorld).ip_setMapData(mapData);
+
+            // all worlds share the same tick rate manager
+            ((IEClientWorld) newWorld).ip_setTickRateManager(CLIENT.level.tickRateManager());
+
+            worldRenderer.setLevel(newWorld);
+
+            worldRenderer.onResourceManagerReload(CLIENT.getResourceManager());
+
+            CLIENT_WORLD_MAP.put(dimension, newWorld);
+            WORLD_RENDERER_MAP.put(dimension, worldRenderer);
+
+            LOGGER.info("Client World Created {}", dimension.identifier());
+        }
+        catch (Exception e) {
+            throw new IllegalStateException(
+                "Creating Client World " + dimension.identifier() + " " + CLIENT_WORLD_MAP.keySet(),
+                e
+            );
+        }
+        finally {
+            isCreatingClientWorld = false;
+            net.minecraft.util.profiling.Profiler.get().pop();
+        }
+
+        NeoForge.EVENT_BUS.post(new DimensionEvents.CLIENT_WORLD_LOAD_EVENT(newWorld));
+        
+        return newWorld;
+    }

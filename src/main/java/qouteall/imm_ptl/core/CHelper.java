@@ -42,7 +42,7 @@ public class CHelper {
     
     public static PlayerInfo getClientPlayerListEntry() {
         return Minecraft.getInstance().getConnection().getPlayerInfo(
-            Minecraft.getInstance().player.getGameProfile().getId()
+            Minecraft.getInstance().player.getGameProfile().id()
         );
     }
     
@@ -89,7 +89,7 @@ public class CHelper {
     }
     
     public static void printChat(Component text) {
-        Minecraft.getInstance().gui.getChat().addMessage(text);
+        if (Minecraft.getInstance().player != null) Minecraft.getInstance().player.sendSystemMessage(text);
     }
     
     public static void openLinkConfirmScreen(
@@ -101,7 +101,8 @@ public class CHelper {
             (result) -> {
                 if (result) {
                     try {
-                        Util.getPlatform().openUri(new URI(link));
+                        new URI(link); // Quasar MC: 26.3 removed OS.openUri; copy the link instead
+                        Minecraft.getInstance().keyboardHandler.setClipboard(link);
                     }
                     catch (URISyntaxException e) {
                         e.printStackTrace();
@@ -114,7 +115,7 @@ public class CHelper {
     }
     
     public static Vec3 getCurrentCameraPos() {
-        return Minecraft.getInstance().gameRenderer.mainCamera().getPosition();
+        return Minecraft.getInstance().gameRenderer.mainCamera().position();
     }
     
     public static Iterable<Entity> getWorldEntityList(Level world) {

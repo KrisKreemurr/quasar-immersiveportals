@@ -235,8 +235,8 @@ public class McHelper {
     @SuppressWarnings("JavadocReference")
     @IPVanillaCopy
     public static int getPlayerLoadDistance(ServerPlayer player) {
-        assert player.level().level().getServer() != null;
-        int loadDistanceOnServer = getLoadDistanceOnServer(player.level().level().getServer());
+        assert player.level().getServer() != null;
+        int loadDistanceOnServer = getLoadDistanceOnServer(player.level().getServer());
         return Mth.clamp(player.requestedViewDistance(), 2, loadDistanceOnServer);
     }
     
@@ -314,10 +314,7 @@ public class McHelper {
         // minecarts, boats and LivingEntity use position interpolation
         // don't make interpolate, or it may interpolate into unloaded chunks
         vehicle.setPos(newVehiclePos.x(), newVehiclePos.y(), newVehiclePos.z());
-        vehicle.lerpTo(
-            newVehiclePos.x(), newVehiclePos.y(), newVehiclePos.z(),
-            vehicle.getYRot(), vehicle.getXRot(), 0
-        );
+        vehicle.moveOrInterpolateTo(newVehiclePos, vehicle.getYRot(), vehicle.getXRot());
         
         McHelper.setPosAndLastTickPos(
             vehicle, newVehiclePos, newVehicleLastTickPos
@@ -389,12 +386,30 @@ public class McHelper {
     }
     
     
+    /** Quasar MC: entity NBT through 26.x's ValueOutput (the CompoundTag the 1.21.1 code expects). */
+    public static CompoundTag saveEntityNbt(net.minecraft.world.entity.Entity entity) {
+        net.minecraft.world.level.storage.TagValueOutput out = net.minecraft.world.level.storage.TagValueOutput.createWithContext(
+            net.minecraft.util.ProblemReporter.DISCARDING, entity.level().registryAccess());
+        entity.saveWithoutId(out);
+        return out.buildResult();
+    }
+
+    /** Quasar MC: load entity NBT through 26.x's ValueInput. */
+    public static void loadEntityNbt(net.minecraft.world.entity.Entity entity, CompoundTag tag) {
+        entity.load(net.minecraft.world.level.storage.TagValueInput.create(
+            net.minecraft.util.ProblemReporter.DISCARDING, entity.level().registryAccess(), tag));
+    }
+
     public static Portal copyEntity(Portal portal) {
         Portal newPortal = ((Portal) portal.getType().create(portal.level(), EntitySpawnReason.COMMAND));
         
         Validate.notNull(newPortal);
         
-        newPortal.load(portal.saveWithoutId(new CompoundTag()));
+        net.minecraft.world.level.storage.TagValueOutput quasarOut = net.minecraft.world.level.storage.TagValueOutput.createWithContext(
+            net.minecraft.util.ProblemReporter.DISCARDING, portal.level().registryAccess());
+        portal.saveWithoutId(quasarOut);
+        newPortal.load(net.minecraft.world.level.storage.TagValueInput.create(
+            net.minecraft.util.ProblemReporter.DISCARDING, portal.level().registryAccess(), quasarOut.buildResult()));
         return newPortal;
     }
     
@@ -416,9 +431,7 @@ public class McHelper {
     
     public static MutableComponent getLinkText(String link) {
         return Component.literal(link).withStyle(
-            style -> style.withClickEvent(new ClickEvent(
-                ClickEvent.Action.OPEN_URL, link
-            )).withUnderlined(true)
+            style -> style.withClickEvent(new ClickEvent.OpenUrl(java.net.URI.create(link))).withUnderlined(true)
         );
     }
     
@@ -427,8 +440,8 @@ public class McHelper {
     }
     
     public static void invokeCommandAs(Entity commandSender, List<String> commandList) {
-        CommandSourceStack commandSource = commandSender.createCommandSourceStack().withPermission(2).withSuppressedOutput();
-        MinecraftServer server = commandSender.level().level().getServer();
+        CommandSourceStack commandSource = commandSender.createCommandSourceStackForNameResolution((net.minecraft.server.level.ServerLevel) commandSender.level()).withPermission(net.minecraft.server.permissions.LevelBasedPermissionSet.GAMEMASTER).withSuppressedOutput();
+        MinecraftServer server = commandSender.level().getServer();
         assert server != null;
         Commands commandManager = server.getCommands();
         
@@ -449,7 +462,7 @@ public class McHelper {
             return;
         }
         
-        entityTracker.broadcastAndSend(packet);
+        ((net.minecraft.server.level.ServerLevel) entity.level()).getChunkSource().sendToTrackingPlayersAndSelf(entity, (Packet) packet);
     }
 
     public static void sendToTrackers(Entity entity, CustomPacketPayload packet) {
@@ -460,7 +473,7 @@ public class McHelper {
             return;
         }
 
-        entityTracker.broadcastAndSend(new ClientboundCustomPayloadPacket(packet));
+        ((net.minecraft.server.level.ServerLevel) entity.level()).getChunkSource().sendToTrackingPlayersAndSelf(entity, new ClientboundCustomPayloadPacket(packet));
     }
     
     //it's a little bit incorrect with corner glass pane

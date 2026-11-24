@@ -230,7 +230,7 @@ public class IPModInfoChecking {
         IPGlobal.CLIENT_TASK_LIST.addTask(MyTaskList.withDelayCondition(
             () -> Minecraft.getInstance().level == null,
             MyTaskList.oneShotTask(() -> {
-                if (IPConfig.getConfig().shouldDisplayWarning("many_mods") && FMLEnvironment.production) {
+                if (IPConfig.getConfig().shouldDisplayWarning("many_mods") && false /* Quasar MC: no mod-count warning */) {
                     List<ModContainer> topLevelMods = ModList.get().getSortedMods(); // TODO @Nick1st Fix this up
 //                    FabricLoader.getInstance().getAllMods().stream()
 //                        .filter(modContainer -> modContainer.getContainingMod().isEmpty()).toList();

@@ -95,7 +95,7 @@ public class MiscHelper {
     }
     
     public static boolean isDedicatedServer() {
-        return FMLLoader.getDist() == Dist.DEDICATED_SERVER;
+        return FMLLoader.getCurrent().getDist() == Dist.DEDICATED_SERVER;
     }
     
     

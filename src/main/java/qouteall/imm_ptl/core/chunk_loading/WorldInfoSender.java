@@ -5,7 +5,6 @@ import net.minecraft.network.protocol.game.ClientboundSetTimePacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
@@ -49,17 +48,8 @@ public class WorldInfoSender {
     public static void sendWorldInfo(ServerPlayer player, ServerLevel world) {
         ResourceKey<Level> remoteDimension = world.dimension();
 
-        PacketRedirection.sendRedirectedMessage(
-                player,
-                remoteDimension,
-                new ClientboundSetTimePacket(
-                        world.getGameTime(),
-                        world.getDayTime(),
-                        world.getGameRules().getBoolean(
-                                GameRules.RULE_DAYLIGHT
-                        )
-                )
-        );
+        // Quasar MC: 26.x replaced the time packet with world clocks; remote-dimension time sync comes with
+        // cross-dimension portals.
 
         /**{@link net.minecraft.client.network.ClientPlayNetworkHandler#onGameStateChange(GameStateChangeS2CPacket)}*/
 
