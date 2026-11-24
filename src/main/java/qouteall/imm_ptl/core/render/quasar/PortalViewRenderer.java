@@ -499,8 +499,11 @@ public final class PortalViewRenderer {
                                   float[] rect, boolean mirrored, GpuTextureView mainColor, GpuTextureView mainDepth, int w, int h) {
         ensurePipeline();
         Vec3 cam = main.pos;
-        // 3 mm toward the viewer: mirrors sit exactly on the glass face, so the picture would z-fight with it
-        Vec3 o = portal.getOriginPos().subtract(cam).add(portal.getNormal().scale(0.003));
+        // Never exactly on the portal plane (a mirror sits on the glass face and would z-fight with it):
+        // mirrors go 3 mm BEHIND the glass face, so the glass texture's own pixels draw over the reflection
+        // (the original mod's look); other portals go 3 mm in front, since they may sit flush on a wall.
+        double nudge = portal instanceof qouteall.imm_ptl.core.portal.Mirror ? -0.003 : 0.003;
+        Vec3 o = portal.getOriginPos().subtract(cam).add(portal.getNormal().scale(nudge));
         Vec3 aw = portal.getAxisW().scale(portal.getWidth() / 2);
         Vec3 ah = portal.getAxisH().scale(portal.getHeight() / 2);
         Vec3 a = o.subtract(aw).subtract(ah);
