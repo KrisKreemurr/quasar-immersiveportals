@@ -72,11 +72,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class PortalViewRenderer {
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    static final int MAX_PORTALS = 2;
+    static final int MAX_PORTALS = 8; // slots allocated on demand
+    /** live settings, tunable with /quasarportals (defaults become config values later) */
+    static volatile int liveLimit = 3;
+    static volatile int renderDistance = 8;
     /** portal view resolution relative to the screen (setting later; scales with on-screen size in milestone 2) */
-    static final float RESOLUTION_SCALE = 0.5f;
+    static volatile float resolutionScale = 0.5f;
     /** redraw each portal view at most every Nth frame, re-pasting the last picture in between (setting later) */
-    static final int MAX_UPDATE_EVERY = 4;
+    static volatile int maxUpdateEvery = 4;
     /** ...but never fewer than this many redraws a second: slower frame rates redraw more often, 60 FPS every frame */
     static final double MIN_UPDATES_PER_SECOND = 60.0;
     private static long viewFrame;
@@ -92,6 +95,7 @@ public final class PortalViewRenderer {
     private static Method mainCameraMethod;
     private static Method drawTerrainMethod;
     private static Method lastSectionsMethod;
+    private static Field renderDistanceField;
     private static boolean failed;
 
     private static final Target[] targets = new Target[MAX_PORTALS];
@@ -113,6 +117,12 @@ public final class PortalViewRenderer {
             catch (NoSuchMethodException ignored) {
                 // older Quasar Meshelium: the F3 line shows no section count
             }
+            try {
+                renderDistanceField = hook.getField("portalRenderDistance");
+            }
+            catch (NoSuchFieldException ignored) {
+                // older Quasar Meshelium: no portal render distance
+            }
             Field after = hook.getField("afterOpaque");
             after.set(null, (Runnable) PortalViewRenderer::renderAll);
             LOGGER.info("[Quasar Portals] live portal views on (Quasar Meshelium found)");
@@ -131,7 +141,7 @@ public final class PortalViewRenderer {
         frameCoverage = 0;
         long t0 = System.nanoTime();
         viewFrame++;
-        // adaptive skip: N = how many frames fit in 1/60 s at the current frame rate, capped at MAX_UPDATE_EVERY
+        // adaptive skip: N = how many frames fit in 1/60 s at the current frame rate, capped at maxUpdateEvery
         if (lastHookNanos != 0) {
             double dt = (t0 - lastHookNanos) / 1e9;
             if (dt > 0 && dt < 0.5) {
@@ -139,7 +149,7 @@ public final class PortalViewRenderer {
             }
         }
         lastHookNanos = t0;
-        updateEvery = Math.max(1, Math.min(MAX_UPDATE_EVERY,
+        updateEvery = Math.max(1, Math.min(maxUpdateEvery,
             (int) Math.floor(1.0 / (MIN_UPDATES_PER_SECOND * avgFrameSeconds))));
         try {
             if (!failed) {
@@ -165,6 +175,9 @@ public final class PortalViewRenderer {
             return;
         }
         Vec3 camPos = main.pos;
+        if (renderDistanceField != null) {
+            renderDistanceField.setInt(null, renderDistance);
+        }
 
         List<Portal> portals = new ArrayList<>();
         for (Entity e : mc.level.entitiesForRendering()) {
@@ -204,7 +217,7 @@ public final class PortalViewRenderer {
                                    int w, int h) throws Exception {
 
         Matrix4f mainViewProj = new Matrix4f(main.projectionMatrix).mul(main.viewRotationMatrix);
-        int n = Math.min(MAX_PORTALS, portals.size());
+        int n = Math.min(Math.min(liveLimit, MAX_PORTALS), portals.size());
         for (int i = 0; i < n; i++) {
             Portal portal = portals.get(i);
             
@@ -213,8 +226,8 @@ public final class PortalViewRenderer {
             if (rect == null) continue; // off screen
             // half resolution (a quarter of the pixels, clears and shading); the composite maps by screen fraction, so
             // the image size does not change the picture's placement
-            Target t = target(i, device, Math.max(1, Math.round(w * RESOLUTION_SCALE)),
-                Math.max(1, Math.round(h * RESOLUTION_SCALE)));
+            Target t = target(i, device, Math.max(1, Math.round(w * resolutionScale)),
+                Math.max(1, Math.round(h * resolutionScale)));
             
             boolean update = !t.valid || t.portalId != portal.getId() || (viewFrame + i) % updateEvery == 0;
             if (update) {

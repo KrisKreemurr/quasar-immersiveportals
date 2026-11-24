@@ -94,6 +94,7 @@ public class IPModMainClient {
 
         NeoForge.EVENT_BUS.addListener(RegisterClientCommandsEvent.class, event -> {
             ClientDebugCommand.register(event.getDispatcher());
+            qouteall.imm_ptl.core.render.quasar.PortalTuneCommand.register(event.getDispatcher());
         });
         
 //        showIntelVideoCardWarning();
