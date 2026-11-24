@@ -206,11 +206,11 @@ public class DimStackManagement {
                             "qouteall.imm_ptl.peripheral.dim_stack.DimStackManagement.RemoteCallables.serverRemoveDimStack"
                         );
                     }
-                    Minecraft.getInstance().setScreen(null);
+                    Minecraft.getInstance().gui.setScreen(null);
                 }
             );
             controller.initializeAsDefault();
-            Minecraft.getInstance().setScreen(controller.view);
+            Minecraft.getInstance().gui.setScreen(controller.view);
         }
         
         public static void serverSetupDimStack(

@@ -66,7 +66,7 @@ public class BlockPortalShape {
         for (int i = 0; i < size / 3; i++) {
             result.add(new BlockPos(
                 list.getIntOr(i * 3, 0),
-                list.getInt(i * 3 + 1),
+                list.getIntOr(i * 3 + 1, 0),
                 list.getInt(i * 3 + 2)
             ));
         }

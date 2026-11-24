@@ -1,5 +1,6 @@
 package qouteall.imm_ptl.core.portal;
 
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -145,7 +146,7 @@ public class EndPortalEntity extends Portal {
         
         Vec3 portalCenter = thisSideBox.getCenter();
         
-        EndPortalEntity portal = EndPortalEntity.ENTITY_TYPE.create(world);
+        EndPortalEntity portal = EndPortalEntity.ENTITY_TYPE.create(world, EntitySpawnReason.COMMAND);
         assert portal != null;
         
         portal.setOriginPos(portalCenter);

@@ -149,7 +149,7 @@ public class DimStackEntryEditScreen extends Screen {
                 
                 editing.entry.bedrockReplacementStr = bedrockBlockField.getValue();
                 
-                Minecraft.getInstance().setScreen(parent);
+                Minecraft.getInstance().gui.setScreen(parent);
                 callback.run();
             }
         ).build();
@@ -287,7 +287,7 @@ public class DimStackEntryEditScreen extends Screen {
     
     @Override
     public void onClose() {
-        Minecraft.getInstance().setScreen(parent);
+        Minecraft.getInstance().gui.setScreen(parent);
     }
     
     @Override

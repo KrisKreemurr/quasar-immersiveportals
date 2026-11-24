@@ -10,7 +10,6 @@ import qouteall.imm_ptl.core.portal.LoadingIndicatorEntity;
 
 public class LoadingIndicatorRenderer {
 
-    public LoadingIndicatorRenderer(EntityRendererProvider.Context context) { super(context); }
 
 
     public void render(

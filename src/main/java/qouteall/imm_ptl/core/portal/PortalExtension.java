@@ -111,19 +111,19 @@ public class PortalExtension {
         }
         
         if (compoundTag.contains("reversePortalId")) {
-            reversePortalId = compoundTag.getUUID("reversePortalId");
+            reversePortalId = compoundTag.read("reversePortalId", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
         }
         else {
             reversePortalId = null;
         }
         if (compoundTag.contains("flippedPortalId")) {
-            flippedPortalId = compoundTag.getUUID("flippedPortalId");
+            flippedPortalId = compoundTag.read("flippedPortalId", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
         }
         else {
             flippedPortalId = null;
         }
         if (compoundTag.contains("parallelPortalId")) {
-            parallelPortalId = compoundTag.getUUID("parallelPortalId");
+            parallelPortalId = compoundTag.read("parallelPortalId", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
         }
         else {
             parallelPortalId = null;
@@ -137,13 +137,13 @@ public class PortalExtension {
         compoundTag.putBoolean("adjustPositionAfterTeleport", adjustPositionAfterTeleport);
         compoundTag.putBoolean("bindCluster", bindCluster);
         if (reversePortalId != null) {
-            compoundTag.putUUID("reversePortalId", reversePortalId);
+            compoundTag.store("reversePortalId", net.minecraft.core.UUIDUtil.CODEC, reversePortalId);
         }
         if (flippedPortalId != null) {
-            compoundTag.putUUID("flippedPortalId", flippedPortalId);
+            compoundTag.store("flippedPortalId", net.minecraft.core.UUIDUtil.CODEC, flippedPortalId);
         }
         if (parallelPortalId != null) {
-            compoundTag.putUUID("parallelPortalId", parallelPortalId);
+            compoundTag.store("parallelPortalId", net.minecraft.core.UUIDUtil.CODEC, parallelPortalId);
         }
     }
     

@@ -1,5 +1,6 @@
 package qouteall.imm_ptl.core.portal.nether_portal;
 
+import net.minecraft.world.entity.EntitySpawnReason;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -129,7 +130,7 @@ public class NetherPortalGeneration {
         Vec3 indicatorPos = fromShape.innerAreaBox.getCenterVec();
         
         LoadingIndicatorEntity indicatorEntity =
-            LoadingIndicatorEntity.entityType.create(fromWorld);
+            LoadingIndicatorEntity.entityType.create(fromWorld, EntitySpawnReason.COMMAND);
         indicatorEntity.isValid = true;
         indicatorEntity.setPos(
             indicatorPos.x, indicatorPos.y, indicatorPos.z
@@ -171,7 +172,7 @@ public class NetherPortalGeneration {
             frameSearchingRadius :
             (fromShape.getShapeInnerLength() < 16 ? 1 : 2);
         ChunkLoader chunkLoader = new ChunkLoader(
-            new DimensionalChunkPos(toDimension, new ChunkPos(toPos)), loaderRadius
+            new DimensionalChunkPos(toDimension, ChunkPos.containing(toPos)), loaderRadius
         );
         
         ImmPtlChunkTracking.addGlobalAdditionalChunkLoader(server, chunkLoader);

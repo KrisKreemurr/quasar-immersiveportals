@@ -1,5 +1,6 @@
 package qouteall.imm_ptl.core;
 
+import net.minecraft.world.entity.EntitySpawnReason;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.logging.LogUtils;
@@ -389,7 +390,7 @@ public class McHelper {
     
     
     public static Portal copyEntity(Portal portal) {
-        Portal newPortal = ((Portal) portal.getType().create(portal.level()));
+        Portal newPortal = ((Portal) portal.getType().create(portal.level(), EntitySpawnReason.COMMAND));
         
         Validate.notNull(newPortal);
         
@@ -403,7 +404,7 @@ public class McHelper {
      * Only check whether the region file exists now.
      */
     public static boolean getDoesRegionFileExist(ResourceKey<Level> toDimension, BlockPos toPos) {
-        ChunkPos chunkPos = new ChunkPos(toPos);
+        ChunkPos chunkPos = ChunkPos.containing(toPos);
         
         LevelStorageSource.LevelStorageAccess storageSource = MiscHelper.getServer().storageSource;
         

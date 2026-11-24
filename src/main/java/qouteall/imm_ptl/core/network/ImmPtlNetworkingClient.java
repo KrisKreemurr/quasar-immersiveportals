@@ -1,5 +1,6 @@
 package qouteall.imm_ptl.core.network;
 
+import net.minecraft.world.entity.EntitySpawnReason;
 import de.nick1st.imm_ptl.events.ClientPortalSpawnEvent;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.resources.ResourceKey;
@@ -41,7 +42,7 @@ public abstract class ImmPtlNetworkingClient {
         }
         else {
             // spawn new portal
-            Entity entity = syncPacket.entityType().create(world);
+            Entity entity = syncPacket.entityType().create(world, EntitySpawnReason.COMMAND);
             Validate.notNull(entity, "Entity type is null");
 
             if (!(entity instanceof Portal portal)) {

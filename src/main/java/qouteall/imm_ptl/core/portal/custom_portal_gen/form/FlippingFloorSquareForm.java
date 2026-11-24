@@ -1,5 +1,6 @@
 package qouteall.imm_ptl.core.portal.custom_portal_gen.form;
 
+import net.minecraft.world.entity.EntitySpawnReason;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -186,7 +187,7 @@ public class FlippingFloorSquareForm extends PortalGenForm {
         ServerLevel fromWorld, ServerLevel toWorld,
         BlockPortalShape fromShape, BlockPortalShape toShape
     ) {
-        GeneralBreakablePortal pa = GeneralBreakablePortal.ENTITY_TYPE.create(fromWorld);
+        GeneralBreakablePortal pa = GeneralBreakablePortal.ENTITY_TYPE.create(fromWorld, EntitySpawnReason.COMMAND);
         fromShape.initPortalPosAxisShape(pa, Direction.AxisDirection.POSITIVE);
         
         pa.setDestination(toShape.innerAreaBox.getCenterVec());

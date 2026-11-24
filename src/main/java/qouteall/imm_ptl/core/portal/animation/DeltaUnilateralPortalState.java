@@ -54,7 +54,7 @@ public record DeltaUnilateralPortalState(
             tag.contains("rotation") ? DQuaternion.fromTag(tag.getCompoundOrEmpty("rotation")) : null,
             tag.contains("sizeScalingX") ? new Vec3(
                 tag.getDoubleOr("sizeScalingX", 0D),
-                tag.getDouble("sizeScalingY"),
+                tag.getDoubleOr("sizeScalingY", 0D),
                 tag.contains("sizeScalingZ") ? tag.getDouble("sizeScalingZ") : 1
             ) : null
         );

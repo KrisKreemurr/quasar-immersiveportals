@@ -1,5 +1,6 @@
 package qouteall.imm_ptl.core.portal;
 
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -170,7 +171,7 @@ public class BreakableMirror extends Mirror {
             return null;
         }
         
-        BreakableMirror breakableMirror = BreakableMirror.ENTITY_TYPE.create(world);
+        BreakableMirror breakableMirror = BreakableMirror.ENTITY_TYPE.create(world, EntitySpawnReason.COMMAND);
         assert breakableMirror != null;
         double distanceToCenter = isPane ? (1.0 / 16) : 0.5;
         

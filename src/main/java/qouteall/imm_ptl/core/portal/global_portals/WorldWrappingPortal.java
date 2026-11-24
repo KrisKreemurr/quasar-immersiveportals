@@ -1,5 +1,6 @@
 package qouteall.imm_ptl.core.portal.global_portals;
 
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -59,7 +60,7 @@ public class WorldWrappingPortal extends GlobalTrackedPortal {
         int zoneId,
         boolean isInward
     ) {
-        WorldWrappingPortal portal = WorldWrappingPortal.ENTITY_TYPE.create(serverWorld);
+        WorldWrappingPortal portal = WorldWrappingPortal.ENTITY_TYPE.create(serverWorld, EntitySpawnReason.COMMAND);
         portal.isInward = isInward;
         portal.zoneId = zoneId;
         

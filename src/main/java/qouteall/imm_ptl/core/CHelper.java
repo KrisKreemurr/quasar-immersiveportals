@@ -107,7 +107,7 @@ public class CHelper {
                         e.printStackTrace();
                     }
                 }
-                client.setScreen(parent);
+                client.gui.setScreen(parent);
             },
             link, true
         ));

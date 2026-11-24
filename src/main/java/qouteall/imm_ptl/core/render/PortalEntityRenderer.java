@@ -16,7 +16,7 @@ import qouteall.imm_ptl.core.render.context_management.PortalRendering;
 // QUASAR STUB: generated no-op stand-in; the original lives in src/parked (render rewrite pending).
 
 @OnlyIn(Dist.CLIENT)
-public class PortalEntityRenderer extends EntityRenderer<Portal> {
+public class PortalEntityRenderer {
 
     public PortalEntityRenderer(EntityRendererProvider.Context context) { super(context); }
 

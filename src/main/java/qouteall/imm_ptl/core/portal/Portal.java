@@ -20,7 +20,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.vehicle.AbstractMinecart;
+import net.minecraft.world.entity.vehicle.minecart.AbstractMinecart;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -274,7 +274,7 @@ public class Portal extends Entity implements
         if (compoundTag.contains("rotationA")) {
             setRotationTransformationD(new DQuaternion(
                 compoundTag.getFloatOr("rotationB", 0F),
-                compoundTag.getFloat("rotationC"),
+                compoundTag.getFloatOr("rotationC", 0F),
                 compoundTag.getFloat("rotationD"),
                 compoundTag.getFloat("rotationA")
             ));
@@ -1031,7 +1031,7 @@ public class Portal extends Entity implements
     }
     
     public Direction getApproximateFacingDirection() {
-        return Direction.getNearest(
+        return Direction.getApproximateNearest(
             getNormal().x, getNormal().y, getNormal().z
         );
     }
@@ -1634,7 +1634,7 @@ public class Portal extends Entity implements
         
         Vec3 newGravityVec = transformLocalVecNonScale(oldGravityVec);
         
-        return Direction.getNearest(
+        return Direction.getApproximateNearest(
             newGravityVec.x, newGravityVec.y, newGravityVec.z
         );
     }
@@ -1847,7 +1847,7 @@ public class Portal extends Entity implements
         
         return McHelper.isServerChunkFullyLoaded(
             (ServerLevel) getDestWorld(),
-            new ChunkPos(BlockPos.containing(getDestPos()))
+            ChunkPos.containing(BlockPos.containing(getDestPos()))
         );
     }
     

@@ -1,5 +1,6 @@
 package qouteall.imm_ptl.peripheral.wand;
 
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.server.permissions.Permissions;
 import com.mojang.logging.LogUtils;
 import de.nick1st.imm_ptl.events.ServerCleanupEvent;
@@ -239,7 +240,7 @@ public class PortalWandInteraction {
             }
         }
         
-        Portal portal = Portal.ENTITY_TYPE.create(McHelper.getServerWorld(firstSideDimension));
+        Portal portal = Portal.ENTITY_TYPE.create(McHelper.getServerWorld(firstSideDimension), EntitySpawnReason.COMMAND);
         Validate.notNull(portal);
         portal.setOriginPos(
             firstSideLeftBottom
@@ -822,7 +823,7 @@ public class PortalWandInteraction {
             return;
         }
         
-        Portal portal = Portal.ENTITY_TYPE.create(player.level());
+        Portal portal = Portal.ENTITY_TYPE.create(player.level(), EntitySpawnReason.COMMAND);
         assert portal != null;
         
         portal.readPortalDataFromNbt(copyingSession.portalData);

@@ -55,11 +55,9 @@ public class MyRenderHelper {
     public static class DrawFbInAreaShader {
 
         public DrawFbInAreaShader(
-        ) throws IOException { super(factory, name, format); }
 
         void loadWidthHeight(int w, int h) {}
 
-        protected DrawFbInAreaShader() {}
 
     }
 

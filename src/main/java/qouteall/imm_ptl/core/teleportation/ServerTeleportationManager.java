@@ -1,5 +1,6 @@
 package qouteall.imm_ptl.core.teleportation;
 
+import net.minecraft.world.entity.EntitySpawnReason;
 import com.mojang.logging.LogUtils;
 import de.nick1st.imm_ptl.events.DimensionEvents;
 import de.nick1st.imm_ptl.events.ServerPortalTickEvent;
@@ -637,7 +638,7 @@ public class ServerTeleportationManager {
         if (recreateEntity) {
             Entity oldEntity = entity;
             Entity newEntity;
-            newEntity = entity.getType().create(toWorld);
+            newEntity = entity.getType().create(toWorld, EntitySpawnReason.COMMAND);
             if (newEntity == null) {
                 return oldEntity;
             }
@@ -685,7 +686,7 @@ public class ServerTeleportationManager {
         
         Entity oldEntity = entity;
         Entity newEntity;
-        newEntity = entity.getType().create(toWorld);
+        newEntity = entity.getType().create(toWorld, EntitySpawnReason.COMMAND);
         Validate.isTrue(newEntity != null);
         
         newEntity.restoreFrom(oldEntity);
