@@ -17,8 +17,11 @@ layout(location = 0) out vec4 fragColor;
 
 void main()
 {
-    // screen pixel -> NDC (the axis convention the view was rendered in) -> position inside the portal rectangle
-    vec2 ndc = gl_FragCoord.xy / uScreen.xy * 2.0 - 1.0;
-    vec2 uv = (ndc - uRect.xy) / (uRect.zw - uRect.xy);
+    // 26.x projects with NDC +y = up and flips rows when rasterizing, so pixel row 0 (top) is NDC y = +1, and the
+    // portal image's row 0 is the top of its rectangle (y1). x runs left to right in both.
+    vec2 p = gl_FragCoord.xy / uScreen.xy;
+    vec2 ndc = vec2(p.x * 2.0 - 1.0, 1.0 - p.y * 2.0);
+    vec2 uv = vec2((ndc.x - uRect.x) / (uRect.z - uRect.x),
+                   (uRect.w - ndc.y) / (uRect.w - uRect.y));
     fragColor = vec4(texture(PortalColor, uv).rgb, 1.0);
 }
