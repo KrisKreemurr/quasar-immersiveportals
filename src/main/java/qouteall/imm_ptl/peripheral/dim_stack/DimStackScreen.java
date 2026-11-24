@@ -20,7 +20,6 @@ public class DimStackScreen extends Screen {
 
     private static Logger LOGGER;
     private DimStackGuiController controller;
-    .jetbrains.annotations.Nullable
     public Screen parent;
     private Button finishButton;
     private Button toggleButton;
