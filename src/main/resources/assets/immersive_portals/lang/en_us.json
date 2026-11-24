@@ -313,5 +313,7 @@
   "quasar_portals.options.entities": "Entities Through Portals",
   "quasar_portals.options.entities.tooltip": "Show mobs, players (including you, in mirrors) and items in portal views and mirrors.",
   "quasar_portals.options.entity_distance": "Portal Entity Distance",
-  "quasar_portals.options.entity_distance.tooltip": "How far from the portal camera entities are shown in portal views. Shorter is cheaper; far mobs are tiny in a portal anyway."
+  "quasar_portals.options.entity_distance.tooltip": "How far from the portal camera entities are shown in portal views. Shorter is cheaper; far mobs are tiny in a portal anyway.",
+  "quasar_portals.options.occlusion": "Hide Portals Behind Walls",
+  "quasar_portals.options.occlusion.tooltip": "Portals the game can't see from where you are (other rooms, underground, behind hills) stop redrawing and don't use a live slot. Turn off only if a portal ever freezes while you can see it."
 }

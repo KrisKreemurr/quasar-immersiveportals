@@ -30,6 +30,8 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.core.SectionPos;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -149,6 +151,7 @@ public final class PortalViewRenderer {
         lastPixels = 0;
         frameTerrainNs = 0;
         frameSkyNs = 0;
+        frameHidden = 0;
         frameEntityNs = 0;
         PortalEntities.beginFrame();
         frameSections = 0;
@@ -177,7 +180,7 @@ public final class PortalViewRenderer {
         PortalEntities.endFrame();
         drawnLastFrame.clear();
         drawnLastFrame.addAll(drawnThisFrame);
-        Stats.frame(System.nanoTime() - t0, frameTerrainNs, frameSkyNs, frameEntityNs, PortalEntities.lastCount, drawnThisFrame.size(), frameSections, frameCoverage);
+        Stats.frame(System.nanoTime() - t0, frameTerrainNs, frameSkyNs, frameEntityNs, PortalEntities.lastCount, frameHidden, drawnThisFrame.size(), frameSections, frameCoverage);
     }
 
     private static void renderPortals() throws Exception {
@@ -206,7 +209,11 @@ public final class PortalViewRenderer {
         if (portals.isEmpty()) {
             return;
         }
-        portals.sort(Comparator.comparingDouble(p -> p.getDistanceToNearestPointInPortal(camPos)));
+        // occlusion: a portal whose chunk sections the game's visibility search (caves, walls, hills) did not reach is
+        // hidden; hidden portals sort after visible ones so they never take a live slot from a visible portal
+        updateOcclusion(mc, portals, camPos);
+        portals.sort(Comparator.<Portal>comparingInt(p -> isHidden(p) ? 1 : 0)
+            .thenComparingDouble(p -> p.getDistanceToNearestPointInPortal(camPos)));
 
         RenderTarget mainTarget = mc.gameRenderer.mainRenderTarget();
         int w = mainTarget.width, h = mainTarget.height;
@@ -227,6 +234,62 @@ public final class PortalViewRenderer {
         }
     }
     
+    // ------------------------------------------------------------------
+    // occlusion (Video Settings → Portals → Hide Portals Behind Walls)
+    // ------------------------------------------------------------------
+
+    /** frames in a row each portal's sections were missing from the visibility search; hidden from 3 on */
+    private static final it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap missingFrames = new it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap();
+    private static final it.unimi.dsi.fastutil.longs.LongOpenHashSet visibleSectionKeys = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+    static int frameHidden;
+
+    private static boolean isHidden(Portal p) {
+        return missingFrames.get(p.getId()) >= 3;
+    }
+
+    private static void updateOcclusion(Minecraft mc, List<Portal> portals, Vec3 camPos) {
+        if (!PortalSettings.occlusion) {
+            missingFrames.clear();
+            return;
+        }
+        var visible = mc.levelRenderer.visibleSections();
+        if (visible == null || visible.isEmpty()) {
+            missingFrames.clear(); // no visibility information: treat everything as visible
+            return;
+        }
+        visibleSectionKeys.clear();
+        for (int i = 0, n = visible.size(); i < n; i++) {
+            visibleSectionKeys.add(visible.get(i).getSectionNode());
+        }
+        it.unimi.dsi.fastutil.ints.IntOpenHashSet seen = new it.unimi.dsi.fastutil.ints.IntOpenHashSet();
+        for (Portal p : portals) {
+            int id = p.getId();
+            seen.add(id);
+            boolean reached = p.getDistanceToNearestPointInPortal(camPos) < 8.0; // right next to you: always drawn
+            if (!reached) {
+                // the portal's sections plus a one-section margin (a portal in open air can sit in empty sections)
+                net.minecraft.world.phys.AABB box = p.getBoundingBox().inflate(1.0);
+                int x0 = SectionPos.blockToSectionCoord(Mth.floor(box.minX)) - 1, x1 = SectionPos.blockToSectionCoord(Mth.floor(box.maxX)) + 1;
+                int y0 = SectionPos.blockToSectionCoord(Mth.floor(box.minY)) - 1, y1 = SectionPos.blockToSectionCoord(Mth.floor(box.maxY)) + 1;
+                int z0 = SectionPos.blockToSectionCoord(Mth.floor(box.minZ)) - 1, z1 = SectionPos.blockToSectionCoord(Mth.floor(box.maxZ)) + 1;
+                search:
+                for (int x = x0; x <= x1; x++) {
+                    for (int y = y0; y <= y1; y++) {
+                        for (int z = z0; z <= z1; z++) {
+                            if (visibleSectionKeys.contains(SectionPos.asLong(x, y, z))) {
+                                reached = true;
+                                break search;
+                            }
+                        }
+                    }
+                }
+            }
+            if (reached) missingFrames.remove(id);
+            else missingFrames.addTo(id, 1);
+        }
+        missingFrames.keySet().removeIf(id -> !seen.contains(id));
+    }
+
     private static void renderEach(List<Portal> portals, CameraRenderState main, GpuDevice device,
                                    CommandEncoder encoder, GpuTextureView mainColor, GpuTextureView mainDepth,
                                    int w, int h) throws Exception {
@@ -245,6 +308,13 @@ public final class PortalViewRenderer {
                 Math.max(1, Math.round(h * resolutionScale)));
             
             boolean update = !t.valid || t.portalId != portal.getId() || (viewFrame + i) % updateEvery == 0;
+            if (isHidden(portal)) {
+                // behind something: no redraw. Keep pasting its last picture (depth-tested, so invisible while it
+                // really is hidden; if the visibility search was ever wrong, a stale view shows instead of nothing)
+                frameHidden++;
+                if (!t.valid || t.portalId != portal.getId()) continue;
+                update = false;
+            }
             if (update) {
                 CameraRenderState virtual = virtualCamera(main, portal, rect);
                 if (virtual == null) continue;
@@ -336,7 +406,7 @@ public final class PortalViewRenderer {
         private static long frameNo;
         private static final long[] slotFrame = new long[RING];
         
-        private static long sumCpu, sumTerrain, sumSky, sumEntity, sumEntities, sumGpu, sumSections, frames, gpuFrames, liveFrames;
+        private static long sumCpu, sumTerrain, sumSky, sumEntity, sumEntities, maxHidden, sumGpu, sumSections, frames, gpuFrames, liveFrames;
         private static double sumCoverage;
         private static int maxLive;
         private static long windowStart = System.nanoTime();
@@ -384,13 +454,14 @@ public final class PortalViewRenderer {
             }
         }
         
-        static void frame(long cpuNs, long terrainNs, long skyNs, long entityNs, int entities, int live, int sections, float coverage) {
+        static void frame(long cpuNs, long terrainNs, long skyNs, long entityNs, int entities, int hidden, int live, int sections, float coverage) {
             frames++;
             sumCpu += cpuNs;
             sumTerrain += terrainNs;
             sumSky += skyNs;
             sumEntity += entityNs;
             sumEntities += entities;
+            maxHidden = Math.max(maxHidden, hidden);
             sumSections += sections;
             sumCoverage += coverage;
             if (live > 0) liveFrames++;
@@ -403,14 +474,15 @@ public final class PortalViewRenderer {
             else {
                 double f = frames;
                 line = String.format(java.util.Locale.ROOT,
-                    "Portals: %d live (every %d), CPU %.3f ms (terrain %.3f, sky+clouds %.3f, %d entities %.3f), GPU %s, %d sections, %.0f%% of screen",
-                    maxLive, updateEvery, sumCpu / f / 1e6, sumTerrain / f / 1e6, sumSky / f / 1e6, Math.round(sumEntities / f), sumEntity / f / 1e6,
+                    "Portals: %d live, %d hidden (every %d), CPU %.3f ms (terrain %.3f, sky+clouds %.3f, %d entities %.3f), GPU %s, %d sections, %.0f%% of screen",
+                    maxLive, maxHidden, updateEvery, sumCpu / f / 1e6, sumTerrain / f / 1e6, sumSky / f / 1e6, Math.round(sumEntities / f), sumEntity / f / 1e6,
                     gpuFrames > 0 ? String.format(java.util.Locale.ROOT, "%.3f ms", sumGpu / (double) gpuFrames / 1e6) : "n/a",
                     Math.round(sumSections / f), sumCoverage / f * 100);
             }
             sumCpu = sumTerrain = sumSky = sumEntity = sumEntities = sumGpu = sumSections = frames = gpuFrames = liveFrames = 0;
             sumCoverage = 0;
             maxLive = 0;
+            maxHidden = 0;
             windowStart = now;
         }
         
