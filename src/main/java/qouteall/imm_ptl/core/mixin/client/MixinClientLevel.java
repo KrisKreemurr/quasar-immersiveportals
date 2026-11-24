@@ -59,11 +59,6 @@ public abstract class MixinClientLevel implements IEClientWorld {
     @Final
     private Minecraft minecraft;
     
-    @Mutable
-    @Shadow
-    @Final
-    private LevelRenderer levelRenderer;
-    
     @Shadow
     @Final
     private EntityTickList tickingEntities;
@@ -100,8 +95,8 @@ public abstract class MixinClientLevel implements IEClientWorld {
     )
     void onConstructed(
         ClientPacketListener clientPacketListener, ClientLevel.ClientLevelData clientLevelData,
-        ResourceKey resourceKey, Holder holder, int loadDistance, int j, Supplier supplier,
-        LevelRenderer levelRenderer, boolean bl, long l, CallbackInfo ci
+        ResourceKey resourceKey, Holder holder, int loadDistance, int j,
+        net.minecraft.client.renderer.extract.LevelExtractor levelExtractor, boolean bl, long l, int seaLevel, CallbackInfo ci
     ) {
         ClientLevel clientWorld = (ClientLevel) (Object) this;
         ClientChunkCache myClientChunkManager =
@@ -161,7 +156,7 @@ public abstract class MixinClientLevel implements IEClientWorld {
     
     @Override
     public void ip_resetWorldRendererRef() {
-        levelRenderer = null;
+        // Quasar MC: client levels hold a LevelExtractor in 26.x, not a LevelRenderer.
     }
     
     @Override

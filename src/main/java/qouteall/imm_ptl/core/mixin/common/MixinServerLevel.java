@@ -33,21 +33,8 @@ public abstract class MixinServerLevel implements IEServerWorld {
     @Final
     private PersistentEntitySectionManager<Entity> entityManager;
     
-    //in vanilla if a dimension has no player and no forced chunks then it will not tick
-    @Redirect(
-        method = "Lnet/minecraft/server/level/ServerLevel;tick(Ljava/util/function/BooleanSupplier;)V",
-        at = @At(
-            value = "INVOKE",
-            target = "Ljava/util/List;isEmpty()Z"
-        )
-    )
-    private boolean redirectIsEmpty(List list) {
-        final ServerLevel this_ = (ServerLevel) (Object) this;
-        if (ImmPtlChunkTracking.shouldLoadDimension(this_.dimension())) {
-            return false;
-        }
-        return list.isEmpty();
-    }
+    // Quasar MC: 26.x keeps a dimension ticking through ticket flags; Immersive Portals' ticket type carries
+    // FLAG_KEEP_DIMENSION_ACTIVE (ImmPtlChunkTickets), replacing the old players.isEmpty() redirect.
     
     // for debug
     @Inject(method = "Lnet/minecraft/server/level/ServerLevel;toString()Ljava/lang/String;", at = @At("HEAD"), cancellable = true)

@@ -151,32 +151,8 @@ public abstract class MixinEntity implements IEEntity, ImmPtlEntityExtension {
         }
     }
     
-    @Redirect(
-        method = "Lnet/minecraft/world/entity/Entity;checkInsideBlocks()V",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/world/entity/Entity;getBoundingBox()Lnet/minecraft/world/phys/AABB;"
-        )
-    )
-    private AABB redirectBoundingBoxInCheckingBlockCollision(Entity entity) {
-        return ip_getActiveCollisionBox(entity.getBoundingBox());
-    }
-    
-    @Inject(
-        method = "checkInsideBlocks",
-        at = @At(
-            value = "INVOKE_ASSIGN",
-            target = "Lnet/minecraft/world/entity/Entity;getBoundingBox()Lnet/minecraft/world/phys/AABB;",
-            shift = At.Shift.AFTER
-        ),
-        locals = LocalCapture.CAPTURE_FAILHARD,
-        cancellable = true
-    )
-    private void onCheckInsideBlocks(CallbackInfo ci, AABB box) {
-        if (box == null) {
-            ci.cancel();
-        }
-    }
+    // Quasar MC: 26.x checks blocks along movement paths (checkInsideBlocks(List, collector)); the bounding-box
+    // redirects for portal-side collision are not ported yet.
     
     // avoid suffocation when colliding with a portal on wall
     @Inject(method = "Lnet/minecraft/world/entity/Entity;isInWall()Z", at = @At("HEAD"), cancellable = true)

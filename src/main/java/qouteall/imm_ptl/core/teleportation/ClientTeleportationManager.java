@@ -487,7 +487,7 @@ public class ClientTeleportationManager {
         
         if (client.particleEngine != null) {
             // avoid clearing all particles
-            ((IEParticleManager) client.particleEngine).ip_setWorld(toWorld);
+            if (client.particleEngine instanceof IEParticleManager quasarPm) quasarPm.ip_setWorld(toWorld); // Quasar MC: particle mixin parked
         }
         
         

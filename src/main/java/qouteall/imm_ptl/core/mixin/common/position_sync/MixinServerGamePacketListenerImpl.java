@@ -226,10 +226,10 @@ public abstract class MixinServerGamePacketListenerImpl implements IEServerPlayN
     }
     
     @Inject(
-        method = "isPlayerCollidingWithAnythingNew", at = @At("HEAD"), cancellable = true
+        method = "isEntityCollidingWithAnythingNew", at = @At("HEAD"), cancellable = true
     )
     private void onIsPlayerCollidingWithAnythingNew(
-        LevelReader level, AABB playerBB, double newX, double newY, double newZ, CallbackInfoReturnable<Boolean> cir
+        LevelReader level, net.minecraft.world.entity.Entity quasarEntity, AABB playerBB, double newX, double newY, double newZ, CallbackInfoReturnable<Boolean> cir
     ) {
         if (!IPGlobal.crossPortalCollision) {
             return;
@@ -237,18 +237,18 @@ public abstract class MixinServerGamePacketListenerImpl implements IEServerPlayN
         
         // for this to work, the player's portal collision status must be updated after teleporting
         
-        AABB activePlayerBB = ((IEEntity) player).ip_getActiveCollisionBox(playerBB);
+        AABB activePlayerBB = ((IEEntity) quasarEntity).ip_getActiveCollisionBox(playerBB);
         
         if (activePlayerBB == null) {
             cir.setReturnValue(false);
             return;
         }
         
-        AABB newBB = this.player.getBoundingBox().move(
-            newX - this.player.getX(), newY - this.player.getY(), newZ - this.player.getZ()
+        AABB newBB = quasarEntity.getBoundingBox().move(
+            newX - quasarEntity.getX(), newY - quasarEntity.getY(), newZ - quasarEntity.getZ()
         );
         
-        AABB activeNewBB = ((IEEntity) player).ip_getActiveCollisionBox(newBB);
+        AABB activeNewBB = ((IEEntity) quasarEntity).ip_getActiveCollisionBox(newBB);
         
         if (activeNewBB == null) {
             cir.setReturnValue(false);
@@ -256,7 +256,7 @@ public abstract class MixinServerGamePacketListenerImpl implements IEServerPlayN
         }
         
         Iterable<VoxelShape> newBBCollisions =
-            level.getCollisions(this.player, activeNewBB.deflate(1.0E-5F));
+            level.getCollisions(quasarEntity, activeNewBB.deflate(1.0E-5F));
         
         VoxelShape activePlayerBBShape = Shapes.create(activePlayerBB.deflate(1.0E-5F));
         
@@ -286,7 +286,7 @@ public abstract class MixinServerGamePacketListenerImpl implements IEServerPlayN
         method = "handleAcceptTeleportPacket",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/server/level/ServerPlayer;absMoveTo(DDDFF)V"
+            target = "Lnet/minecraft/server/level/ServerPlayer;absSnapTo(DDDFF)V"
         )
     )
     private void onHandleAcceptTeleportPacket(
@@ -322,19 +322,8 @@ public abstract class MixinServerGamePacketListenerImpl implements IEServerPlayN
         }
     }
     
-    @Inject(
-        method = "handlePlayerCommand",
-        at = @At(
-            value = "FIELD",
-            target = "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;awaitingPositionFromClient:Lnet/minecraft/world/phys/Vec3;",
-            opcode = Opcodes.PUTFIELD
-        )
-    )
-    private void onTeleportPlayerCancelSleeping(
-        ServerboundPlayerCommandPacket packet, CallbackInfo ci
-    ) {
-        ip_dimOfAwaitingPosition = player.level().dimension();
-    }
+    // Quasar MC: 26.3's handlePlayerCommand no longer teleports when leaving a bed, so the
+    // "remember the dimension of the awaited teleport" hook is gone (it only mattered across dimensions).
     
     @Override
     public boolean ip_hasAwaitingTeleport() {

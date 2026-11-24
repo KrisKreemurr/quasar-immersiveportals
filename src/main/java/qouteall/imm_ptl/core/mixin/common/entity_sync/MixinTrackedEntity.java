@@ -49,40 +49,7 @@ public abstract class MixinTrackedEntity implements IETrackedEntity {
     @Shadow
     private SectionPos lastSectionPos;
     
-    @Redirect(
-        method = "Lnet/minecraft/server/level/ChunkMap$TrackedEntity;broadcast(Lnet/minecraft/network/protocol/Packet;)V",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/server/network/ServerPlayerConnection;send(Lnet/minecraft/network/protocol/Packet;)V"
-        )
-    )
-    private void onSendToOtherNearbyPlayers(
-        ServerPlayerConnection entityTrackingListener, Packet<?> packet
-    ) {
-        PacketRedirection.withForceRedirect(
-            ((ServerLevel) entity.level()),
-            () -> {
-                entityTrackingListener.send(packet);
-            }
-        );
-    }
-    
-    @SuppressWarnings("rawtypes")
-    @Redirect(
-        method = "Lnet/minecraft/server/level/ChunkMap$TrackedEntity;broadcastAndSend(Lnet/minecraft/network/protocol/Packet;)V",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;send(Lnet/minecraft/network/protocol/Packet;)V"
-        )
-    )
-    private void onSendToNearbyPlayers(
-        ServerGamePacketListenerImpl serverPlayNetworkHandler,
-        Packet packet
-    ) {
-        PacketRedirection.sendRedirectedPacket(
-            serverPlayNetworkHandler, packet, entity.level().dimension()
-        );
-    }
+    // Quasar MC: 26.x moved entity broadcasts; the cross-dimension packet redirects are not ported yet.
     
     /**
      * @author qouteall

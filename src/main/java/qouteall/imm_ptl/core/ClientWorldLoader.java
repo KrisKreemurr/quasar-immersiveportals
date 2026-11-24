@@ -155,7 +155,7 @@ public class ClientWorldLoader {
             Camera camera = CLIENT.gameRenderer.mainCamera();
             Vec3 oldCameraPos = camera.position();
             
-            ((IECamera) camera).portal_setPos(center);
+            if (camera instanceof IECamera quasarCam) quasarCam.portal_setPos(center);
             
             if (newWorld.getGameTime() % 2 == 0) {
                 // it costs some CPU time
@@ -166,7 +166,7 @@ public class ClientWorldLoader {
             
             CLIENT.particleEngine.tick();
             
-            ((IECamera) camera).portal_setPos(oldCameraPos);
+            if (camera instanceof IECamera quasarCam) quasarCam.portal_setPos(oldCameraPos);
         });
         
         
@@ -430,7 +430,7 @@ public class ClientWorldLoader {
         Validate.notNull(newWorldRenderer, "new world renderer is null");
         
         CLIENT.level = newWorld;
-        ((IEParticleManager) CLIENT.particleEngine).ip_setWorld(newWorld);
+        if (CLIENT.particleEngine instanceof IEParticleManager quasarPm) quasarPm.ip_setWorld(newWorld); // Quasar MC: particle mixin parked
         ((IEMinecraftClient) CLIENT).ip_setWorldRenderer(newWorldRenderer);
         ((IEClientPlayNetworkHandler) networkHandler).ip_setWorld(newWorld);
         isWorldSwitched = true;
@@ -448,7 +448,7 @@ public class ClientWorldLoader {
             
             CLIENT.level = originalWorld;
             ((IEMinecraftClient) CLIENT).ip_setWorldRenderer(originalWorldRenderer);
-            ((IEParticleManager) CLIENT.particleEngine).ip_setWorld(originalWorld);
+            if (CLIENT.particleEngine instanceof IEParticleManager quasarPm) quasarPm.ip_setWorld(originalWorld); // Quasar MC: particle mixin parked
             ((IEClientPlayNetworkHandler) networkHandler).ip_setWorld(originalNetHandlerWorld);
             isWorldSwitched = originalIsWorldSwitched;
         }

@@ -10,13 +10,8 @@ import qouteall.imm_ptl.core.ducks.IEAbstractClientPlayer;
 
 @Mixin(AbstractClientPlayer.class)
 public class MixinAbstractClientPlayer implements IEAbstractClientPlayer {
-    @Shadow
-    @Final
-    @Mutable
-    public ClientLevel clientLevel;
-    
     @Override
     public void ip_setClientLevel(ClientLevel clientWorld) {
-        clientLevel = clientWorld;
+        // Quasar MC: 26.x players have no separate clientLevel field (cross-dimension portals are not ported yet).
     }
 }

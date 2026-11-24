@@ -25,15 +25,17 @@ public class MixinServerPlayerEntity_MA {
     }
     
     // update chunk visibility data
-    @Inject(method = "Lnet/minecraft/server/level/ServerPlayer;teleportTo(Lnet/minecraft/server/level/ServerLevel;DDDFF)V", at = @At("HEAD"))
+    @Inject(method = "Lnet/minecraft/server/level/ServerPlayer;teleportTo(Lnet/minecraft/server/level/ServerLevel;DDDLjava/util/Set;FFZ)Z", at = @At("HEAD"))
     private void onTeleported(
         ServerLevel targetWorld,
         double x,
         double y,
         double z,
+        java.util.Set<net.minecraft.world.entity.Relative> relatives,
         float yaw,
         float pitch,
-        CallbackInfo ci
+        boolean resetCamera,
+        CallbackInfoReturnable<Boolean> cir
     ) {
         ServerPlayer this_ = (ServerPlayer) (Object) this;
         

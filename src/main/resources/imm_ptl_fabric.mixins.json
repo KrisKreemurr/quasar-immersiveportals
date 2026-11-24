@@ -6,8 +6,7 @@
     "common.MixinPlayerManager_MA",
     "common.MixinServerPlayerEntity_MA"
   ],
-  "client": [
-  ],
+  "client": [],
   "injectors": {
     "defaultRequire": 1
   }

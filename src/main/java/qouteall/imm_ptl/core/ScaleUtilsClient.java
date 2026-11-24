@@ -20,7 +20,7 @@ public class ScaleUtilsClient {
 
             doScalingForEntity(player, portal);
 
-            IECamera camera = (IECamera) client.gameRenderer.mainCamera();
+            if (!(client.gameRenderer.mainCamera() instanceof IECamera camera)) return; // Quasar MC: camera mixin parked
             camera.ip_setCameraY(
                     ((float) (camera.ip_getCameraY() * portal.getScaling())),
                     ((float) (camera.ip_getLastCameraY() * portal.getScaling()))

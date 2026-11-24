@@ -53,9 +53,10 @@ public class ImmPtlChunkTickets {
     private static final Logger LOGGER = LogUtils.getLogger();
     
     // Quasar MC: 26.x ticket types are registered records (no comparator, no per-ticket key). Registered as
-    // immersive_portals:imm_ptl in IPModEntry. Loading + simulation, no timeout, not saved.
+    // immersive_portals:imm_ptl in IPModEntry. Loading + simulation + keeps the dimension ticking, no timeout, not saved.
     public static final TicketType TICKET_TYPE =
-        new TicketType(TicketType.NO_TIMEOUT, TicketType.FLAG_LOADING | TicketType.FLAG_SIMULATION);
+        new TicketType(TicketType.NO_TIMEOUT,
+            TicketType.FLAG_LOADING | TicketType.FLAG_SIMULATION | TicketType.FLAG_KEEP_DIMENSION_ACTIVE);
     
     // for debugging
     @SuppressWarnings("FieldMayBeFinal")

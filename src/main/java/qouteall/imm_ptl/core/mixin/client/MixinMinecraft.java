@@ -40,13 +40,7 @@ import java.util.function.Function;
 
 @Mixin(Minecraft.class)
 public abstract class MixinMinecraft implements IEMinecraftClient {
-    @Final
-    @Shadow
-    @Mutable
-    private RenderTarget mainRenderTarget;
     
-    @Shadow
-    public Screen screen;
     
     @Mutable
     @Shadow
@@ -56,17 +50,11 @@ public abstract class MixinMinecraft implements IEMinecraftClient {
     @Shadow
     private static int fps;
     
-    @Shadow
-    public abstract ProfilerFiller getProfiler();
     
     @Shadow
     @Nullable
     public ClientLevel level;
     
-    @Mutable
-    @Shadow
-    @Final
-    private RenderBuffers renderBuffers;
     
     @Shadow
     @Final
@@ -128,7 +116,7 @@ public abstract class MixinMinecraft implements IEMinecraftClient {
         )
     )
     private void onAfterClientTick(CallbackInfo ci) {
-        getProfiler().push("imm_ptl_client_tick");
+        net.minecraft.util.profiling.Profiler.get().push("imm_ptl_client_tick");
         
         // including ticking remote worlds
         ClientWorldLoader.tick();
@@ -141,11 +129,11 @@ public abstract class MixinMinecraft implements IEMinecraftClient {
 
         NeoForge.EVENT_BUS.post(new IPGlobal.PostClientTickEvent());
         
-        getProfiler().pop();
+        net.minecraft.util.profiling.Profiler.get().pop();
     }
     
     @Inject(
-        method = "Lnet/minecraft/client/Minecraft;runTick(Z)V",
+        method = "Lnet/minecraft/client/Minecraft;renderFrame(Z)V",
         at = @At(
             value = "FIELD",
             target = "Lnet/minecraft/client/Minecraft;fps:I",
@@ -177,33 +165,14 @@ public abstract class MixinMinecraft implements IEMinecraftClient {
         }
     }
     
-    //avoid messing up rendering states in fabulous
-    @Inject(method = "Lnet/minecraft/client/Minecraft;useShaderTransparency()Z", at = @At("HEAD"), cancellable = true)
-    private static void onIsFabulousGraphicsOrBetter(CallbackInfoReturnable<Boolean> cir) {
-        if (WorldRenderInfo.isRendering()) {
-            cir.setReturnValue(false);
-        }
-    }
-    
-    @Inject(
-        method = "addInitialScreens",
-        at = @At("RETURN")
-    )
-    private void onAddInitialScreens(List<Function<Runnable, Screen>> output, CallbackInfo ci) {
-        IPConfig config = IPConfig.getConfig();
-        if (!config.initialScreenShown) {
-            output.add(IPortalInitialScreen::new);
-        }
-    }
-    
     @Override
     public void ip_setFrameBuffer(RenderTarget buffer) {
-        mainRenderTarget = buffer;
+        // Quasar MC: the main render target is not swapped any more (parked renderer).
     }
     
     @Override
     public Screen ip_getCurrentScreen() {
-        return screen;
+        return ((Minecraft) (Object) this).gui.screen();
     }
     
     @Override
@@ -213,7 +182,7 @@ public abstract class MixinMinecraft implements IEMinecraftClient {
     
     @Override
     public void ip_setRenderBuffers(RenderBuffers arg) {
-        renderBuffers = arg;
+        // Quasar MC: render buffers are not swapped any more (parked renderer).
     }
     
     @Override

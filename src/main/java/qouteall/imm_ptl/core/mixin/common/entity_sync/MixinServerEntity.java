@@ -32,62 +32,7 @@ public abstract class MixinServerEntity implements IEEntityTrackerEntry {
     @Final
     private static Logger LOGGER;
     
-    // make sure that the packet is being redirected
-    @Inject(
-        method = "Lnet/minecraft/server/level/ServerEntity;sendChanges()V",
-        at = @At("HEAD")
-    )
-    private void onTick(CallbackInfo ci) {
-        PacketRedirection.validateForceRedirecting();
-    }
-    
-    @Redirect(
-        method = "removePairing",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;send(Lnet/minecraft/network/protocol/Packet;)V"
-        )
-    )
-    private void onSendRemoveEntityPacket(
-        ServerGamePacketListenerImpl networkHandler,
-        Packet packet
-    ) {
-        if (IPGlobal.entityUntrackDebug) {
-            LOGGER.info("Entity remove packet sent {} {}", entity.level().getGameTime(), entity);
-        }
-        PacketRedirection.sendRedirectedPacket(networkHandler, packet, entity.level().dimension());
-    }
-    
-    @Redirect(
-        method = "addPairing",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;send(Lnet/minecraft/network/protocol/Packet;)V"
-        )
-    )
-    private void onSendAddEntityPacket(
-        ServerGamePacketListenerImpl networkHandler,
-        Packet packet
-    ) {
-        if (IPGlobal.entityTrackDebug) {
-            LOGGER.info("Entity add packet sent {} {}", entity.level().getGameTime(), entity);
-        }
-        PacketRedirection.sendRedirectedPacket(networkHandler, packet, entity.level().dimension());
-    }
-    
-    @Redirect(
-        method = "Lnet/minecraft/server/level/ServerEntity;broadcastAndSend(Lnet/minecraft/network/protocol/Packet;)V",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;send(Lnet/minecraft/network/protocol/Packet;)V"
-        )
-    )
-    private void onSendToWatcherAndSelf(
-        ServerGamePacketListenerImpl serverPlayNetworkHandler,
-        Packet packet
-    ) {
-        PacketRedirection.sendRedirectedPacket(serverPlayNetworkHandler, packet, entity.level().dimension());
-    }
+    // Quasar MC: the add/remove/broadcast packet redirects (cross-dimension) are not ported yet.
     
     /**
      * It encodes position into 1/4096 units. That precision is not enough for portals.
