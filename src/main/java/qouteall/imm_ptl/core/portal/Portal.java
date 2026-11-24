@@ -933,6 +933,12 @@ public class Portal extends Entity implements
         }
         
         if (level().isClientSide()) {
+            // Quasar MC: a portal into another dimension (e.g. one made before portals were forced to vanilla)
+            // would need a second client world, which is not ported yet. Hide it on this client instead of crashing.
+            if (getDestDim() != level().dimension()) {
+                discard();
+                return;
+            }
             NeoForge.EVENT_BUS.post(new ClientPortalTickEvent(this));
         }
         else {
