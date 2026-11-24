@@ -75,9 +75,6 @@ file="META-INF/accesstransformer.cfg"
 config="imm_ptl.mixins.json"
 
 [[mixins]]
-config="imm_ptl_compat.mixins.json"
-
-[[mixins]]
 config="imm_ptl_fabric.mixins.json"
 
 [[mixins]]

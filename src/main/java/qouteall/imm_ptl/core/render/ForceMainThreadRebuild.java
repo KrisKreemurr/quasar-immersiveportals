@@ -1,3 +1,4 @@
+// QUASAR STUB: real code parked in src/parked (rendering is replaced for Quasar MC).
 package qouteall.imm_ptl.core.render;
 
 import com.mojang.logging.LogUtils;
@@ -7,41 +8,23 @@ import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.common.NeoForge;
 import org.slf4j.Logger;
 
-// Note: this is sometimes effective but not always effective
-// (maybe because of lighting or uploading delay?)
+// QUASAR STUB: generated no-op stand-in; the original lives in src/parked (render rewrite pending).
+
 @OnlyIn(Dist.CLIENT)
 public class ForceMainThreadRebuild {
-    private static final Logger LOGGER = LogUtils.getLogger();
-    
-    private static int forceMainThreadRebuildForFrames = 0;
-    private static boolean currentFrameForceMainThreadRebuild = false;
-    
-    public static void init() {
-        NeoForge.EVENT_BUS.addListener(ClientCleanupEvent.class, e -> ForceMainThreadRebuild.reset());
-    }
-    
-    private static void reset() {
-        forceMainThreadRebuildForFrames = 0;
-    }
-    
-    public static void onPreRender() {
-        currentFrameForceMainThreadRebuild = forceMainThreadRebuildForFrames > 0;
-        if (currentFrameForceMainThreadRebuild) {
-            forceMainThreadRebuildForFrames--;
-        }
-        if (currentFrameForceMainThreadRebuild) {
-            LOGGER.info("Forcing main thread rebuild in current frame");
-        }
-    }
-    
-    /**
-     * Force the nearby chunks to rebuild
-     */
-    public static void forceMainThreadRebuildFor(int frameCount) {
-        forceMainThreadRebuildForFrames = Math.max(forceMainThreadRebuildForFrames, frameCount);
-    }
-    
-    public static boolean isCurrentFrameForceMainThreadRebuild() {
-        return currentFrameForceMainThreadRebuild;
-    }
+
+    private static Logger LOGGER;
+    private static int forceMainThreadRebuildForFrames;
+    private static boolean currentFrameForceMainThreadRebuild;
+    public static void init() {}
+
+    private static void reset() {}
+
+    public static void onPreRender() {}
+
+    public static void forceMainThreadRebuildFor(int frameCount) {}
+
+    public static boolean isCurrentFrameForceMainThreadRebuild() { return false; }
+
 }
+

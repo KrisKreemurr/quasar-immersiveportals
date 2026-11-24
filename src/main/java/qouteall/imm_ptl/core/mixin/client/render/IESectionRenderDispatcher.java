@@ -1,3 +1,4 @@
+// QUASAR STUB: real code parked in src/parked (rendering is replaced for Quasar MC).
 package qouteall.imm_ptl.core.mixin.client.render;
 
 import net.minecraft.client.renderer.SectionBufferBuilderPack;
@@ -6,12 +7,12 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin(SectionRenderDispatcher.class)
+// QUASAR STUB: generated no-op stand-in; the original lives in src/parked (render rewrite pending).
 public interface IESectionRenderDispatcher {
-    @Accessor("fixedBuffers")
-    SectionBufferBuilderPack ip_getFixedBuffers();
-    
+SectionBufferBuilderPack ip_getFixedBuffers();
+
     @Mutable
-    @Accessor("fixedBuffers")
-    void ip_setFixedBuffers(SectionBufferBuilderPack arg);
+void ip_setFixedBuffers(SectionBufferBuilderPack arg);
+
 }
+
