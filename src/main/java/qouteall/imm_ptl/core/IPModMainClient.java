@@ -74,16 +74,7 @@ public class IPModMainClient {
         
         ClientTeleportationManager.init();
         
-        Minecraft.getInstance().execute(() -> {
-            ShaderCodeTransformation.init();
-            
-            MyRenderHelper.init();
-            
-            IPCGlobal.rendererUsingStencil = new RendererUsingStencil();
-            IPCGlobal.rendererUsingFrameBuffer = new RendererUsingFrameBuffer();
-            
-            IPCGlobal.renderer = IPCGlobal.rendererUsingStencil;
-        });
+        // Quasar MC: the original renderer setup ran here (parked; Quasar Meshelium draws portals).
         
         DubiousThings.init();
         

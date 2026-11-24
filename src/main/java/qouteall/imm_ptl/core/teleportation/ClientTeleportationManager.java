@@ -60,8 +60,7 @@ import java.util.function.Function;
 //@OnlyIn(Dist.CLIENT)
 public class ClientTeleportationManager {
     private static final Logger LOGGER = LogUtils.getLogger();
-    
-    public static final Minecraft client = Minecraft.getInstance();
+    // Quasar MC: read Minecraft.getInstance() live; a static copy is null if this class loads during mod setup.
     
     public static long tickTimeForTeleportation = 0;
     private static long lastTeleportGameTime = 0;
@@ -106,11 +105,11 @@ public class ClientTeleportationManager {
                 return;
             }
             // newly teleported by vanilla means
-            if (client.player.tickCount < 200) {
+            if (Minecraft.getInstance().player.tickCount < 200) {
                 return;
             }
         }
-        if (client.player.level().dimension() != dimension) {
+        if (Minecraft.getInstance().player.level().dimension() != dimension) {
             forceTeleportPlayer(dimension, pos);
         }
     }
@@ -126,13 +125,13 @@ public class ClientTeleportationManager {
         
         isTeleportingFrame = false;
         
-        if (client.level == null || client.player == null) {
+        if (Minecraft.getInstance().level == null || Minecraft.getInstance().player == null) {
             lastPlayerEyePos = null;
             return;
         }
         
         // not initialized
-        if (client.player.xo == 0 && client.player.yo == 0 && client.player.zo == 0) {
+        if (Minecraft.getInstance().player.xo == 0 && Minecraft.getInstance().player.yo == 0 && Minecraft.getInstance().player.zo == 0) {
             return;
         }
         
@@ -153,7 +152,7 @@ public class ClientTeleportationManager {
         float realPartialTicks = RenderStates.getPartialTick();
         
         TeleportationUtil.Teleportation lastTeleportation = null;
-        ResourceKey<Level> originalDim = client.player.level().dimension();
+        ResourceKey<Level> originalDim = Minecraft.getInstance().player.level().dimension();
         
         if (lastPlayerEyePos != null) {
             for (int i = 0; i <= teleportLimitPerFrame; i++) {
@@ -170,12 +169,12 @@ public class ClientTeleportationManager {
                             // if not, the player can escape a fractal scale box from the portal that overlaps its two sides
                             LOGGER.info("Combo teleport out of limit. Reject teleportation!");
                             Vec3 oldPos =
-                                lastPlayerEyePos.subtract(McHelper.getEyeOffset(client.player));
+                                lastPlayerEyePos.subtract(McHelper.getEyeOffset(Minecraft.getInstance().player));
                             forceTeleportPlayer(
                                 originalDim,
                                 oldPos.add(teleportation.worldSurfaceNormal().scale(-0.001))
                             );
-                            client.player.setDeltaMovement(
+                            Minecraft.getInstance().player.setDeltaMovement(
                                 teleportation.worldSurfaceNormal().scale(-0.1)
                             );
                             lastTeleportation = null;
@@ -188,7 +187,7 @@ public class ClientTeleportationManager {
         
         if (lastTeleportation != null) {
             if (PortalExtension.get(lastTeleportation.portal()).adjustPositionAfterTeleport) {
-                adjustPlayerPosition(client.player);
+                adjustPlayerPosition(Minecraft.getInstance().player);
             }
         }
         
@@ -206,7 +205,7 @@ public class ClientTeleportationManager {
     // return null if failed
     @Nullable
     private static TeleportationUtil.Teleportation tryTeleport(float partialTicks) {
-        LocalPlayer player = client.player;
+        LocalPlayer player = Minecraft.getInstance().player;
         assert player != null;
         
         Vec3 thisFrameEyePos = getPlayerEyePos(partialTicks);
@@ -216,8 +215,8 @@ public class ClientTeleportationManager {
             return null;
         }
         
-        assert client.level != null;
-        long currentGameTime = client.level.getGameTime();
+        assert Minecraft.getInstance().level != null;
+        long currentGameTime = Minecraft.getInstance().level.getGameTime();
         
         Vec3 lastTickEyePos = McHelper.getLastTickEyePos(player);
         Vec3 thisTickEyePos = McHelper.getEyePos(player);
@@ -311,7 +310,7 @@ public class ClientTeleportationManager {
     }
     
     public static Vec3 getPlayerEyePos(float partialTick) {
-        return client.player.getEyePosition(partialTick);
+        return Minecraft.getInstance().player.getEyePosition(partialTick);
     }
     
     private static void teleportPlayer(
@@ -326,7 +325,7 @@ public class ClientTeleportationManager {
         
         lastTeleportGameTime = tickTimeForTeleportation;
         
-        LocalPlayer player = client.player;
+        LocalPlayer player = Minecraft.getInstance().player;
         Validate.isTrue(player != null);
         
         ResourceKey<Level> toDimension = portal.getDestDim();
@@ -341,7 +340,7 @@ public class ClientTeleportationManager {
         Vec3 newThisTickEyePos = teleportation.newThisTickEyePos();
         Vec3 newLastTickEyePos = teleportation.newLastTickEyePos();
         
-        ClientLevel fromWorld = client.level;
+        ClientLevel fromWorld = Minecraft.getInstance().level;
         ResourceKey<Level> fromDimension = fromWorld.dimension();
         
         if (fromDimension != toDimension) {
@@ -428,10 +427,10 @@ public class ClientTeleportationManager {
     public static void forceTeleportPlayer(ResourceKey<Level> toDimension, Vec3 destination) {
         LOGGER.info("client player force teleported {} {}", toDimension.identifier(), destination);
         
-        ClientLevel fromWorld = client.level;
+        ClientLevel fromWorld = Minecraft.getInstance().level;
         assert fromWorld != null;
         ResourceKey<Level> fromDimension = fromWorld.dimension();
-        LocalPlayer player = client.player;
+        LocalPlayer player = Minecraft.getInstance().player;
         assert player != null;
         if (fromDimension != toDimension) {
             ClientLevel toWorld = ClientWorldLoader.getWorld(toDimension);
@@ -464,7 +463,7 @@ public class ClientTeleportationManager {
         ResourceKey<Level> toDimension = toWorld.dimension();
         ResourceKey<Level> fromDimension = fromWorld.dimension();
         
-        ((IEClientPlayNetworkHandler) client.getConnection()).ip_setWorld(toWorld);
+        ((IEClientPlayNetworkHandler) Minecraft.getInstance().getConnection()).ip_setWorld(toWorld);
         
         fromWorld.removeEntity(player.getId(), Entity.RemovalReason.CHANGED_DIMENSION);
         
@@ -480,14 +479,14 @@ public class ClientTeleportationManager {
         
         // Quasar MC: per-dimension lightmaps belonged to the parked renderer.
         
-        client.level = toWorld;
-        ((IEMinecraftClient) client).ip_setWorldRenderer(
+        Minecraft.getInstance().level = toWorld;
+        ((IEMinecraftClient) Minecraft.getInstance()).ip_setWorldRenderer(
             ClientWorldLoader.getWorldRenderer(toDimension)
         );
         
-        if (client.particleEngine != null) {
+        if (Minecraft.getInstance().particleEngine != null) {
             // avoid clearing all particles
-            if (client.particleEngine instanceof IEParticleManager quasarPm) quasarPm.ip_setWorld(toWorld); // Quasar MC: particle mixin parked
+            if (Minecraft.getInstance().particleEngine instanceof IEParticleManager quasarPm) quasarPm.ip_setWorld(toWorld); // Quasar MC: particle mixin parked
         }
         
         
@@ -520,7 +519,7 @@ public class ClientTeleportationManager {
     }
     
     private static void changePlayerMotionIfCollidingWithPortal() {
-        LocalPlayer player = client.player;
+        LocalPlayer player = Minecraft.getInstance().player;
         
         Portal portal = ((IEEntity) player).ip_getCollidingPortal();
         

@@ -63,7 +63,7 @@ public class IPOuterClientMisc {
     }
     
     private static File getStorageFile() {
-        return new File(Minecraft.getInstance().gameDirectory, "imm_ptl_state.json");
+        return new File(net.neoforged.fml.loading.FMLPaths.GAMEDIR.get().toFile(), "imm_ptl_state.json");
     }
     
     private static void writeToFile(OuterConfig outerConfig) {

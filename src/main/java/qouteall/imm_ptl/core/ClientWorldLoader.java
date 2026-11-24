@@ -62,8 +62,7 @@ public class ClientWorldLoader {
         new Object2ObjectOpenHashMap<>();
     
     public static @Nullable Map<ResourceKey<Level>, ResourceKey<DimensionType>> dimIdToDimTypeId;
-
-    private static final Minecraft CLIENT = Minecraft.getInstance();
+    // Quasar MC: read Minecraft.getInstance() live; a static copy is null if this class loads during mod setup.
     
     private static boolean isInitialized = false;
     
@@ -102,7 +101,7 @@ public class ClientWorldLoader {
         if (IPCGlobal.isClientRemoteTickingEnabled) {
             isClientRemoteTicking = true;
             CLIENT_WORLD_MAP.values().forEach(world -> {
-                if (CLIENT.level != world) {
+                if (Minecraft.getInstance().level != world) {
                     tickRemoteWorld(world);
                 }
             });
@@ -126,7 +125,7 @@ public class ClientWorldLoader {
                 newWorld.tickEntities();
                 newWorld.tick(() -> true);
                 
-                if (!CLIENT.isPaused()) {
+                if (!Minecraft.getInstance().isPaused()) {
                     tickRemoteWorldRandomTicksClient(newWorld, nearbyPortals);
                 }
                 
@@ -148,11 +147,11 @@ public class ClientWorldLoader {
         nearbyPortals.stream().filter(
             portal -> portal.getDestDim() == newWorld.dimension()
         ).findFirst().ifPresent(portal -> {
-            assert CLIENT.player != null;
-            Vec3 playerPos = CLIENT.player.position();
+            assert Minecraft.getInstance().player != null;
+            Vec3 playerPos = Minecraft.getInstance().player.position();
             Vec3 center = portal.transformPoint(playerPos);
             
-            Camera camera = CLIENT.gameRenderer.mainCamera();
+            Camera camera = Minecraft.getInstance().gameRenderer.mainCamera();
             Vec3 oldCameraPos = camera.position();
             
             if (camera instanceof IECamera quasarCam) quasarCam.portal_setPos(center);
@@ -164,7 +163,7 @@ public class ClientWorldLoader {
                 );
             }
             
-            CLIENT.particleEngine.tick();
+            Minecraft.getInstance().particleEngine.tick();
             
             if (camera instanceof IECamera quasarCam) quasarCam.portal_setPos(oldCameraPos);
         });
@@ -190,30 +189,30 @@ public class ClientWorldLoader {
     }
     
     private static void disposeWorldRenderer(LevelRenderer worldRenderer) {
-        if (worldRenderer != CLIENT.levelRenderer) {
+        if (worldRenderer != Minecraft.getInstance().levelRenderer) {
             worldRenderer.close();
             ((IEWorldRenderer) worldRenderer).portal_fullyDispose();
         }
     }
     
     private static void disposeDimensionDynamically(ResourceKey<Level> dimension) {
-        Validate.notNull(CLIENT.player, "player is null");
-        Validate.notNull(CLIENT.level, "level is null");
+        Validate.notNull(Minecraft.getInstance().player, "player is null");
+        Validate.notNull(Minecraft.getInstance().level, "level is null");
         Validate.isTrue(
-            CLIENT.level.dimension() != dimension,
+            Minecraft.getInstance().level.dimension() != dimension,
             "Cannot dispose current dimension"
         );
         Validate.isTrue(
-            CLIENT.player.level().dimension() != dimension,
+            Minecraft.getInstance().player.level().dimension() != dimension,
             "Cannot dispose current dimension"
         );
-        Validate.isTrue(CLIENT.isSameThread(), "not on client thread");
+        Validate.isTrue(Minecraft.getInstance().isSameThread(), "not on client thread");
         
         LevelRenderer worldRenderer = WORLD_RENDERER_MAP.get(dimension);
         disposeWorldRenderer(worldRenderer);
         WORLD_RENDERER_MAP.remove(dimension);
         
-        Validate.isTrue(CLIENT.levelRenderer != worldRenderer);
+        Validate.isTrue(Minecraft.getInstance().levelRenderer != worldRenderer);
         
         ClientLevel clientWorld = CLIENT_WORLD_MAP.get(dimension);
         ((IEClientWorld) clientWorld).ip_resetWorldRendererRef();
@@ -234,7 +233,7 @@ public class ClientWorldLoader {
             LOGGER.error("The entities of that dimension was not cleared before removal");
         }
         
-        CLIENT.gameRenderer.resetData();
+        Minecraft.getInstance().gameRenderer.resetData();
 
         NeoForge.EVENT_BUS.post(new DimensionEvents.CLIENT_DIMENSION_DYNAMIC_REMOVE_EVENT(dimension));
     }
@@ -273,7 +272,7 @@ public class ClientWorldLoader {
     @NotNull
     public static ClientLevel getWorld(ResourceKey<Level> dimension) {
         Validate.notNull(dimension, "dimension is null");
-        Validate.isTrue(CLIENT.isSameThread());
+        Validate.isTrue(Minecraft.getInstance().isSameThread());
         
         initializeIfNeeded();
         
@@ -293,7 +292,7 @@ public class ClientWorldLoader {
     @Nullable
     public static ClientLevel getOptionalWorld(ResourceKey<Level> dimension) {
         Validate.notNull(dimension, "dimension is null");
-        Validate.isTrue(CLIENT.isSameThread(), "not on client thread");
+        Validate.isTrue(Minecraft.getInstance().isSameThread(), "not on client thread");
         
         if (getServerDimensions().contains(dimension)) {
             return getWorld(dimension);
@@ -323,28 +322,28 @@ public class ClientWorldLoader {
     public static void initializeIfNeeded() {
         if (!isInitialized) {
             Validate.isTrue(
-                CLIENT.level != null, "level is null"
+                Minecraft.getInstance().level != null, "level is null"
             );
             // note: client.levelRenderer is not necessarily not null due to mixin
             Validate.isTrue(
-                CLIENT.levelRenderer != null, "levelRenderer is null"
+                Minecraft.getInstance().levelRenderer != null, "levelRenderer is null"
             );
             
             Validate.notNull(
-                CLIENT.player,
+                Minecraft.getInstance().player,
                 "player is null. This may be caused by prior initialization failure. The log may provide useful information."
             );
             Validate.isTrue(
-                CLIENT.player.level() == CLIENT.level,
+                Minecraft.getInstance().player.level() == Minecraft.getInstance().level,
                 "The player level is not the same as client level"
             );
             
-            ResourceKey<Level> playerDimension = CLIENT.level.dimension();
-            CLIENT_WORLD_MAP.put(playerDimension, CLIENT.level);
-            WORLD_RENDERER_MAP.put(playerDimension, CLIENT.levelRenderer);
+            ResourceKey<Level> playerDimension = Minecraft.getInstance().level.dimension();
+            CLIENT_WORLD_MAP.put(playerDimension, Minecraft.getInstance().level);
+            WORLD_RENDERER_MAP.put(playerDimension, Minecraft.getInstance().levelRenderer);
             RENDER_HELPER_MAP.put(
-                CLIENT.level.dimension(),
-                new DimensionRenderHelper(CLIENT.level)
+                Minecraft.getInstance().level.dimension(),
+                new DimensionRenderHelper(Minecraft.getInstance().level)
             );
             
             isInitialized = true;
@@ -359,8 +358,8 @@ public class ClientWorldLoader {
     }
     
     public static Set<ResourceKey<Level>> getServerDimensions() {
-        assert CLIENT.player != null;
-        return CLIENT.player.connection.levels();
+        assert Minecraft.getInstance().player != null;
+        return Minecraft.getInstance().player.connection.levels();
     }
     
     public static Collection<ClientLevel> getClientWorlds() {
@@ -373,9 +372,9 @@ public class ClientWorldLoader {
     
     @SuppressWarnings("Convert2MethodRef")
     public static void _onWorldRendererReloaded() {
-        Validate.isTrue(CLIENT.isSameThread());
-        if (CLIENT.level != null) {
-            LOGGER.info("WorldRenderer reloaded {}", CLIENT.level.dimension().identifier());
+        Validate.isTrue(Minecraft.getInstance().isSameThread());
+        if (Minecraft.getInstance().level != null) {
+            LOGGER.info("WorldRenderer reloaded {}", Minecraft.getInstance().level.dimension().identifier());
         }
         
         if (isReloadingOtherWorldRenderers) {
@@ -391,7 +390,7 @@ public class ClientWorldLoader {
         isReloadingOtherWorldRenderers = true;
         
         List<ResourceKey<Level>> toReload = WORLD_RENDERER_MAP.keySet().stream()
-            .filter(d -> d != CLIENT.level.dimension()).toList();
+            .filter(d -> d != Minecraft.getInstance().level.dimension()).toList();
         
         for (ResourceKey<Level> dim : toReload) {
             ClientLevel world = CLIENT_WORLD_MAP.get(dim);
@@ -401,7 +400,7 @@ public class ClientWorldLoader {
                 () -> {
                     // cannot be replaced into method reference
                     // because levelRenderer field is actually mutable
-                    CLIENT.levelRenderer.resetLevelRenderData();
+                    Minecraft.getInstance().levelRenderer.resetLevelRenderData();
                 }
             );
         }
@@ -414,14 +413,14 @@ public class ClientWorldLoader {
      */
     @SuppressWarnings({"ReassignedVariable", "DataFlowIssue"})
     public static <T> T withSwitchedWorld(ClientLevel newWorld, Supplier<T> supplier) {
-        Validate.isTrue(CLIENT.isSameThread(), "not on client thread");
-        Validate.isTrue(CLIENT.player != null, "player is null");
+        Validate.isTrue(Minecraft.getInstance().isSameThread(), "not on client thread");
+        Validate.isTrue(Minecraft.getInstance().player != null, "player is null");
         
-        ClientPacketListener networkHandler = CLIENT.getConnection();
+        ClientPacketListener networkHandler = Minecraft.getInstance().getConnection();
         assert networkHandler != null;
         
-        ClientLevel originalWorld = CLIENT.level;
-        LevelRenderer originalWorldRenderer = CLIENT.levelRenderer;
+        ClientLevel originalWorld = Minecraft.getInstance().level;
+        LevelRenderer originalWorldRenderer = Minecraft.getInstance().levelRenderer;
         ClientLevel originalNetHandlerWorld = networkHandler.getLevel();
         boolean originalIsWorldSwitched = isWorldSwitched;
         
@@ -429,9 +428,9 @@ public class ClientWorldLoader {
         
         Validate.notNull(newWorldRenderer, "new world renderer is null");
         
-        CLIENT.level = newWorld;
-        if (CLIENT.particleEngine instanceof IEParticleManager quasarPm) quasarPm.ip_setWorld(newWorld); // Quasar MC: particle mixin parked
-        ((IEMinecraftClient) CLIENT).ip_setWorldRenderer(newWorldRenderer);
+        Minecraft.getInstance().level = newWorld;
+        if (Minecraft.getInstance().particleEngine instanceof IEParticleManager quasarPm) quasarPm.ip_setWorld(newWorld); // Quasar MC: particle mixin parked
+        ((IEMinecraftClient) Minecraft.getInstance()).ip_setWorldRenderer(newWorldRenderer);
         ((IEClientPlayNetworkHandler) networkHandler).ip_setWorld(newWorld);
         isWorldSwitched = true;
         
@@ -439,16 +438,16 @@ public class ClientWorldLoader {
             return supplier.get();
         }
         finally {
-            if (CLIENT.level != newWorld) {
+            if (Minecraft.getInstance().level != newWorld) {
                 LOGGER.error("Respawn packet should not be redirected");
-                originalWorld = CLIENT.level;
-                originalWorldRenderer = CLIENT.levelRenderer;
+                originalWorld = Minecraft.getInstance().level;
+                originalWorldRenderer = Minecraft.getInstance().levelRenderer;
                 // client.levelRenderer is not final by mixin.
             }
             
-            CLIENT.level = originalWorld;
-            ((IEMinecraftClient) CLIENT).ip_setWorldRenderer(originalWorldRenderer);
-            if (CLIENT.particleEngine instanceof IEParticleManager quasarPm) quasarPm.ip_setWorld(originalWorld); // Quasar MC: particle mixin parked
+            Minecraft.getInstance().level = originalWorld;
+            ((IEMinecraftClient) Minecraft.getInstance()).ip_setWorldRenderer(originalWorldRenderer);
+            if (Minecraft.getInstance().particleEngine instanceof IEParticleManager quasarPm) quasarPm.ip_setWorld(originalWorld); // Quasar MC: particle mixin parked
             ((IEClientPlayNetworkHandler) networkHandler).ip_setWorld(originalNetHandlerWorld);
             isWorldSwitched = originalIsWorldSwitched;
         }

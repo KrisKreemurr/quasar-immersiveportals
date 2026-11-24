@@ -27,7 +27,7 @@ import qouteall.imm_ptl.core.portal.PortalUtils;
 import java.util.function.Supplier;
 
 public class BlockManipulationClient {
-    private static final Minecraft client = Minecraft.getInstance();
+    // Quasar MC: read Minecraft.getInstance() live; a static copy is null if this class loads during mod setup.
     
     public static ResourceKey<Level> remotePointedDim;
     public static HitResult remoteHitResult;
@@ -55,32 +55,32 @@ public class BlockManipulationClient {
     }
     
     public static void updatePointedBlock(float partialTick) {
-        if (client.gameMode == null || client.level == null || client.player == null) {
+        if (Minecraft.getInstance().gameMode == null || Minecraft.getInstance().level == null || Minecraft.getInstance().player == null) {
             return;
         }
         
         remotePointedDim = null;
         remoteHitResult = null;
 
-        if (!NeoForge.EVENT_BUS.post(new BlockManipulationServer.CrossPortalInteractionEvent(client.player)).canDo()) {
+        if (!NeoForge.EVENT_BUS.post(new BlockManipulationServer.CrossPortalInteractionEvent(Minecraft.getInstance().player)).canDo()) {
             return;
         }
         
-        Vec3 cameraPos = client.gameRenderer.mainCamera().position();
+        Vec3 cameraPos = Minecraft.getInstance().gameRenderer.mainCamera().position();
         
-        double reachDistance = client.player.blockInteractionRange();
+        double reachDistance = Minecraft.getInstance().player.blockInteractionRange();
 
-        PortalUtils.raytracePortalFromEntityView(client.player, partialTick, reachDistance, true, portal1 -> portal1.isInteractableBy(client.player)).ifPresent(pair -> {
+        PortalUtils.raytracePortalFromEntityView(Minecraft.getInstance().player, partialTick, reachDistance, true, portal1 -> portal1.isInteractableBy(Minecraft.getInstance().player)).ifPresent(pair -> {
             Portal portal = pair.getFirst();
             Vec3 hitPos = pair.getSecond().hitPos();
             double distanceToPortalPointing = hitPos.distanceTo(cameraPos);
             if (distanceToPortalPointing < getCurrentTargetDistance() + 0.2) {
-                client.hitResult = createMissedHitResult(cameraPos, hitPos);
+                Minecraft.getInstance().hitResult = createMissedHitResult(cameraPos, hitPos);
                 
                 updateTargetedBlockThroughPortal(
                     cameraPos,
-                    client.player.getViewVector(partialTick),
-                    client.player.level().dimension(),
+                    Minecraft.getInstance().player.getViewVector(partialTick),
+                    Minecraft.getInstance().player.level().dimension(),
                     distanceToPortalPointing,
                     reachDistance,
                     portal
@@ -90,20 +90,20 @@ public class BlockManipulationClient {
     }
     
     private static double getCurrentTargetDistance() {
-        Vec3 cameraPos = client.gameRenderer.mainCamera().position();
+        Vec3 cameraPos = Minecraft.getInstance().gameRenderer.mainCamera().position();
         
-        if (hitResultIsMissedOrNull(client.hitResult)) {
+        if (hitResultIsMissedOrNull(Minecraft.getInstance().hitResult)) {
             return 23333;
         }
         
-        if (client.hitResult instanceof BlockHitResult) {
-            BlockPos hitPos = ((BlockHitResult) client.hitResult).getBlockPos();
-            if (client.level.getBlockState(hitPos).getBlock() == PortalPlaceholderBlock.instance) {
+        if (Minecraft.getInstance().hitResult instanceof BlockHitResult) {
+            BlockPos hitPos = ((BlockHitResult) Minecraft.getInstance().hitResult).getBlockPos();
+            if (Minecraft.getInstance().level.getBlockState(hitPos).getBlock() == PortalPlaceholderBlock.instance) {
                 return 23333;
             }
         }
         
-        return cameraPos.distanceTo(client.hitResult.getLocation());
+        return cameraPos.distanceTo(Minecraft.getInstance().hitResult.getLocation());
     }
     
     private static void updateTargetedBlockThroughPortal(
@@ -127,7 +127,7 @@ public class BlockManipulationClient {
             to,
             ClipContext.Block.OUTLINE,
             ClipContext.Fluid.NONE,
-            client.player
+            Minecraft.getInstance().player
         );
         
         ClientLevel world = ClientWorldLoader.getWorld(portal.getDestDim());
@@ -185,7 +185,7 @@ public class BlockManipulationClient {
         
         if (remoteHitResult != null) {
             if (!world.getBlockState(((BlockHitResult) remoteHitResult).getBlockPos()).isAir()) {
-                client.hitResult = createMissedHitResult(from, to);
+                Minecraft.getInstance().hitResult = createMissedHitResult(from, to);
                 remotePointedDim = portal.getDestDim();
             }
         }
@@ -219,13 +219,13 @@ public class BlockManipulationClient {
         
         return ClientWorldLoader.withSwitchedWorld(
             remoteWorld, () -> {
-                HitResult originalHitResult = client.hitResult;
-                client.hitResult = effectiveHitResult;
+                HitResult originalHitResult = Minecraft.getInstance().hitResult;
+                Minecraft.getInstance().hitResult = effectiveHitResult;
                 try {
                     return func.get();
                 }
                 finally {
-                    client.hitResult = originalHitResult;
+                    Minecraft.getInstance().hitResult = originalHitResult;
                 }
             }
         );

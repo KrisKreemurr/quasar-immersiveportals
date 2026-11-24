@@ -17,12 +17,11 @@ import qouteall.q_misc_util.my_util.LimitedLogger;
 
 //@OnlyIn(Dist.CLIENT)
 public class PacketRedirectionClient {
-    
-    public static final Minecraft client = Minecraft.getInstance();
+    // Quasar MC: read Minecraft.getInstance() live; a static copy is null if this class loads during mod setup.
     private static final LimitedLogger limitedLogger = new LimitedLogger(100);
     
     /**
-     * This ensures that when it calls client.execute(...)
+     * This ensures that when it calls Minecraft.getInstance().execute(...)
      * the task will be executed with redirected dimension.
      * {@link MixinMinecraft_RedirectedPacket}
      * This is also used in networking threads.
