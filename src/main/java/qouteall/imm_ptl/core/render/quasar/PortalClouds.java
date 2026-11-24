@@ -1,6 +1,5 @@
 package qouteall.imm_ptl.core.render.quasar;
 
-import com.mojang.blaze3d.ProjectionType;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
@@ -74,17 +73,11 @@ public final class PortalClouds {
         b.putFloat(32, 12f).putFloat(36, 4f).putFloat(40, 12f);
         GpuBufferSlice info = encoder.transientMemory().uploadGpu(b, 256, GpuBuffer.USAGE_UNIFORM);
         
-        ByteBuffer pb = ByteBuffer.allocateDirect(64).order(ByteOrder.nativeOrder());
-        virtual.projectionMatrix.get(pb);
-        GpuBufferSlice projection = encoder.transientMemory().uploadGpu(pb, 256, GpuBuffer.USAGE_UNIFORM);
-        
         Matrix4fStack modelView = RenderSystem.getModelViewStack();
         modelView.pushMatrix();
-        RenderSystem.backupProjectionMatrix();
-        overrideInfo = info;
+        overrideInfo = info; // the portal camera's projection is already set by PortalViewRenderer
         try {
             modelView.set(virtual.viewRotationMatrix);
-            RenderSystem.setProjectionMatrix(projection, ProjectionType.PERSPECTIVE);
             try (RenderPass pass = encoder.createRenderPass(() -> "Quasar portal clouds", color, Optional.empty(),
                 depth, OptionalDouble.empty())) {
                 clouds.render(status, pass);
@@ -96,7 +89,6 @@ public final class PortalClouds {
         }
         finally {
             overrideInfo = null;
-            RenderSystem.restoreProjectionMatrix();
             modelView.popMatrix();
         }
     }

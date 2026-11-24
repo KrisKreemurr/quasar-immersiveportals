@@ -42,6 +42,7 @@ import qouteall.imm_ptl.core.portal.Portal;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -254,8 +255,15 @@ public final class PortalViewRenderer {
                 long tt = System.nanoTime();
                 GpuBufferSlice mainFog = RenderSystem.getShaderFog();
                 GpuBufferSlice fog = PortalSky.portalFog(encoder, main, renderDistance);
+                // Meshelium's terrain shaders (and clouds) read vanilla's Projection buffer: give them the portal
+                // camera's oblique projection, so the portal plane clips the near side and every pass shares one depth
+                ByteBuffer pb = ByteBuffer.allocateDirect(64).order(ByteOrder.nativeOrder());
+                virtual.projectionMatrix.get(pb);
+                GpuBufferSlice projection = encoder.transientMemory().uploadGpu(pb, 256, GpuBuffer.USAGE_UNIFORM);
+                RenderSystem.backupProjectionMatrix();
                 boolean drawn;
                 try {
+                    RenderSystem.setProjectionMatrix(projection, com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
                     if (fog != null) RenderSystem.setShaderFog(fog);
                     drawn = (Boolean) drawTerrainMethod.invoke(null, virtual, t.colorView, t.depthView,
                         t.width, t.height);
@@ -272,6 +280,7 @@ public final class PortalViewRenderer {
                 }
                 finally {
                     RenderSystem.setShaderFog(mainFog);
+                    RenderSystem.restoreProjectionMatrix();
                 }
                 frameTerrainNs += System.nanoTime() - tt;
                 t.portalId = portal.getId();
