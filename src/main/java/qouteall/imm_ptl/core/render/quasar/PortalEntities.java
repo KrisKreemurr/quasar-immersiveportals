@@ -133,6 +133,8 @@ public final class PortalEntities {
                     RenderSystem.bindDefaultUniforms(pass);
                     frame.executeSolid(pass);
                     frame.executeTranslucent(pass);
+                    // particles (and other effects vanilla draws after translucent terrain) are their own phase
+                    frame.executeTranslucentAfterTerrain(pass);
                 }
                 finally {
                     frame.close();
