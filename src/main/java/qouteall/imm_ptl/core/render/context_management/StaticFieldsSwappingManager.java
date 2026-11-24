@@ -36,7 +36,7 @@ public class StaticFieldsSwappingManager<Context> {
     public StaticFieldsSwappingManager(
         Consumer<Context> copyFromObject,
         Consumer<Context> copyToObject,
-        boolean doStrictCheck,
+        boolean doStrictCheck) {}
         @Nullable Supplier<Context> contextConstructor
     ) {}
 

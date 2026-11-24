@@ -72,7 +72,7 @@ public class ImmPtlViewArea extends ViewArea {
             SectionRenderDispatcher sectionBuilder,
             Level world,
             int r,
-            LevelRenderer worldRenderer
+            LevelRenderer worldRenderer) {}
 
     protected void createSections(SectionRenderDispatcher sectionBuilder_1) {}
 

@@ -54,7 +54,7 @@ public class MyRenderHelper {
 
     public static class DrawFbInAreaShader {
 
-        public DrawFbInAreaShader(
+        public DrawFbInAreaShader() {}
 
         void loadWidthHeight(int w, int h) {}
 

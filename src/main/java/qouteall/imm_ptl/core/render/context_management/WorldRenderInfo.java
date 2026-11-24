@@ -41,7 +41,7 @@ public class WorldRenderInfo {
     private static Stack<WorldRenderInfo> renderInfoStack;
     private static List<UUID> renderingDescCache;
     private WorldRenderInfo(
-        ClientLevel world, Vec3 cameraPos,
+        ClientLevel world, Vec3 cameraPos) {}
         @Nullable Matrix4f cameraTransformation,
         boolean overwriteCameraTransformation,
         @Nullable UUID description,
