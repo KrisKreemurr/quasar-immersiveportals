@@ -67,7 +67,7 @@ public class O_O {
     }
     
     public static void postClientChunkLoadEvent(LevelChunk chunk) {
-        NeoForge.EVENT_BUS.post(new ChunkEvent.Load(chunk, true));
+        NeoForge.EVENT_BUS.post(new ChunkEvent.Load(chunk, false)); // Quasar MC: vanilla client passes false (not newly generated)
 //        ClientChunkEvents.CHUNK_LOAD.invoker().onChunkLoad(
 //            ((ClientLevel) chunk.getLevel()), chunk
 //        );

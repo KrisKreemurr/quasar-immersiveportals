@@ -1,6 +1,8 @@
 package qouteall.imm_ptl.core.chunk_loading;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientChunkCache;
@@ -74,6 +76,7 @@ public class ImmPtlClientChunkMap extends ClientChunkCache {
             });
             
             O_O.postClientChunkUnloadEvent(chunk);
+            ip_onChunkRemoved(chunk);
             this.level.unload(chunk);
             clientChunkUnloadSignal.emit(chunk);
         }
@@ -146,9 +149,11 @@ public class ImmPtlClientChunkMap extends ClientChunkCache {
             modifyChunkMap(chunkMap -> {
                 chunkMap.put(chunkPosLong, worldChunkToPut);
             });
+            ip_onChunkAdded(worldChunk);
         }
         else {
             loadChunkDataFromPacket(x, z, data, worldChunk);
+            ip_refreshEmptySections(worldChunk);
         }
         
         this.level.onChunkLoaded(new ChunkPos(x, z));
@@ -223,4 +228,84 @@ public class ImmPtlClientChunkMap extends ClientChunkCache {
         Minecraft.getInstance().levelExtractor.setSectionDirty(chunkSectionPos.x(), chunkSectionPos.y(), chunkSectionPos.z());
     }
     
+
+    // ---- Quasar MC: 26.x render-tracking sets ----
+    // Vanilla's ClientChunkCache.Storage double-buffers which chunks were added/removed and which sections became
+    // empty/non-empty; the level extractor reads them each frame and flips. This map bypasses Storage (radius 1),
+    // so without these the renderer never learns a chunk loaded: no terrain, and LevelLoadTracker times out.
+    // Same logic as Storage.onChunkAdded / onChunkRemoved / refreshEmptySections / markSection*.
+    private final LongOpenHashSet[] ip_addedEmptySections = {new LongOpenHashSet(), new LongOpenHashSet()};
+    private final LongOpenHashSet[] ip_removedEmptySections = {new LongOpenHashSet(), new LongOpenHashSet()};
+    private final LongOpenHashSet[] ip_addedLoadedChunks = {new LongOpenHashSet(), new LongOpenHashSet()};
+    private final LongOpenHashSet[] ip_removedLoadedChunks = {new LongOpenHashSet(), new LongOpenHashSet()};
+    private int ip_updatingSetsIndex = 0;
+    
+    @Override
+    public LongOpenHashSet addedEmptySections() { return ip_addedEmptySections[ip_updatingSetsIndex]; }
+    
+    @Override
+    public LongOpenHashSet removedEmptySections() { return ip_removedEmptySections[ip_updatingSetsIndex]; }
+    
+    @Override
+    public LongOpenHashSet addedLoadedChunks() { return ip_addedLoadedChunks[ip_updatingSetsIndex]; }
+    
+    @Override
+    public LongOpenHashSet removedLoadedChunks() { return ip_removedLoadedChunks[ip_updatingSetsIndex]; }
+    
+    @Override
+    public void flipUpdateTrackingSets() {
+        ip_updatingSetsIndex = (ip_updatingSetsIndex + 1) % 2;
+        ip_addedEmptySections[ip_updatingSetsIndex].clear();
+        ip_removedEmptySections[ip_updatingSetsIndex].clear();
+        ip_addedLoadedChunks[ip_updatingSetsIndex].clear();
+        ip_removedLoadedChunks[ip_updatingSetsIndex].clear();
+    }
+    
+    @Override
+    public void onSectionEmptinessChanged(int x, int y, int z, boolean empty) {
+        if (!isChunkLoaded(x, z)) {
+            return;
+        }
+        long key = SectionPos.asLong(x, y, z);
+        if (empty) ip_markSectionEmpty(key);
+        else ip_markSectionNotEmpty(key);
+    }
+    
+    private void ip_markSectionEmpty(long key) {
+        ip_removedEmptySections[ip_updatingSetsIndex].remove(key);
+        ip_addedEmptySections[ip_updatingSetsIndex].add(key);
+    }
+    
+    private void ip_markSectionNotEmpty(long key) {
+        ip_addedEmptySections[ip_updatingSetsIndex].remove(key);
+        ip_removedEmptySections[ip_updatingSetsIndex].add(key);
+    }
+    
+    private void ip_onChunkAdded(LevelChunk chunk) {
+        long pos = chunk.getPos().pack();
+        ip_removedLoadedChunks[ip_updatingSetsIndex].remove(pos);
+        ip_addedLoadedChunks[ip_updatingSetsIndex].add(pos);
+        ip_refreshEmptySections(chunk);
+    }
+    
+    private void ip_onChunkRemoved(LevelChunk chunk) {
+        ChunkPos cp = chunk.getPos();
+        long pos = cp.pack();
+        ip_addedLoadedChunks[ip_updatingSetsIndex].remove(pos);
+        ip_removedLoadedChunks[ip_updatingSetsIndex].add(pos);
+        LevelChunkSection[] sections = chunk.getSections();
+        for (int i = 0; i < sections.length; i++) {
+            ip_markSectionEmpty(SectionPos.asLong(cp.x(), chunk.getSectionYFromSectionIndex(i), cp.z()));
+        }
+    }
+    
+    private void ip_refreshEmptySections(LevelChunk chunk) {
+        ChunkPos cp = chunk.getPos();
+        LevelChunkSection[] sections = chunk.getSections();
+        for (int i = 0; i < sections.length; i++) {
+            long key = SectionPos.asLong(cp.x(), chunk.getSectionYFromSectionIndex(i), cp.z());
+            if (sections[i].hasOnlyAir()) ip_markSectionEmpty(key);
+            else ip_markSectionNotEmpty(key);
+        }
+    }
 }
