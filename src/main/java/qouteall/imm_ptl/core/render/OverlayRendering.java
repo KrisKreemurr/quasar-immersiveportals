@@ -30,14 +30,14 @@ public class OverlayRendering {
     private static boolean shaderOverlayWarned;
     public static void onRenderPortalEntity(
         Portal portal,
-        PoseStack matrixStack,
+        PoseStack matrixStack
     ) {}
 
 
     private static void renderBreakablePortalOverlay(
         BreakablePortalEntity portal,
         float partialTick,
-        PoseStack matrixStack,
+        PoseStack matrixStack
     ) {}
 
 }
