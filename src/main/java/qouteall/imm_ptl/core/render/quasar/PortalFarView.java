@@ -42,7 +42,6 @@ import java.util.OptionalDouble;
 public final class PortalFarView {
     /** how many portals get far terrain (each costs ~25 MB of video memory at 512 px faces) */
     static final int MAX_PORTALS = 2;
-    static final int FACE_SIZE = 512;
     
     private static Method requestMethod;
     private static Method viewMethod;
@@ -82,7 +81,7 @@ public final class PortalFarView {
         if (portalChunks <= 0 || !available()) return false;
         try {
             Vec3 cam = virtual.pos;
-            requestMethod.invoke(null, portalId, cam.x, cam.y, cam.z, startDistance(portalChunks), FACE_SIZE);
+            requestMethod.invoke(null, portalId, cam.x, cam.y, cam.z, startDistance(portalChunks), PortalSettings.farResolution);
             Object[] v = (Object[]) viewMethod.invoke(null, portalId);
             if (v == null) return false;
             GpuTextureView[] colors = (GpuTextureView[]) v[0];

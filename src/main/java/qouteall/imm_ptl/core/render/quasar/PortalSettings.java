@@ -26,6 +26,9 @@ public final class PortalSettings {
     public static volatile boolean occlusion = true;
     /** far LOD terrain through the nearest portals (needs Quasar Horizons) */
     public static volatile boolean farTerrain = true;
+    /** pixels per side of each far-terrain cube face */
+    public static final int DEFAULT_FAR_RESOLUTION = 512;
+    public static volatile int farResolution = DEFAULT_FAR_RESOLUTION;
     public static final int DEFAULT_ENTITY_DISTANCE = 4;
     public static volatile int entityDistance = DEFAULT_ENTITY_DISTANCE;
 
@@ -46,6 +49,7 @@ public final class PortalSettings {
             PortalViewRenderer.resolutionScale = clamp(p, "resolutionPercent", DEFAULT_RES, 10, 100) / 100f;
             PortalViewRenderer.maxUpdateEvery = clamp(p, "maxUpdateEvery", DEFAULT_UPDATE_EVERY, 1, 8);
             PortalViewRenderer.minUpdatesPerSecond = clamp(p, "minUpdatesPerSecond", DEFAULT_MIN_RATE, 20, 240);
+            farResolution = clamp(p, "farResolution", DEFAULT_FAR_RESOLUTION, 64, 1024);
             farTerrain = !"false".equalsIgnoreCase(p.getProperty("farTerrain", "true").trim());
             occlusion = !"false".equalsIgnoreCase(p.getProperty("hideBehindWalls", "true").trim());
             entities = !"false".equalsIgnoreCase(p.getProperty("entities", "true").trim());
@@ -67,6 +71,7 @@ public final class PortalSettings {
         p.setProperty("resolutionPercent", Integer.toString(resolutionPercent()));
         p.setProperty("maxUpdateEvery", Integer.toString(PortalViewRenderer.maxUpdateEvery));
         p.setProperty("minUpdatesPerSecond", Integer.toString(PortalViewRenderer.minUpdatesPerSecond));
+        p.setProperty("farResolution", Integer.toString(farResolution));
         p.setProperty("farTerrain", Boolean.toString(farTerrain));
         p.setProperty("hideBehindWalls", Boolean.toString(occlusion));
         p.setProperty("entities", Boolean.toString(entities));
@@ -101,6 +106,7 @@ public final class PortalSettings {
         entities = true;
         occlusion = true;
         farTerrain = true;
+        farResolution = DEFAULT_FAR_RESOLUTION;
         entityDistance = DEFAULT_ENTITY_DISTANCE;
         save();
     }

@@ -317,5 +317,8 @@
   "quasar_portals.options.occlusion": "Hide Portals Behind Walls",
   "quasar_portals.options.occlusion.tooltip": "Portals the game can't see from where you are (other rooms, underground, behind hills) stop redrawing and don't use a live slot. Turn off only if a portal ever freezes while you can see it.",
   "quasar_portals.options.far": "Far Terrain Through Portals",
-  "quasar_portals.options.far.tooltip": "Quasar Horizons' distant terrain beyond the Portal Render Distance, for the 2 nearest portals and mirrors. A low-resolution snapshot redrawn only when you move far enough, so it is nearly free most of the time. Needs Quasar Horizons."
+  "quasar_portals.options.far.tooltip": "Quasar Horizons' distant terrain beyond the Portal Render Distance, for the 2 nearest portals and mirrors. A low-resolution snapshot redrawn only when you move far enough, so it is nearly free most of the time. Needs Quasar Horizons.",
+  "quasar_portals.options.far_resolution": "Far Terrain Resolution",
+  "quasar_portals.options.far_resolution.value": "%s px",
+  "quasar_portals.options.far_resolution.tooltip": "Sharpness of the far terrain seen through portals, in pixels per cube side. Lower is cheaper to redraw and uses less video memory (512 px: about 25 MB per portal, 256 px: about 6 MB)."
 }

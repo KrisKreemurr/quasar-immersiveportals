@@ -58,6 +58,9 @@ public class PortalSettingsScreen extends Screen {
             PortalSettings.save();
             b.setMessage(farLabel());
         }).tooltip(Tooltip.create(Component.translatable("quasar_portals.options.far.tooltip"))).width(WIDTH).build());
+        rows.addChild(slider("far_resolution", 64, 1024, 64,
+            () -> PortalSettings.farResolution, v -> PortalSettings.farResolution = v,
+            v -> Component.translatable("quasar_portals.options.far_resolution.value", v)));
         rows.addChild(Button.builder(occlusionLabel(), b -> {
             PortalSettings.occlusion = !PortalSettings.occlusion;
             PortalSettings.save();
