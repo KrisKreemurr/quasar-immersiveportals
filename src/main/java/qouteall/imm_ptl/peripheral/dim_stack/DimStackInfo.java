@@ -1,3 +1,4 @@
+// QUASAR STUB: parked peripheral feature (dimension stack / alternate dimensions / portal wand / command stick), see src/parked.
 package qouteall.imm_ptl.peripheral.dim_stack;
 
 import com.mojang.datafixers.util.Pair;
@@ -18,263 +19,48 @@ import qouteall.imm_ptl.core.portal.Portal;
 import qouteall.imm_ptl.core.portal.global_portals.GlobalPortalStorage;
 import qouteall.imm_ptl.core.portal.global_portals.VerticalConnectingPortal;
 import qouteall.q_misc_util.Helper;
-
 import java.util.*;
 
-// will be serialized by GSON
+// QUASAR STUB: generated no-op stand-in; the original lives in src/parked (render rewrite pending).
+
 public class DimStackInfo {
-    
+
     public boolean loop;
     public boolean gravityTransform;
     public List<DimStackEntry> entries;
-    
-    public DimStackInfo() {
-        entries = new ArrayList<>();
-        loop = false;
-        gravityTransform = false;
-    }
-    
-    public DimStackInfo(List<DimStackEntry> entries, boolean loop, boolean gravityTransform) {
-        this.entries = entries;
-        this.loop = loop;
-        this.gravityTransform = gravityTransform;
-    }
-    
-    public static void initializeFuseViewProperty(Portal portal) {
-        // all portals are fuse-view now
-        portal.setFuseView(true);
-    }
-    
+    public DimStackInfo() {}
+
+    public DimStackInfo(List<DimStackEntry> entries, boolean loop, boolean gravityTransform) {}
+
+    public static void initializeFuseViewProperty(Portal portal) {}
+
     public static void createConnectionBetween(
         DimStackEntry a, DimStackEntry b, boolean gravityChange
-    ) {
-        ServerLevel fromWorld = McHelper.getServerWorld(a.getDimension());
-        ServerLevel toWorld = McHelper.getServerWorld(b.getDimension());
-        
-        boolean xorFlipped = a.flipped ^ b.flipped;
-        
-        int fromWorldMinY = McHelper.getMinY(fromWorld);
-        if (a.bottomY != null) {
-            fromWorldMinY = a.bottomY;
-        }
-        int fromWorldMaxY = McHelper.getMaxContentYExclusive(fromWorld);
-        if (a.topY != null) {
-            fromWorldMaxY = a.topY;
-        }
-        int toWorldMinY = McHelper.getMinY(toWorld);
-        if (b.bottomY != null) {
-            toWorldMinY = b.bottomY;
-        }
-        int toWorldMaxY = McHelper.getMaxContentYExclusive(toWorld);
-        if (b.topY != null) {
-            toWorldMaxY = b.topY;
-        }
-        
-        VerticalConnectingPortal connectingPortal = VerticalConnectingPortal.createConnectingPortal(
-            fromWorld,
-            a.flipped ? VerticalConnectingPortal.ConnectorType.ceil :
-                VerticalConnectingPortal.ConnectorType.floor,
-            toWorld,
-            b.scale / a.scale,
-            xorFlipped,
-            b.horizontalRotation - a.horizontalRotation,
-            fromWorldMinY, fromWorldMaxY,
-            toWorldMinY, toWorldMaxY
-        );
-        
-        VerticalConnectingPortal reverse = PortalAPI.createReversePortal(connectingPortal);
-        
-        initializeFuseViewProperty(connectingPortal);
-        initializeFuseViewProperty(reverse);
-        
-        if (gravityChange) {
-            connectingPortal.setTeleportChangesGravity(true);
-            reverse.setTeleportChangesGravity(true);
-        }
-        
-        if (a.connectsNext) {
-            PortalAPI.addGlobalPortal(fromWorld, connectingPortal);
-        }
-        
-        if (b.connectsPrevious) {
-            PortalAPI.addGlobalPortal(toWorld, reverse);
-        }
-    }
-    
-    public void apply(MinecraftServer server) {
-        
-        if (entries.isEmpty()) {
-            McHelper.sendMessageToFirstLoggedPlayer(server, Component.literal(
-                "Error: No dimension for dimension stack"
-            ));
-            return;
-        }
-        
-        for (DimStackEntry entry : entries) {
-            if (server.getLevel(entry.getDimension()) == null) {
-                McHelper.sendMessageToFirstLoggedPlayer(server, Component.literal(
-                    "Failed to apply dimension stack. Missing dimension " + entry.dimensionIdStr
-                ).withStyle(ChatFormatting.RED));
-                return;
-            }
-        }
-        
-        if (!GlobalPortalStorage.getGlobalPortals(McHelper.getServerWorld(entries.get(0).getDimension())).isEmpty()) {
-            Helper.err("There are already global portals when initializing dimension stack");
-            McHelper.sendMessageToFirstLoggedPlayer(server, Component.literal(
-                "Failed to apply dimension stack because there are already global portals when initializing dimension stack"
-            ).withStyle(ChatFormatting.RED));
-            return;
-        }
-        
-        // check connection conflict
-        Map<PortalInfo, List<DimStackEntry>> portalInfoMap = getPortalInfoMap();
-        for (Map.Entry<PortalInfo, List<DimStackEntry>> entry : portalInfoMap.entrySet()) {
-            PortalInfo key = entry.getKey();
-            List<DimStackEntry> value = entry.getValue();
-            if (value != null && value.size() > 1) {
-                McHelper.sendMessageToFirstLoggedPlayer(server, Component.literal(
-                    "Failed to apply dimension stack because of connection conflict. There are multiple connections in the %s of %s"
-                        .formatted(key.connectorType, key.dimension.identifier())
-                ).withStyle(ChatFormatting.RED));
-                return;
-            }
-        }
-        
-        Helper.wrapAdjacentAndMap(
-            entries.stream(),
-            Pair::of
-        ).forEach(pair -> {
-            DimStackEntry before = pair.getFirst();
-            DimStackEntry after = pair.getSecond();
-            createConnectionBetween(before, after, gravityTransform);
-        });
-        
-        if (loop) {
-            createConnectionBetween(entries.get(entries.size() - 1), entries.get(0), gravityTransform);
-        }
-        
-        Map<ResourceKey<Level>, BlockState> bedrockReplacementMap = new HashMap<>();
-        for (DimStackEntry entry : entries) {
-            String bedrockReplacementStr = entry.bedrockReplacementStr;
-            
-            BlockState bedrockReplacement = parseBlockString(bedrockReplacementStr);
-            
-            ResourceKey<Level> dimId = entry.getDimension();
-            if (bedrockReplacement != null) {
-                bedrockReplacementMap.put(dimId, bedrockReplacement);
-            }
-            ServerLevel world = server.getLevel(dimId);
-            Validate.notNull(world, "Missing dimension %s", dimId.identifier());
-            GlobalPortalStorage gps = GlobalPortalStorage.get(world);
-            gps.bedrockReplacement = bedrockReplacement;
-            gps.onDataChanged();
-        }
-        DimStackManagement.bedrockReplacementMap = bedrockReplacementMap;
-        
-        McHelper.sendMessageToFirstLoggedPlayer(
-            server,
-            Component.translatable("imm_ptl.dim_stack_initialized")
-        );
-    }
-    
-    public boolean isEffectivelyConnectingPrevious(int index) {
-        DimStackEntry entry = entries.get(index);
-        if (!entry.connectsPrevious) {
-            return false;
-        }
-        
-        if (index == 0) {
-            return loop;
-        }
-        return true;
-    }
-    
-    public boolean isEffectivelyConnectionNext(int index) {
-        DimStackEntry entry = entries.get(index);
-        if (!entry.connectsNext) {
-            return false;
-        }
-        
-        if (index == entries.size() - 1) {
-            return loop;
-        }
-        return true;
-    }
-    
-    public boolean isEffectivelyConnectingCeil(int index) {
-        DimStackEntry entry = entries.get(index);
-        
-        if (!entry.flipped) {
-            return isEffectivelyConnectingPrevious(index);
-        }
-        else {
-            return isEffectivelyConnectionNext(index);
-        }
-    }
-    
-    public boolean isEffectivelyConnectingFloor(int index) {
-        DimStackEntry entry = entries.get(index);
-        
-        if (!entry.flipped) {
-            return isEffectivelyConnectionNext(index);
-        }
-        else {
-            return isEffectivelyConnectingPrevious(index);
-        }
-    }
-    
+    ) {}
+
+    public void apply(MinecraftServer server) {}
+
+    public boolean isEffectivelyConnectingPrevious(int index) { return false; }
+
+    public boolean isEffectivelyConnectionNext(int index) { return false; }
+
+    public boolean isEffectivelyConnectingCeil(int index) { return false; }
+
+    public boolean isEffectivelyConnectingFloor(int index) { return false; }
+
     public record PortalInfo(
         ResourceKey<Level> dimension,
         VerticalConnectingPortal.ConnectorType connectorType
-    ) {}
-    
-    public Map<PortalInfo, List<DimStackEntry>> getPortalInfoMap() {
-        Map<PortalInfo, List<DimStackEntry>> map = new HashMap<>();
-        
-        for (int i = 0; i < entries.size(); i++) {
-            DimStackEntry entry = entries.get(i);
-            
-            if (isEffectivelyConnectingCeil(i)) {
-                PortalInfo portalInfo = new PortalInfo(
-                    entry.getDimension(),
-                    VerticalConnectingPortal.ConnectorType.ceil
-                );
-                map.computeIfAbsent(portalInfo, k -> new ArrayList<>()).add(entry);
-            }
-            
-            if (isEffectivelyConnectingFloor(i)) {
-                PortalInfo portalInfo = new PortalInfo(
-                    entry.getDimension(),
-                    VerticalConnectingPortal.ConnectorType.floor
-                );
-                map.computeIfAbsent(portalInfo, k -> new ArrayList<>()).add(entry);
-            }
-        }
-        
-        return map;
+    ) {
+
     }
-    
+
+    public Map<PortalInfo, List<DimStackEntry>> getPortalInfoMap() { return null; }
+
     @Nullable
-    public static BlockState parseBlockString(@Nullable String str) {
-        if (str == null) {
-            return null;
-        }
-        if (str.isEmpty()) {
-            return null;
-        }
-        
-        try {
-            Optional<Block> block = BuiltInRegistries.BLOCK.getOptional(McHelper.newResourceLocation(str));
-            return block.map(Block::defaultBlockState).orElse(null);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-    
-    public boolean hasDimension(ResourceKey<Level> dimension) {
-        return entries.stream().anyMatch(e -> e.getDimension() == dimension);
-    }
+    public static BlockState parseBlockString(@Nullable String str) { return null; }
+
+    public boolean hasDimension(ResourceKey<Level> dimension) { return false; }
+
 }
+

@@ -1,3 +1,4 @@
+// QUASAR STUB: parked peripheral feature (dimension stack / alternate dimensions / portal wand / command stick), see src/parked.
 package qouteall.imm_ptl.peripheral.alternate_dimension;
 
 import com.mojang.datafixers.util.Pair;
@@ -34,139 +35,70 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import qouteall.imm_ptl.core.miscellaneous.IPVanillaCopy;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+// QUASAR STUB: generated no-op stand-in; the original lives in src/parked (render rewrite pending).
+
 @IPVanillaCopy
 public abstract class DelegatedChunkGenerator extends ChunkGenerator {
-    
+
     protected ChunkGenerator delegate;
     protected BiomeSource biomeSource_;
-    
     public DelegatedChunkGenerator(
         BiomeSource biomeSource,
         ChunkGenerator delegate
-    ) {
-        super(biomeSource);
-        this.delegate = delegate;
-        this.biomeSource_ = biomeSource;
-    }
-    
-    @Override
-    public void applyCarvers(WorldGenRegion worldGenRegion, long l, RandomState randomState, BiomeManager biomeManager, StructureManager structureManager, ChunkAccess chunkAccess, GenerationStep.Carving carving) {
-        delegate.applyCarvers(worldGenRegion, l, randomState, biomeManager, structureManager, chunkAccess, carving);
-    }
-    
-    @Override
-    public void buildSurface(WorldGenRegion worldGenRegion, StructureManager structureManager, RandomState randomState, ChunkAccess chunkAccess) {
-        delegate.buildSurface(worldGenRegion, structureManager, randomState, chunkAccess);
-    }
-    
-    @Override
-    public void spawnOriginalMobs(WorldGenRegion region) {
-        delegate.spawnOriginalMobs(region);
-    }
-    
-    @Override
-    public int getGenDepth() {
-        return delegate.getGenDepth();
-    }
-    
-    @Override
-    public @NotNull CompletableFuture<ChunkAccess> fillFromNoise(Blender blender, RandomState randomState, StructureManager structureManager, ChunkAccess chunkAccess) {
-        return delegate.fillFromNoise(blender, randomState, structureManager, chunkAccess);
-    }
-    
-    @Override
-    public int getSeaLevel() {
-        return delegate.getSeaLevel();
-    }
-    
-    @Override
-    public int getMinY() {
-        return delegate.getMinY();
-    }
-    
-    @Override
-    public int getBaseHeight(int i, int j, Heightmap.Types types, LevelHeightAccessor levelHeightAccessor, RandomState randomState) {
-        return delegate.getBaseHeight(i, j, types, levelHeightAccessor, randomState);
-    }
-    
-    @Override
-    public NoiseColumn getBaseColumn(int i, int j, LevelHeightAccessor levelHeightAccessor, RandomState randomState) {
-        return delegate.getBaseColumn(i, j, levelHeightAccessor, randomState);
-    }
-    
-    @Override
-    public void addDebugScreenInfo(List<String> list, RandomState randomState, BlockPos blockPos) {
-        delegate.addDebugScreenInfo(list, randomState, blockPos);
-    }
-    
-    @Override
-    public ChunkGeneratorStructureState createState(HolderLookup<StructureSet> holderLookup, RandomState randomState, long l) {
-        return super.createState(holderLookup, randomState, l);
-    }
-    
-    @Override
-    public CompletableFuture<ChunkAccess> createBiomes(RandomState randomState, Blender blender, StructureManager structureManager, ChunkAccess chunkAccess) {
-        return super.createBiomes(randomState, blender, structureManager, chunkAccess);
-    }
-    
-    @Override
-    public void createStructures(RegistryAccess registryAccess, ChunkGeneratorStructureState chunkGeneratorStructureState, StructureManager structureManager, ChunkAccess chunkAccess, StructureTemplateManager structureTemplateManager) {
-        super.createStructures(registryAccess, chunkGeneratorStructureState, structureManager, chunkAccess, structureTemplateManager);
-    }
-    
-    @Override
-    public void applyBiomeDecoration(WorldGenLevel worldGenLevel, ChunkAccess chunkAccess, StructureManager structureManager) {
-        delegate.applyBiomeDecoration(worldGenLevel, chunkAccess, structureManager);
-    }
-    
-    @Override
-    public Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> getTypeNameForDataFixer() {
-        return delegate.getTypeNameForDataFixer();
-    }
-    
+    ) { super(biomeSource); }
+
+    public void applyCarvers(WorldGenRegion worldGenRegion, long l, RandomState randomState, BiomeManager biomeManager, StructureManager structureManager, ChunkAccess chunkAccess, GenerationStep.Carving carving) {}
+
+    public void buildSurface(WorldGenRegion worldGenRegion, StructureManager structureManager, RandomState randomState, ChunkAccess chunkAccess) {}
+
+    public void spawnOriginalMobs(WorldGenRegion region) {}
+
+    public int getGenDepth() { return 0; }
+
+    public @NotNull CompletableFuture<ChunkAccess> fillFromNoise(Blender blender, RandomState randomState, StructureManager structureManager, ChunkAccess chunkAccess) { return null; }
+
+    public int getSeaLevel() { return 0; }
+
+    public int getMinY() { return 0; }
+
+    public int getBaseHeight(int i, int j, Heightmap.Types types, LevelHeightAccessor levelHeightAccessor, RandomState randomState) { return 0; }
+
+    public NoiseColumn getBaseColumn(int i, int j, LevelHeightAccessor levelHeightAccessor, RandomState randomState) { return null; }
+
+    public void addDebugScreenInfo(List<String> list, RandomState randomState, BlockPos blockPos) {}
+
+    public ChunkGeneratorStructureState createState(HolderLookup<StructureSet> holderLookup, RandomState randomState, long l) { return null; }
+
+    public CompletableFuture<ChunkAccess> createBiomes(RandomState randomState, Blender blender, StructureManager structureManager, ChunkAccess chunkAccess) { return null; }
+
+    public void createStructures(RegistryAccess registryAccess, ChunkGeneratorStructureState chunkGeneratorStructureState, StructureManager structureManager, ChunkAccess chunkAccess, StructureTemplateManager structureTemplateManager) {}
+
+    public void applyBiomeDecoration(WorldGenLevel worldGenLevel, ChunkAccess chunkAccess, StructureManager structureManager) {}
+
+    public Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> getTypeNameForDataFixer() { return null; }
+
     @Nullable
-    @Override
-    public Pair<BlockPos, Holder<Structure>> findNearestMapStructure(ServerLevel serverLevel, HolderSet<Structure> holderSet, BlockPos blockPos, int i, boolean bl) {
-        return delegate.findNearestMapStructure(serverLevel, holderSet, blockPos, i, bl);
-    }
-    
-    @Override
-    public int getSpawnHeight(LevelHeightAccessor level) {
-        return delegate.getSpawnHeight(level);
-    }
-    
-    @Override
-    public BiomeSource getBiomeSource() {
-        return delegate.getBiomeSource();
-    }
-    
-    @Override
-    public WeightedRandomList<MobSpawnSettings.SpawnerData> getMobsAt(Holder<Biome> holder, StructureManager structureManager, MobCategory mobCategory, BlockPos blockPos) {
-        return delegate.getMobsAt(holder, structureManager, mobCategory, blockPos);
-    }
-    
-    @Override
-    public void createReferences(WorldGenLevel worldGenLevel, StructureManager structureManager, ChunkAccess chunkAccess) {
-        delegate.createReferences(worldGenLevel, structureManager, chunkAccess);
-    }
-    
-    @Override
-    public int getFirstFreeHeight(int i, int j, Heightmap.Types types, LevelHeightAccessor levelHeightAccessor, RandomState randomState) {
-        return delegate.getFirstFreeHeight(i, j, types, levelHeightAccessor, randomState);
-    }
-    
-    @Override
-    public int getFirstOccupiedHeight(int i, int j, Heightmap.Types types, LevelHeightAccessor levelHeightAccessor, RandomState randomState) {
-        return delegate.getFirstOccupiedHeight(i, j, types, levelHeightAccessor, randomState);
-    }
-    
-    @Override
-    public BiomeGenerationSettings getBiomeGenerationSettings(Holder<Biome> holder) {
-        return delegate.getBiomeGenerationSettings(holder);
-    }
+    public Pair<BlockPos, Holder<Structure>> findNearestMapStructure(ServerLevel serverLevel, HolderSet<Structure> holderSet, BlockPos blockPos, int i, boolean bl) { return null; }
+
+    public int getSpawnHeight(LevelHeightAccessor level) { return 0; }
+
+    public BiomeSource getBiomeSource() { return null; }
+
+    public WeightedRandomList<MobSpawnSettings.SpawnerData> getMobsAt(Holder<Biome> holder, StructureManager structureManager, MobCategory mobCategory, BlockPos blockPos) { return null; }
+
+    public void createReferences(WorldGenLevel worldGenLevel, StructureManager structureManager, ChunkAccess chunkAccess) {}
+
+    public int getFirstFreeHeight(int i, int j, Heightmap.Types types, LevelHeightAccessor levelHeightAccessor, RandomState randomState) { return 0; }
+
+    public int getFirstOccupiedHeight(int i, int j, Heightmap.Types types, LevelHeightAccessor levelHeightAccessor, RandomState randomState) { return 0; }
+
+    public BiomeGenerationSettings getBiomeGenerationSettings(Holder<Biome> holder) { return null; }
+
+    protected DelegatedChunkGenerator() {}
+
 }
+
