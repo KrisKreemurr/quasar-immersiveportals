@@ -53,6 +53,11 @@ public class PortalSettingsScreen extends Screen {
             () -> Math.min(32, PortalViewRenderer.renderDistance), v -> PortalViewRenderer.renderDistance = v,
             v -> v == 0 ? Component.translatable("quasar_portals.options.distance.unlimited")
                 : Component.translatable("quasar_portals.options.distance.value", v)));
+        rows.addChild(Button.builder(farLabel(), b -> {
+            PortalSettings.farTerrain = !PortalSettings.farTerrain;
+            PortalSettings.save();
+            b.setMessage(farLabel());
+        }).tooltip(Tooltip.create(Component.translatable("quasar_portals.options.far.tooltip"))).width(WIDTH).build());
         rows.addChild(Button.builder(occlusionLabel(), b -> {
             PortalSettings.occlusion = !PortalSettings.occlusion;
             PortalSettings.save();
@@ -104,6 +109,11 @@ public class PortalSettingsScreen extends Screen {
     public void onClose() {
         PortalSettings.save();
         minecraft.gui.setScreen(parent);
+    }
+    
+    private static Component farLabel() {
+        return CommonComponents.optionNameValue(Component.translatable("quasar_portals.options.far"),
+            PortalSettings.farTerrain ? CommonComponents.OPTION_ON : CommonComponents.OPTION_OFF);
     }
     
     private static Component occlusionLabel() {

@@ -24,6 +24,8 @@ public final class PortalSettings {
     public static volatile boolean entities = true;
     /** skip redrawing portals hidden behind walls/terrain (the game's chunk visibility search) */
     public static volatile boolean occlusion = true;
+    /** far LOD terrain through the nearest portals (needs Quasar Horizons) */
+    public static volatile boolean farTerrain = true;
     public static final int DEFAULT_ENTITY_DISTANCE = 4;
     public static volatile int entityDistance = DEFAULT_ENTITY_DISTANCE;
 
@@ -44,6 +46,7 @@ public final class PortalSettings {
             PortalViewRenderer.resolutionScale = clamp(p, "resolutionPercent", DEFAULT_RES, 10, 100) / 100f;
             PortalViewRenderer.maxUpdateEvery = clamp(p, "maxUpdateEvery", DEFAULT_UPDATE_EVERY, 1, 8);
             PortalViewRenderer.minUpdatesPerSecond = clamp(p, "minUpdatesPerSecond", DEFAULT_MIN_RATE, 20, 240);
+            farTerrain = !"false".equalsIgnoreCase(p.getProperty("farTerrain", "true").trim());
             occlusion = !"false".equalsIgnoreCase(p.getProperty("hideBehindWalls", "true").trim());
             entities = !"false".equalsIgnoreCase(p.getProperty("entities", "true").trim());
             entityDistance = clamp(p, "entityDistance", DEFAULT_ENTITY_DISTANCE, 1, 16);
@@ -64,6 +67,7 @@ public final class PortalSettings {
         p.setProperty("resolutionPercent", Integer.toString(resolutionPercent()));
         p.setProperty("maxUpdateEvery", Integer.toString(PortalViewRenderer.maxUpdateEvery));
         p.setProperty("minUpdatesPerSecond", Integer.toString(PortalViewRenderer.minUpdatesPerSecond));
+        p.setProperty("farTerrain", Boolean.toString(farTerrain));
         p.setProperty("hideBehindWalls", Boolean.toString(occlusion));
         p.setProperty("entities", Boolean.toString(entities));
         p.setProperty("entityDistance", Integer.toString(entityDistance));
@@ -96,6 +100,7 @@ public final class PortalSettings {
         translucent = true;
         entities = true;
         occlusion = true;
+        farTerrain = true;
         entityDistance = DEFAULT_ENTITY_DISTANCE;
         save();
     }

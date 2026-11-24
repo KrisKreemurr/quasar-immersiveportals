@@ -296,6 +296,7 @@ public final class PortalViewRenderer {
 
         Matrix4f mainViewProj = new Matrix4f(main.projectionMatrix).mul(main.viewRotationMatrix);
         int n = Math.min(Math.min(liveLimit, MAX_PORTALS), portals.size());
+        int farSlots = 0;
         for (int i = 0; i < n; i++) {
             Portal portal = portals.get(i);
             
@@ -325,9 +326,18 @@ public final class PortalViewRenderer {
                 long ts = System.nanoTime();
                 PortalSky.drawSky(virtual, t.colorView, t.depthView);
                 frameSkyNs += System.nanoTime() - ts;
+                // far terrain (Quasar Horizons portal panorama) for the nearest portals, before the live terrain
+                boolean far = false;
+                if (PortalSettings.farTerrain && farSlots < PortalFarView.MAX_PORTALS) {
+                    farSlots++;
+                    long tf = System.nanoTime();
+                    far = PortalFarView.draw(encoder, portal.getId(), virtual, main, t.colorView, t.depthView, renderDistance);
+                    frameSkyNs += System.nanoTime() - tf;
+                }
                 long tt = System.nanoTime();
                 GpuBufferSlice mainFog = RenderSystem.getShaderFog();
-                GpuBufferSlice fog = PortalSky.portalFog(encoder, main, renderDistance);
+                // with far terrain behind it, the live terrain must not fade out at the portal distance
+                GpuBufferSlice fog = far ? null : PortalSky.portalFog(encoder, main, renderDistance);
                 // Meshelium's terrain shaders (and clouds) read vanilla's Projection buffer: give them the portal
                 // camera's oblique projection, so the portal plane clips the near side and every pass shares one depth
                 ByteBuffer pb = ByteBuffer.allocateDirect(64).order(ByteOrder.nativeOrder());
