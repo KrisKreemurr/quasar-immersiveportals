@@ -1,4 +1,3 @@
-// QUASAR STUB: parked peripheral feature (dimension stack / alternate dimensions / portal wand / command stick), see src/parked.
 package qouteall.imm_ptl.peripheral.wand;
 
 import net.minecraft.resources.ResourceKey;
@@ -13,48 +12,167 @@ import qouteall.q_misc_util.my_util.DQuaternion;
 import qouteall.q_misc_util.my_util.Plane;
 import qouteall.q_misc_util.my_util.WithDim;
 
-// QUASAR STUB: generated no-op stand-in; the original lives in src/parked (render rewrite pending).
-
+/**
+ * The proto-portal's one-side when using portal wand to create new portal.
+ * Will be serialized to JSON (require type adapter for dimension intId).
+ */
 public class ProtoPortalSide {
-
+    @NotNull
     public ResourceKey<Level> dimension;
+    
+    @NotNull
     public Vec3 leftBottom;
+    
+    @Nullable
     public Vec3 rightBottom;
+    
+    @Nullable
     public Vec3 leftTop;
-    public ProtoPortalSide(@NotNull ResourceKey<Level> dimension, @NotNull Vec3 leftBottom) {}
-
-    public ProtoPortalSide copy() { return null; }
-
-    public Vec3 getHorizontalAxis() { return null; }
-
-    public Vec3 getVerticalAxis() { return null; }
-
-    public Vec3 getNormal() { return null; }
-
-    public double getWidth() { return 0D; }
-
-    public double getHeight() { return 0D; }
-
-    public double getHeightDivWidth() { return 0D; }
-
+    
+    public ProtoPortalSide(@NotNull ResourceKey<Level> dimension, @NotNull Vec3 leftBottom) {
+        this.leftBottom = leftBottom;
+        this.dimension = dimension;
+    }
+    
+    public ProtoPortalSide copy() {
+        ProtoPortalSide newPortal = new ProtoPortalSide(dimension, leftBottom);
+        newPortal.rightBottom = rightBottom;
+        newPortal.leftTop = leftTop;
+        return newPortal;
+    }
+    
+    public Vec3 getHorizontalAxis() {
+        assert rightBottom != null;
+        return rightBottom.subtract(leftBottom);
+    }
+    
+    public Vec3 getVerticalAxis() {
+        assert leftTop != null;
+        return leftTop.subtract(leftBottom);
+    }
+    
+    public Vec3 getNormal() {
+        return getHorizontalAxis().cross(getVerticalAxis()).normalize();
+    }
+    
+    public double getWidth() {
+        return getHorizontalAxis().length();
+    }
+    
+    public double getHeight() {
+        return getVerticalAxis().length();
+    }
+    
+    public double getHeightDivWidth() {
+        double width = getWidth();
+        double height = getHeight();
+        
+        if (width == 0) {
+            return 0;
+        }
+        
+        return height / width;
+    }
+    
     @Nullable
-    public ProtoPortalSide undo() { return null; }
-
-    public boolean isComplete() { return false; }
-
+    public ProtoPortalSide undo() {
+        if (leftTop != null) {
+            leftTop = null;
+            return this;
+        }
+        if (rightBottom != null) {
+            rightBottom = null;
+            return this;
+        }
+        return null;
+    }
+    
+    public boolean isComplete() {
+        return leftTop != null;
+    }
+    
     @Nullable
-    public WithDim<Plane> getCursorConstraintPlane() { return null; }
-
+    public WithDim<Plane> getCursorConstraintPlane() {
+        if (isComplete()) {
+            return null;
+        }
+        if (rightBottom == null) {
+            return null;
+        }
+        return new WithDim<>(dimension, new Plane(leftBottom, getHorizontalAxis()));
+    }
+    
     @Nullable
-    public WithDim<Circle> getCursorConstraintCircle(double heightDivWidth) { return null; }
+    public WithDim<Circle> getCursorConstraintCircle(double heightDivWidth) {
+        if (isComplete()) {
+            return null;
+        }
+        
+        if (rightBottom == null) {
+            return null;
+        }
+        
+        WithDim<Plane> plane = getCursorConstraintPlane();
+        Validate.notNull(plane);
+        
+        Vec3 horizontalAxis = getHorizontalAxis();
+        double width = horizontalAxis.length();
+        
+        double constraintHeight = width * heightDivWidth;
+        
+        return new WithDim<>(dimension, new Circle(plane.value(), leftBottom, constraintHeight));
+    }
+    
+    public boolean isValidPlacement(@Nullable Double heightDivWidth) {
+        if (rightBottom != null) {
+            double width = getHorizontalAxis().length();
+            
+            if (width < 0.001 || width > 64.001) {
+                return false;
+            }
+            
+            if (leftTop != null) {
+                double height = getVerticalAxis().length();
 
-    public boolean isValidPlacement(@Nullable Double heightDivWidth) { return false; }
+                return !(height < 0.001) && !(height > 64.001);
+            }
+            else if (heightDivWidth != null) {
+                double height = width * heightDivWidth;
 
-    public void placeCursor(Vec3 pos) {}
-
-    public UnilateralPortalState toUnilateralPortalState() { return null; }
-
-    protected ProtoPortalSide() {}
-
+                return !(height < 0.001) && !(height > 64.001);
+            }
+        }
+        
+        return true;
+    }
+    
+    public void placeCursor(Vec3 pos) {
+        if (rightBottom == null) {
+            rightBottom = pos;
+        }
+        else if (leftTop == null) {
+            leftTop = pos;
+        }
+        else {
+            throw new IllegalStateException();
+        }
+    }
+    
+    public UnilateralPortalState toUnilateralPortalState() {
+        Validate.isTrue(isComplete());
+        
+        Vec3 horizontalAxis = getHorizontalAxis();
+        Vec3 verticalAxis = getVerticalAxis();
+        
+        return new UnilateralPortalState(
+            dimension,
+            leftBottom.add(horizontalAxis.scale(0.5)).add(verticalAxis.scale(0.5)),
+            DQuaternion.fromFacingVecs(
+                horizontalAxis.normalize(),
+                verticalAxis.normalize()
+            ),
+            horizontalAxis.length(),
+            verticalAxis.length()
+        );
+    }
 }
-

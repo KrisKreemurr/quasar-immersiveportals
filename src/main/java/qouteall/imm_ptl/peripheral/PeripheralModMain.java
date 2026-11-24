@@ -31,7 +31,7 @@ public class PeripheralModMain {
     public static Block portalHelperBlock;
 
     public static final CreativeModeTab TAB = CreativeModeTab.builder()
-            .icon(() -> new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("immersive_portals", "portal_helper")))) // Quasar MC: wand parked
+            .icon(() -> new ItemStack(PortalWandItem.instance))
             .title(Component.translatable("imm_ptl.item_group"))
             .displayItems((enabledFeatures, entries) -> {
                 PortalWandItem.addIntoCreativeTag(entries);
@@ -80,7 +80,17 @@ public class PeripheralModMain {
                     new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.Identifier.fromNamespaceAndPath("immersive_portals", "portal_helper"))).useBlockDescriptionPrefix())
         );
 
-        // Quasar MC: command stick and portal wand are parked (not registered) until they are ported.
+        CommandStickItem commandStickItem = new CommandStickItem(new Item.Properties()
+            .setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM,
+                Identifier.fromNamespaceAndPath("immersive_portals", "command_stick"))));
+        regFunc.accept(Identifier.fromNamespaceAndPath("immersive_portals", "command_stick"), commandStickItem);
+        CommandStickItem.instance = commandStickItem;
+        
+        PortalWandItem portalWandItem = new PortalWandItem(new Item.Properties()
+            .setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM,
+                Identifier.fromNamespaceAndPath("immersive_portals", "portal_wand"))));
+        regFunc.accept(Identifier.fromNamespaceAndPath("immersive_portals", "portal_wand"), portalWandItem);
+        PortalWandItem.instance = portalWandItem;
     }
     
     public static void registerBlocks(BiConsumer<Identifier, Block> regFunc) {
