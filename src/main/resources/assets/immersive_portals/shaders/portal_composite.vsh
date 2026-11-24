@@ -8,7 +8,8 @@ layout(location = 0) in vec3 Position;
 layout(std140) uniform PortalUniforms
 {
     mat4 uViewProj;  // main camera projection * view rotation
-    vec4 uScreen;    // xy = size of the portal view image in pixels
+    vec4 uScreen;    // xy = main screen size in pixels
+    vec4 uRect;      // the portal view's NDC rectangle (x0, y0, x1, y1)
 };
 
 void main()

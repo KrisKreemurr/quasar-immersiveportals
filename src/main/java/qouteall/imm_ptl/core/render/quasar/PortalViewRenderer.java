@@ -106,6 +106,7 @@ public final class PortalViewRenderer {
 
     private static void renderAll() {
         drawnThisFrame.clear();
+        lastPixels = 0;
         try {
             if (!failed) {
                 renderPortals();
@@ -155,29 +156,70 @@ public final class PortalViewRenderer {
         GpuDevice device = RenderSystem.getDevice();
         CommandEncoder encoder = device.createCommandEncoder();
 
+        Matrix4f mainViewProj = new Matrix4f(main.projectionMatrix).mul(main.viewRotationMatrix);
         int n = Math.min(MAX_PORTALS, portals.size());
         for (int i = 0; i < n; i++) {
             Portal portal = portals.get(i);
-            Target t = target(i, device, w, h);
-
-            CameraRenderState virtual = virtualCamera(main, portal);
+            
+            // only the part of the screen the portal covers: its NDC rectangle (x0, y0, x1, y1)
+            float[] rect = screenRect(mainViewProj, main.pos, portal);
+            if (rect == null) continue; // off screen
+            int rw = Math.max(1, (int) Math.ceil((rect[2] - rect[0]) * 0.5f * w));
+            int rh = Math.max(1, (int) Math.ceil((rect[3] - rect[1]) * 0.5f * h));
+            Target t = target(i, device, rw, rh);
+            
+            CameraRenderState virtual = virtualCamera(main, portal, rect);
             if (virtual == null) continue;
-
+            
             // flat sky colour for now (the sky, clouds and far panorama come in later milestones)
             encoder.clearColorAndDepthTextures(t.color, new Vector4f(0.53f, 0.71f, 1.0f, 1.0f), t.depth, 0.0);
-            boolean drawn = (Boolean) drawTerrainMethod.invoke(null, virtual, t.colorView, t.depthView, w, h);
+            boolean drawn = (Boolean) drawTerrainMethod.invoke(null, virtual, t.colorView, t.depthView,
+                t.width, t.height);
             if (!drawn) continue;
-
-            composite(encoder, main, portal, t, mainColor, mainDepth, w, h);
+            
+            composite(encoder, main, portal, t, rect, mainColor, mainDepth, w, h);
             drawnThisFrame.add(portal.getId());
+            lastPixels += (long) t.width * t.height;
         }
     }
 
+    static long lastPixels;
+    
+    /**
+     * The portal's bounding rectangle on screen in NDC (x0, y0, x1, y1), padded by a couple of pixels and clamped to
+     * the screen; the whole screen when a corner is behind the camera; null when it is off screen.
+     */
+    private static float[] screenRect(Matrix4f viewProj, Vec3 cam, Portal portal) {
+        Vec3 o = portal.getOriginPos().subtract(cam);
+        Vec3 aw = portal.getAxisW().scale(portal.getWidth() / 2);
+        Vec3 ah = portal.getAxisH().scale(portal.getHeight() / 2);
+        Vec3[] corners = {
+            o.subtract(aw).subtract(ah), o.add(aw).subtract(ah), o.add(aw).add(ah), o.subtract(aw).add(ah)
+        };
+        float x0 = Float.MAX_VALUE, y0 = Float.MAX_VALUE, x1 = -Float.MAX_VALUE, y1 = -Float.MAX_VALUE;
+        for (Vec3 c : corners) {
+            Vector4f p = viewProj.transform(new Vector4f((float) c.x, (float) c.y, (float) c.z, 1f));
+            if (p.w <= 1e-4f) {
+                return new float[]{-1f, -1f, 1f, 1f};
+            }
+            float x = p.x / p.w, y = p.y / p.w;
+            x0 = Math.min(x0, x); y0 = Math.min(y0, y);
+            x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+        }
+        float pad = 0.004f;
+        x0 = Math.max(-1f, x0 - pad); y0 = Math.max(-1f, y0 - pad);
+        x1 = Math.min(1f, x1 + pad); y1 = Math.min(1f, y1 + pad);
+        if (x1 <= x0 || y1 <= y0) {
+            return null;
+        }
+        return new float[]{x0, y0, x1, y1};
+    }
+    
     // ------------------------------------------------------------------
     // virtual camera
     // ------------------------------------------------------------------
 
-    private static CameraRenderState virtualCamera(CameraRenderState main, Portal portal) {
+    private static CameraRenderState virtualCamera(CameraRenderState main, Portal portal, float[] rect) {
         Vec3 camPos = main.pos;
         Vec3 vPos = portal.transformPoint(camPos);
 
@@ -198,7 +240,17 @@ public final class PortalViewRenderer {
         Vector3f nv = view.transformDirection(new Vector3f((float) n.x, (float) n.y, (float) n.z));
         Vector4f clip = new Vector4f(nv.x, nv.y, nv.z, d);
 
-        Matrix4f proj = obliqueReverseZ(main.projectionMatrix, clip);
+        // zoom the projection onto the portal's screen rectangle: rows 0/1 remapped so the rectangle fills the image
+        // (narrows the frustum too, so only terrain that can appear inside the portal is drawn)
+        Matrix4f sub = new Matrix4f(main.projectionMatrix);
+        float cx = (rect[0] + rect[2]) * 0.5f, hx = (rect[2] - rect[0]) * 0.5f;
+        float cy = (rect[1] + rect[3]) * 0.5f, hy = (rect[3] - rect[1]) * 0.5f;
+        Vector4f row0 = sub.getRow(0, new Vector4f()), row1 = sub.getRow(1, new Vector4f());
+        Vector4f row3 = sub.getRow(3, new Vector4f());
+        sub.setRow(0, new Vector4f(row0).sub(new Vector4f(row3).mul(cx)).div(hx));
+        sub.setRow(1, new Vector4f(row1).sub(new Vector4f(row3).mul(cy)).div(hy));
+        
+        Matrix4f proj = obliqueReverseZ(sub, clip);
         if (proj == null) {
             return null;
         }
@@ -254,7 +306,7 @@ public final class PortalViewRenderer {
     // ------------------------------------------------------------------
 
     private static void composite(CommandEncoder encoder, CameraRenderState main, Portal portal, Target t,
-                                  GpuTextureView mainColor, GpuTextureView mainDepth, int w, int h) {
+                                  float[] rect, GpuTextureView mainColor, GpuTextureView mainDepth, int w, int h) {
         ensurePipeline();
         Vec3 cam = main.pos;
         Vec3 o = portal.getOriginPos().subtract(cam);
@@ -270,11 +322,15 @@ public final class PortalViewRenderer {
             putVec(vb, a); putVec(vb, b); putVec(vb, c);
             putVec(vb, a); putVec(vb, c); putVec(vb, d);
             vb.flip();
-            ByteBuffer ub = stack.calloc(80);
+            ByteBuffer ub = stack.calloc(96);
             Matrix4f viewProj = new Matrix4f(main.projectionMatrix).mul(main.viewRotationMatrix);
             viewProj.get(0, ub);
-            ub.putFloat(64, (float) w);
+            ub.putFloat(64, (float) w);   // main screen size
             ub.putFloat(68, (float) h);
+            ub.putFloat(80, rect[0]);     // the portal view's NDC rectangle
+            ub.putFloat(84, rect[1]);
+            ub.putFloat(88, rect[2]);
+            ub.putFloat(92, rect[3]);
 
             GpuBufferSlice vertices = encoder.transientMemory().uploadGpu(vb, 16, GpuBuffer.USAGE_VERTEX);
             GpuBufferSlice uniforms = encoder.transientMemory().uploadGpu(ub, 256, GpuBuffer.USAGE_UNIFORM);
@@ -316,7 +372,7 @@ public final class PortalViewRenderer {
             .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
             .build();
         sampler = RenderSystem.getDevice().createSampler(AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE,
-            FilterMode.NEAREST, FilterMode.NEAREST, 1, OptionalDouble.empty());
+            FilterMode.LINEAR, FilterMode.LINEAR, 1, OptionalDouble.empty());
     }
 
     // ------------------------------------------------------------------
@@ -329,11 +385,15 @@ public final class PortalViewRenderer {
         int width, height;
     }
 
-    private static Target target(int slot, GpuDevice device, int w, int h) {
+    private static Target target(int slot, GpuDevice device, int needW, int needH) {
         Target t = targets[slot];
-        if (t != null && t.width == w && t.height == h) {
+        // reuse while big enough and not more than about twice too big (no reallocation as the portal moves a bit)
+        if (t != null && t.width >= needW && t.height >= needH
+            && t.width <= needW * 2 + 64 && t.height <= needH * 2 + 64) {
             return t;
         }
+        int w = (needW + 63) / 64 * 64;
+        int h = (needH + 63) / 64 * 64;
         if (t != null) {
             t.colorView.close();
             t.depthView.close();
