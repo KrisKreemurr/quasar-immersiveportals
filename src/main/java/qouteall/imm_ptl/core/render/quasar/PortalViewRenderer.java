@@ -149,6 +149,8 @@ public final class PortalViewRenderer {
         lastPixels = 0;
         frameTerrainNs = 0;
         frameSkyNs = 0;
+        frameEntityNs = 0;
+        PortalEntities.beginFrame();
         frameSections = 0;
         frameCoverage = 0;
         long t0 = System.nanoTime();
@@ -172,9 +174,10 @@ public final class PortalViewRenderer {
             failed = true;
             LOGGER.error("[Quasar Portals] portal view rendering failed; falling back to outlines", t);
         }
+        PortalEntities.endFrame();
         drawnLastFrame.clear();
         drawnLastFrame.addAll(drawnThisFrame);
-        Stats.frame(System.nanoTime() - t0, frameTerrainNs, frameSkyNs, drawnThisFrame.size(), frameSections, frameCoverage);
+        Stats.frame(System.nanoTime() - t0, frameTerrainNs, frameSkyNs, frameEntityNs, PortalEntities.lastCount, drawnThisFrame.size(), frameSections, frameCoverage);
     }
 
     private static void renderPortals() throws Exception {
@@ -267,6 +270,14 @@ public final class PortalViewRenderer {
                     if (fog != null) RenderSystem.setShaderFog(fog);
                     drawn = (Boolean) drawTerrainMethod.invoke(null, virtual, t.colorView, t.depthView,
                         t.width, t.height);
+                    if (drawn && PortalSettings.entities) {
+                        long te = System.nanoTime();
+                        PortalEntities.draw(encoder, virtual, t.colorView, t.depthView,
+                            qouteall.imm_ptl.core.render.context_management.RenderStates.getPartialTick());
+                        long de = System.nanoTime() - te;
+                        frameEntityNs += de;
+                        tt += de; // entities are reported on their own, not under terrain
+                    }
                     if (drawn && PortalSettings.translucent && drawTranslucentMethod != null) {
                         drawTranslucentMethod.invoke(null, virtual, t.colorView, t.depthView, t.width, t.height);
                         frameSections += (Integer) lastTranslucentMethod.invoke(null);
@@ -302,6 +313,7 @@ public final class PortalViewRenderer {
     static long lastPixels;
     private static long frameTerrainNs;
     private static long frameSkyNs;
+    private static long frameEntityNs;
     /** whether the camera just built is a mirror view (its picture is drawn flipped) */
     private static boolean lastMirrored;
     private static int frameSections;
@@ -324,7 +336,7 @@ public final class PortalViewRenderer {
         private static long frameNo;
         private static final long[] slotFrame = new long[RING];
         
-        private static long sumCpu, sumTerrain, sumSky, sumGpu, sumSections, frames, gpuFrames, liveFrames;
+        private static long sumCpu, sumTerrain, sumSky, sumEntity, sumEntities, sumGpu, sumSections, frames, gpuFrames, liveFrames;
         private static double sumCoverage;
         private static int maxLive;
         private static long windowStart = System.nanoTime();
@@ -372,11 +384,13 @@ public final class PortalViewRenderer {
             }
         }
         
-        static void frame(long cpuNs, long terrainNs, long skyNs, int live, int sections, float coverage) {
+        static void frame(long cpuNs, long terrainNs, long skyNs, long entityNs, int entities, int live, int sections, float coverage) {
             frames++;
             sumCpu += cpuNs;
             sumTerrain += terrainNs;
             sumSky += skyNs;
+            sumEntity += entityNs;
+            sumEntities += entities;
             sumSections += sections;
             sumCoverage += coverage;
             if (live > 0) liveFrames++;
@@ -389,12 +403,12 @@ public final class PortalViewRenderer {
             else {
                 double f = frames;
                 line = String.format(java.util.Locale.ROOT,
-                    "Portals: %d live (every %d), CPU %.3f ms (terrain %.3f, sky+clouds %.3f), GPU %s, %d sections, %.0f%% of screen",
-                    maxLive, updateEvery, sumCpu / f / 1e6, sumTerrain / f / 1e6, sumSky / f / 1e6,
+                    "Portals: %d live (every %d), CPU %.3f ms (terrain %.3f, sky+clouds %.3f, %d entities %.3f), GPU %s, %d sections, %.0f%% of screen",
+                    maxLive, updateEvery, sumCpu / f / 1e6, sumTerrain / f / 1e6, sumSky / f / 1e6, Math.round(sumEntities / f), sumEntity / f / 1e6,
                     gpuFrames > 0 ? String.format(java.util.Locale.ROOT, "%.3f ms", sumGpu / (double) gpuFrames / 1e6) : "n/a",
                     Math.round(sumSections / f), sumCoverage / f * 100);
             }
-            sumCpu = sumTerrain = sumSky = sumGpu = sumSections = frames = gpuFrames = liveFrames = 0;
+            sumCpu = sumTerrain = sumSky = sumEntity = sumEntities = sumGpu = sumSections = frames = gpuFrames = liveFrames = 0;
             sumCoverage = 0;
             maxLive = 0;
             windowStart = now;

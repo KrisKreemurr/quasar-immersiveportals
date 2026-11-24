@@ -309,5 +309,9 @@
   "quasar_portals.options.clouds": "Clouds Through Portals",
   "quasar_portals.options.clouds.tooltip": "Show clouds in portal views and mirrors. Reuses the clouds already built for your view, so it is cheap. Follows your Clouds video setting.",
   "quasar_portals.options.water_glass": "Water & Glass Through Portals",
-  "quasar_portals.options.water_glass.tooltip": "Show water, glass, ice and other see-through blocks in portal views and mirrors. Costs a little more where there is a lot of water in view."
+  "quasar_portals.options.water_glass.tooltip": "Show water, glass, ice and other see-through blocks in portal views and mirrors. Costs a little more where there is a lot of water in view.",
+  "quasar_portals.options.entities": "Entities Through Portals",
+  "quasar_portals.options.entities.tooltip": "Show mobs, players (including you, in mirrors) and items in portal views and mirrors.",
+  "quasar_portals.options.entity_distance": "Portal Entity Distance",
+  "quasar_portals.options.entity_distance.tooltip": "How far from the portal camera entities are shown in portal views. Shorter is cheaper; far mobs are tiny in a portal anyway."
 }

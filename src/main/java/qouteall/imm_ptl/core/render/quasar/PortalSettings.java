@@ -20,6 +20,10 @@ public final class PortalSettings {
     public static volatile boolean clouds = true;
     /** water, glass and other translucent blocks through portals */
     public static volatile boolean translucent = true;
+    /** mobs, players and items through portals, and how far (chunks) from the portal camera */
+    public static volatile boolean entities = true;
+    public static final int DEFAULT_ENTITY_DISTANCE = 4;
+    public static volatile int entityDistance = DEFAULT_ENTITY_DISTANCE;
 
     private PortalSettings() {}
     
@@ -38,6 +42,8 @@ public final class PortalSettings {
             PortalViewRenderer.resolutionScale = clamp(p, "resolutionPercent", DEFAULT_RES, 10, 100) / 100f;
             PortalViewRenderer.maxUpdateEvery = clamp(p, "maxUpdateEvery", DEFAULT_UPDATE_EVERY, 1, 8);
             PortalViewRenderer.minUpdatesPerSecond = clamp(p, "minUpdatesPerSecond", DEFAULT_MIN_RATE, 20, 240);
+            entities = !"false".equalsIgnoreCase(p.getProperty("entities", "true").trim());
+            entityDistance = clamp(p, "entityDistance", DEFAULT_ENTITY_DISTANCE, 1, 16);
             translucent = !"false".equalsIgnoreCase(p.getProperty("waterAndGlass", "true").trim());
             clouds = !"false".equalsIgnoreCase(p.getProperty("clouds", "true").trim());
             PortalPlaceholderOutline.enabled = !"false".equalsIgnoreCase(p.getProperty("outlines", "true").trim());
@@ -55,6 +61,8 @@ public final class PortalSettings {
         p.setProperty("resolutionPercent", Integer.toString(resolutionPercent()));
         p.setProperty("maxUpdateEvery", Integer.toString(PortalViewRenderer.maxUpdateEvery));
         p.setProperty("minUpdatesPerSecond", Integer.toString(PortalViewRenderer.minUpdatesPerSecond));
+        p.setProperty("entities", Boolean.toString(entities));
+        p.setProperty("entityDistance", Integer.toString(entityDistance));
         p.setProperty("waterAndGlass", Boolean.toString(translucent));
         p.setProperty("clouds", Boolean.toString(clouds));
         p.setProperty("outlines", Boolean.toString(PortalPlaceholderOutline.enabled));
@@ -82,6 +90,8 @@ public final class PortalSettings {
         PortalPlaceholderOutline.enabled = true;
         clouds = true;
         translucent = true;
+        entities = true;
+        entityDistance = DEFAULT_ENTITY_DISTANCE;
         save();
     }
     
