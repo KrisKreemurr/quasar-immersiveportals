@@ -63,46 +63,46 @@ public class MyNbtTextFormatter
     
     @Override
     public void visitByte(ByteTag element) {
-        if (element.getAsByte() == 0) {
+        if (element.value() == 0) {
             result = Component.literal("false").withStyle(NUMBER_COLOR);
             return;
         }
-        else if (element.getAsByte() == 1) {
+        else if (element.value() == 1) {
             result = Component.literal("true").withStyle(NUMBER_COLOR);
             return;
         }
         
         MutableComponent text = Component.literal("b").withStyle(TYPE_SUFFIX_COLOR);
-        this.result = Component.literal(String.valueOf(element.getAsNumber())).append(text).withStyle(NUMBER_COLOR);
+        this.result = Component.literal(String.valueOf(element.value())).append(text).withStyle(NUMBER_COLOR);
     }
     
     @Override
     public void visitShort(ShortTag element) {
         MutableComponent text = Component.literal("s").withStyle(TYPE_SUFFIX_COLOR);
-        this.result = Component.literal(String.valueOf(element.getAsNumber())).append(text).withStyle(NUMBER_COLOR);
+        this.result = Component.literal(String.valueOf(element.value())).append(text).withStyle(NUMBER_COLOR);
     }
     
     @Override
     public void visitInt(IntTag element) {
-        this.result = Component.literal(String.valueOf(element.getAsNumber())).withStyle(NUMBER_COLOR);
+        this.result = Component.literal(String.valueOf(element.value())).withStyle(NUMBER_COLOR);
     }
     
     @Override
     public void visitLong(LongTag element) {
         MutableComponent text = Component.literal("L").withStyle(TYPE_SUFFIX_COLOR);
-        this.result = Component.literal(String.valueOf(element.getAsNumber())).append(text).withStyle(NUMBER_COLOR);
+        this.result = Component.literal(String.valueOf(element.value())).append(text).withStyle(NUMBER_COLOR);
     }
     
     @Override
     public void visitFloat(FloatTag element) {
         MutableComponent text = Component.literal("f").withStyle(TYPE_SUFFIX_COLOR);
-        this.result = Component.literal(String.valueOf(element.getAsFloat())).append(text).withStyle(NUMBER_COLOR);
+        this.result = Component.literal(String.valueOf(element.value())).append(text).withStyle(NUMBER_COLOR);
     }
     
     @Override
     public void visitDouble(DoubleTag element) {
         MutableComponent text = Component.literal("d").withStyle(TYPE_SUFFIX_COLOR);
-        this.result = Component.literal(String.valueOf(element.getAsDouble())).append(text).withStyle(NUMBER_COLOR);
+        this.result = Component.literal(String.valueOf(element.value())).append(text).withStyle(NUMBER_COLOR);
     }
     
     @Override
@@ -155,7 +155,7 @@ public class MyNbtTextFormatter
             this.result = Component.literal("[]");
             return;
         }
-        if (SINGLE_LINE_ELEMENT_TYPES.contains(element.getElementType()) && element.size() <= 8) {
+        if (element.stream().allMatch(t -> SINGLE_LINE_ELEMENT_TYPES.contains(t.getId())) && element.size() <= 8) {
             String string = ENTRY_SEPARATOR + SPACE;
             MutableComponent mutableText = Component.literal(SQUARE_OPEN_BRACKET);
             for (int i = 0; i < element.size(); ++i) {

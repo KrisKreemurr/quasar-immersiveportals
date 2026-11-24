@@ -18,7 +18,6 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
-import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 import net.neoforged.neoforge.registries.NewRegistryEvent;
 import net.neoforged.neoforge.registries.RegisterEvent;
 import net.neoforged.neoforge.registries.RegistryBuilder;
@@ -46,10 +45,8 @@ public class CustomPortalGenManager {
     private final Map<UUID, WithDim<Vec3>> playerPosBeforeTravel = new HashMap<>();
     
     public static void init(IEventBus eventBus) {
-        eventBus.addListener(DataPackRegistryEvent.NewRegistry.class, newRegistryEvent -> {
-            newRegistryEvent.dataPackRegistry(CustomPortalGeneration.REGISTRY_KEY, CustomPortalGeneration.CODEC);
-            newRegistryEvent.dataPackRegistry(CustomPortalGeneration.LEGACY_REGISTRY_KEY, CustomPortalGeneration.CODEC);
-        });
+        // Quasar MC: NeoForge 26.3 has no DataPackRegistryEvent; datapack-defined portal generation is off until
+        // it's ported (onDataPackReloaded skips when the registries are missing).
 
         // TODO @Nick1st - This must probably be fixed, but there is no event for it on Forge
 //        ServerLifecycleEvents.END_DATA_PACK_RELOAD.register(
@@ -68,10 +65,14 @@ public class CustomPortalGenManager {
         
         CustomPortalGenManager manager = new CustomPortalGenManager();
         
-        Registry<CustomPortalGeneration> registry = server.registryAccess()
-            .lookupOrThrow(CustomPortalGeneration.REGISTRY_KEY);
-        Registry<CustomPortalGeneration> legacyRegistry = server.registryAccess()
-            .lookupOrThrow(CustomPortalGeneration.LEGACY_REGISTRY_KEY);
+        var registryOpt = server.registryAccess().lookup(CustomPortalGeneration.REGISTRY_KEY);
+        var legacyRegistryOpt = server.registryAccess().lookup(CustomPortalGeneration.LEGACY_REGISTRY_KEY);
+        if (registryOpt.isEmpty() || legacyRegistryOpt.isEmpty()) {
+            LOGGER.info("Custom portal generation registries are not registered (Quasar MC); skipping");
+            return;
+        }
+        Registry<CustomPortalGeneration> registry = registryOpt.get();
+        Registry<CustomPortalGeneration> legacyRegistry = legacyRegistryOpt.get();
         
         for (var entry : registry.entrySet()) {
             manager.addEntry(server, entry.getKey(), entry.getValue());

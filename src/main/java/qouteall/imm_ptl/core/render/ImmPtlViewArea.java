@@ -68,8 +68,7 @@ public class ImmPtlViewArea extends ViewArea {
     private boolean isAlive;
     public static void init() {}
 
-    public ImmPtlViewArea(
-            SectionRenderDispatcher sectionBuilder) {}
+    public ImmPtlViewArea() {}
 
     protected void createSections(SectionRenderDispatcher sectionBuilder_1) {}
 

@@ -116,6 +116,11 @@ public class LoadingIndicatorEntity extends Entity {
     }
     
     @Override
+    public boolean hurtServer(net.minecraft.server.level.ServerLevel level, net.minecraft.world.damagesource.DamageSource source, float amount) {
+        return false; // Quasar MC: 26.x split hurt() into hurtServer(); portals take no damage
+    }
+
+    @Override
     protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput input) {
         readAdditionalSaveData(qouteall.q_misc_util.QuasarNbtBridge.read(input));
     }

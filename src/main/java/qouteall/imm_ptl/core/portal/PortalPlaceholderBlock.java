@@ -87,13 +87,15 @@ public class PortalPlaceholderBlock extends Block {
     }
     
     @Override
-    public BlockState updateShape(
+    protected BlockState updateShape(
         BlockState thisState,
-        Direction direction,
-        BlockState neighborState,
-        LevelAccessor worldAccess,
+        net.minecraft.world.level.LevelReader worldAccess,
+        net.minecraft.world.level.ScheduledTickAccess scheduledTickAccess,
         BlockPos blockPos,
-        BlockPos neighborPos
+        Direction direction,
+        BlockPos neighborPos,
+        BlockState neighborState,
+        net.minecraft.util.RandomSource random
     ) {
         if (!worldAccess.isClientSide()) {
             if (worldAccess instanceof Level world) {
@@ -119,14 +121,7 @@ public class PortalPlaceholderBlock extends Block {
             }
         }
         
-        return super.updateShape(
-            thisState,
-            direction,
-            neighborState,
-            worldAccess,
-            blockPos,
-            neighborPos
-        );
+        return super.updateShape(thisState, worldAccess, scheduledTickAccess, blockPos, direction, neighborPos, neighborState, random);
     }
     
     public static boolean isHitOnPlaceholder(HitResult hitResult, Level world) {
@@ -141,11 +136,7 @@ public class PortalPlaceholderBlock extends Block {
     
     //---------These are copied from BlockBarrier
     @Override
-    public boolean propagatesSkylightDown(
-        BlockState blockState_1,
-        BlockGetter blockView_1,
-        BlockPos blockPos_1
-    ) {
+    protected boolean propagatesSkylightDown(BlockState blockState_1) {
         return true;
     }
     

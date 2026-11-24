@@ -54,7 +54,16 @@ import java.util.function.Predicate;
  * Also stores bedrock replacement block state for dimension stack.
  */
 @SuppressWarnings("resource")
-public class GlobalPortalStorage extends SavedData {
+public class GlobalPortalStorage {
+    // Quasar MC: 26.x reworked SavedData (SavedDataType + codecs). Global portals (world wrapping, dimension stack)
+    // are parked, so this store is in memory per level for now. TODO(quasar): persist via SavedDataType.
+    private static final java.util.Map<ServerLevel, GlobalPortalStorage> QUASAR_STORES = new java.util.WeakHashMap<>();
+    private boolean quasarDirty;
+
+    public void setDirty(boolean dirty) {
+        quasarDirty = dirty;
+    }
+
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public List<Portal> data;
@@ -96,21 +105,10 @@ public class GlobalPortalStorage extends SavedData {
     public static GlobalPortalStorage get(
         ServerLevel world
     ) {
-        return world.getDataStorage().computeIfAbsent(
-            new SavedData.Factory<>(
-                () -> {
-                    LOGGER.info("Global portal storage initialized {}", world.dimension().identifier());
-                    return new GlobalPortalStorage(world);
-                },
-                (nbt, holderLookup) -> {
-                    GlobalPortalStorage globalPortalStorage = new GlobalPortalStorage(world);
-                    globalPortalStorage.fromNbt(nbt);
-                    return globalPortalStorage;
-                },
-                null
-            ),
-            "global_portal"
-        );
+        return QUASAR_STORES.computeIfAbsent(world, w -> {
+            LOGGER.info("Global portal storage initialized {}", w.dimension().identifier());
+            return new GlobalPortalStorage(w);
+        });
     }
 
     //@OnlyIn(Dist.CLIENT)
@@ -249,10 +247,10 @@ public class GlobalPortalStorage extends SavedData {
     
     private static Portal readPortalFromTag(Level currWorld, CompoundTag compoundTag) {
         Identifier entityId = McHelper.newResourceLocation(compoundTag.getStringOr("entity_type", ""));
-        EntityType<?> entityType = BuiltInRegistries.ENTITY_TYPE.get(entityId);
+        EntityType<?> entityType = BuiltInRegistries.ENTITY_TYPE.getValue(entityId);
         
         Entity e = entityType.create(currWorld, EntitySpawnReason.COMMAND);
-        e.load(compoundTag);
+        McHelper.loadEntityNbt(e, compoundTag);
         
         ((Portal) e).isGlobalPortal = true;
         
@@ -263,7 +261,6 @@ public class GlobalPortalStorage extends SavedData {
         return (Portal) e;
     }
     
-    @Override
     public @NotNull CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         if (data == null) {
             return tag;
@@ -275,8 +272,7 @@ public class GlobalPortalStorage extends SavedData {
         
         for (Portal portal : data) {
             Validate.isTrue(portal.level() == currWorld);
-            CompoundTag portalTag = new CompoundTag();
-            portal.saveWithoutId(portalTag);
+            CompoundTag portalTag = McHelper.saveEntityNbt(portal);
             portalTag.putString(
                 "entity_type",
                 EntityType.getKey(portal.getType()).toString()

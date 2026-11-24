@@ -657,7 +657,7 @@ public class Helper {
                 compoundTag.getDoubleOr(name + "X", 0D),
                 compoundTag.getDoubleOr(name + "Y", 0D),
                 compoundTag.getDoubleOr(name + "Z", 0D),
-                compoundTag.getDouble(name + "W")
+                compoundTag.getDoubleOr(name + "W", 0D)
             );
         }
         else {

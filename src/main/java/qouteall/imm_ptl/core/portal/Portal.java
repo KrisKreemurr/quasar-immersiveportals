@@ -40,7 +40,6 @@ import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.api.ImmPtlEntityExtension;
 import qouteall.imm_ptl.core.api.PortalAPI;
-import qouteall.imm_ptl.core.compat.iris_compatibility.IrisInterface;
 import qouteall.imm_ptl.core.mc_utils.IPEntityEventListenableEntity;
 import qouteall.imm_ptl.core.mc_utils.ServerTaskList;
 import qouteall.imm_ptl.core.mixin.common.entity_sync.MixinServerEntity;
@@ -102,7 +101,7 @@ public class Portal extends Entity implements
         builder.dimensions = new EntityDimensions(1, 1, .85f, EntityAttachments.createDefault(1, 1), true);
 
         return builder.build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE,
-            Identifier.fromNamespaceAndPath("immersive_portals", id)));
+            net.minecraft.resources.Identifier.fromNamespaceAndPath("immersive_portals", id)));
     }
     
     private static final AABB NULL_BOX =
@@ -210,6 +209,11 @@ public class Portal extends Entity implements
     }
 
     @Override
+    @Override
+    public boolean hurtServer(net.minecraft.server.level.ServerLevel level, net.minecraft.world.damagesource.DamageSource source, float amount) {
+        return false; // Quasar MC: 26.x split hurt() into hurtServer(); portals take no damage
+    }
+
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         // nothing
     }
@@ -288,8 +292,8 @@ public class Portal extends Entity implements
             setRotationTransformationD(new DQuaternion(
                 compoundTag.getFloatOr("rotationB", 0F),
                 compoundTag.getFloatOr("rotationC", 0F),
-                compoundTag.getFloat("rotationD"),
-                compoundTag.getFloat("rotationA")
+                compoundTag.getFloatOr("rotationD", 0F),
+                compoundTag.getFloatOr("rotationA", 0F)
             ));
         }
         else {
@@ -535,7 +539,7 @@ public class Portal extends Entity implements
     
     public void reloadAndSyncToClientWithTickDelay(int tickDelay) {
         Validate.isTrue(!level().isClientSide(), "must be used on server side");
-        ServerTaskList.of(getServer()).addTask(MyTaskList.withDelay(tickDelay, () -> {
+        ServerTaskList.of(level().getServer()).addTask(MyTaskList.withDelay(tickDelay, () -> {
             reloadAndSyncToClientNextTick();
             return true;
         }));
@@ -875,7 +879,7 @@ public class Portal extends Entity implements
     ) {
         if (this instanceof Mirror) {
             //rendering portal behind translucent objects with shader is broken
-            boolean offsetFront = IrisInterface.invoker.isShaders()
+            boolean offsetFront = false /* Quasar MC: no Iris */
                 || IPGlobal.pureMirror;
             double mirrorOffset = offsetFront ? 0.01 : -0.01;
             portalPosRelativeToCamera = portalPosRelativeToCamera.add(
@@ -904,7 +908,7 @@ public class Portal extends Entity implements
 
         return new ImmPtlNetworking.PortalSyncPacket(
                 getId(), getUUID(), getType(),
-                PortalAPI.serverDimKeyToInt(getServer(), getOriginDim()), getX(), getY(), getZ(), compoundTag);
+                PortalAPI.serverDimKeyToInt(level().getServer(), getOriginDim()), getX(), getY(), getZ(), compoundTag);
     }
     
     @Override
@@ -1297,7 +1301,7 @@ public class Portal extends Entity implements
             return CHelper.getClientWorld(dimensionTo);
         }
         else {
-            MinecraftServer server = getServer();
+            MinecraftServer server = level().getServer();
             assert server != null;
             return server.getLevel(dimensionTo);
         }
@@ -1368,7 +1372,7 @@ public class Portal extends Entity implements
     public boolean isRoughlyVisibleTo(Vec3 cameraPos) {
         return getPortalShape().roughTestVisibility(
             getThisSideState(), cameraPos,
-            IrisInterface.invoker.isShaders()
+            false /* Quasar MC: no Iris */
         );
     }
     

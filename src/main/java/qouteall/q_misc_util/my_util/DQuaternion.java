@@ -453,7 +453,7 @@ public class DQuaternion {
             compoundTag.getDoubleOr("x", 0D),
             compoundTag.getDoubleOr("y", 0D),
             compoundTag.getDoubleOr("z", 0D),
-            compoundTag.getDouble("w")
+            compoundTag.getDoubleOr("w", 0D)
         );
     }
     

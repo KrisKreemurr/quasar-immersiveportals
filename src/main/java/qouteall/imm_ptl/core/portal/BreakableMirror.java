@@ -49,12 +49,12 @@ public class BreakableMirror extends Mirror {
                 new BlockPos(
                     tag.getIntOr("boxXL", 0),
                     tag.getIntOr("boxYL", 0),
-                    tag.getInt("boxZL")
+                    tag.getIntOr("boxZL", 0)
                 ),
                 new BlockPos(
                     tag.getIntOr("boxXH", 0),
                     tag.getIntOr("boxYH", 0),
-                    tag.getInt("boxZH")
+                    tag.getIntOr("boxZH", 0)
                 )
             );
         }

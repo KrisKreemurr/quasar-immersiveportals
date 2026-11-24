@@ -40,7 +40,6 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import qouteall.imm_ptl.core.CHelper;
 import qouteall.imm_ptl.core.McHelper;
-import qouteall.imm_ptl.core.api.example.ExampleGuiPortalRendering;
 import qouteall.imm_ptl.core.chunk_loading.ChunkVisibility;
 import qouteall.imm_ptl.core.chunk_loading.ImmPtlChunkTickets;
 import qouteall.imm_ptl.core.chunk_loading.ImmPtlChunkTracking;
@@ -73,21 +72,8 @@ public class PortalDebugCommands {
         LiteralArgumentBuilder<CommandSourceStack> builder
     ) {
         
-        builder.then(Commands
-            .literal("gui_portal")
-            .then(Commands.argument("dim", DimensionArgument.dimension())
-                .then(Commands.argument("pos", Vec3Argument.vec3(false))
-                    .executes(context -> {
-                        ExampleGuiPortalRendering.onCommandExecuted(
-                            context.getSource().getPlayerOrException(),
-                            DimensionArgument.getDimension(context, "dim"),
-                            Vec3Argument.getVec3(context, "pos")
-                        );
-                        return 0;
-                    })
-                )
-            ));
-        
+        // Quasar MC: the gui_portal example command is parked with the old renderer.
+
         builder.then(Commands
             .literal("isometric_enable")
             .then(Commands.argument("viewLength", FloatArgumentType.floatArg())
