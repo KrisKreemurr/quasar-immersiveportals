@@ -335,7 +335,7 @@ public class ClientDebugCommand {
             .executes(context -> {
                 Minecraft.getInstance().execute(() -> {
                     ClientWorldLoader.getClientWorlds().forEach((world) -> {
-                        ImmPtlViewArea builtChunkStorage = (ImmPtlViewArea) ((IEWorldRenderer)
+                        ImmPtlViewArea builtChunkStorage = (ImmPtlViewArea) (Object) ((IEWorldRenderer)
                             ClientWorldLoader.getWorldRenderer(world.dimension()))
                             .ip_getBuiltChunkStorage();
                         CHelper.printChat(
@@ -823,7 +823,7 @@ public class ClientDebugCommand {
                     str.append(String.format(
                         "%s %s\n",
                         dimension.identifier(),
-                        ((ImmPtlViewArea) ((IEWorldRenderer) worldRenderer)
+                        ((ImmPtlViewArea) (Object) ((IEWorldRenderer) worldRenderer)
                             .ip_getBuiltChunkStorage()
                         ).getManagedSectionNum()
                     ));

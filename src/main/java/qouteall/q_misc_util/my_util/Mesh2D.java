@@ -79,12 +79,12 @@ public class Mesh2D {
             return -1;
         }
         
-        double p0x = pointCoords.getDouble(pointIndex0 * 2);
-        double p0y = pointCoords.getDouble(pointIndex0 * 2 + 1);
-        double p1x = pointCoords.getDouble(pointIndex1 * 2);
-        double p1y = pointCoords.getDouble(pointIndex1 * 2 + 1);
-        double p2x = pointCoords.getDouble(pointIndex2 * 2);
-        double p2y = pointCoords.getDouble(pointIndex2 * 2 + 1);
+        double p0x = pointCoords.getDoubleOr(pointIndex0 * 2, 0D);
+        double p0y = pointCoords.getDoubleOr(pointIndex0 * 2 + 1, 0D);
+        double p1x = pointCoords.getDoubleOr(pointIndex1 * 2, 0D);
+        double p1y = pointCoords.getDoubleOr(pointIndex1 * 2 + 1, 0D);
+        double p2x = pointCoords.getDoubleOr(pointIndex2 * 2, 0D);
+        double p2y = pointCoords.getDoubleOr(pointIndex2 * 2 + 1, 0D);
         
         double cross = Helper.crossProduct2D(
             p1x - p0x, p1y - p0y, p2x - p0x, p2y - p0y
@@ -161,12 +161,12 @@ public class Mesh2D {
             throw new IllegalArgumentException();
         }
         
-        double x1 = pointCoords.getDouble(pointIndex * 2);
-        double y1 = pointCoords.getDouble(pointIndex * 2 + 1);
-        double x2 = pointCoords.getDouble(otherP1Index * 2);
-        double y2 = pointCoords.getDouble(otherP1Index * 2 + 1);
-        double x3 = pointCoords.getDouble(otherP2Index * 2);
-        double y3 = pointCoords.getDouble(otherP2Index * 2 + 1);
+        double x1 = pointCoords.getDoubleOr(pointIndex * 2, 0D);
+        double y1 = pointCoords.getDoubleOr(pointIndex * 2 + 1, 0D);
+        double x2 = pointCoords.getDoubleOr(otherP1Index * 2, 0D);
+        double y2 = pointCoords.getDoubleOr(otherP1Index * 2 + 1, 0D);
+        double x3 = pointCoords.getDoubleOr(otherP2Index * 2, 0D);
+        double y3 = pointCoords.getDoubleOr(otherP2Index * 2 + 1, 0D);
         
         double dx1 = x2 - x1;
         double dy1 = y2 - y1;
@@ -245,11 +245,11 @@ public class Mesh2D {
     }
     
     public double getPointX(int pointIndex) {
-        return pointCoords.getDouble(pointIndex * 2);
+        return pointCoords.getDoubleOr(pointIndex * 2, 0D);
     }
     
     public double getPointY(int pointIndex) {
-        return pointCoords.getDouble(pointIndex * 2 + 1);
+        return pointCoords.getDoubleOr(pointIndex * 2 + 1, 0D);
     }
     
     public void updateTrianglePoint(
@@ -276,12 +276,12 @@ public class Mesh2D {
         int p1Index = getTrianglePointIndex(triangleIndex, 1);
         int p2Index = getTrianglePointIndex(triangleIndex, 2);
         
-        double p0x = pointCoords.getDouble(p0Index * 2);
-        double p0y = pointCoords.getDouble(p0Index * 2 + 1);
-        double p1x = pointCoords.getDouble(p1Index * 2);
-        double p1y = pointCoords.getDouble(p1Index * 2 + 1);
-        double p2x = pointCoords.getDouble(p2Index * 2);
-        double p2y = pointCoords.getDouble(p2Index * 2 + 1);
+        double p0x = pointCoords.getDoubleOr(p0Index * 2, 0D);
+        double p0y = pointCoords.getDoubleOr(p0Index * 2 + 1, 0D);
+        double p1x = pointCoords.getDoubleOr(p1Index * 2, 0D);
+        double p1y = pointCoords.getDoubleOr(p1Index * 2 + 1, 0D);
+        double p2x = pointCoords.getDoubleOr(p2Index * 2, 0D);
+        double p2y = pointCoords.getDoubleOr(p2Index * 2 + 1, 0D);
         
         double cross = Helper.crossProduct2D(
             p1x - p0x, p1y - p0y, p2x - p0x, p2y - p0y
@@ -329,12 +329,12 @@ public class Mesh2D {
                 continue;
             }
             
-            double np0x = pointCoords.getDouble(p0IndexInTriangle * 2);
-            double np0y = pointCoords.getDouble(p0IndexInTriangle * 2 + 1);
-            double np1x = pointCoords.getDouble(p1IndexInTriangle * 2);
-            double np1y = pointCoords.getDouble(p1IndexInTriangle * 2 + 1);
-            double np2x = pointCoords.getDouble(p2IndexInTriangle * 2);
-            double np2y = pointCoords.getDouble(p2IndexInTriangle * 2 + 1);
+            double np0x = pointCoords.getDoubleOr(p0IndexInTriangle * 2, 0D);
+            double np0y = pointCoords.getDoubleOr(p0IndexInTriangle * 2 + 1, 0D);
+            double np1x = pointCoords.getDoubleOr(p1IndexInTriangle * 2, 0D);
+            double np1y = pointCoords.getDoubleOr(p1IndexInTriangle * 2 + 1, 0D);
+            double np2x = pointCoords.getDoubleOr(p2IndexInTriangle * 2, 0D);
+            double np2y = pointCoords.getDoubleOr(p2IndexInTriangle * 2 + 1, 0D);
             
             double cross = Helper.crossProduct2D(
                 np1x - np0x, np1y - np0y, np2x - np0x, np2y - np0y
@@ -437,8 +437,8 @@ public class Mesh2D {
                 continue;
             }
             
-            double x = pointCoords.getDouble(i * 2);
-            double y = pointCoords.getDouble(i * 2 + 1);
+            double x = pointCoords.getDoubleOr(i * 2, 0D);
+            double y = pointCoords.getDoubleOr(i * 2 + 1, 0D);
             
             IntOpenHashSet adjacentVertices = adjacentVerticesFrom(i);
             
@@ -455,10 +455,10 @@ public class Mesh2D {
                     int p2 = iter2.nextInt();
                     
                     if (p1 < p2) {
-                        double p1x = pointCoords.getDouble(p1 * 2);
-                        double p1y = pointCoords.getDouble(p1 * 2 + 1);
-                        double p2x = pointCoords.getDouble(p2 * 2);
-                        double p2y = pointCoords.getDouble(p2 * 2 + 1);
+                        double p1x = pointCoords.getDoubleOr(p1 * 2, 0D);
+                        double p1y = pointCoords.getDoubleOr(p1 * 2 + 1, 0D);
+                        double p2x = pointCoords.getDoubleOr(p2 * 2, 0D);
+                        double p2y = pointCoords.getDoubleOr(p2 * 2 + 1, 0D);
                         
                         boolean collinear = GeometryUtil.isOppositeVec(
                             p1x - x, p1y - y, p2x - x, p2y - y
@@ -611,12 +611,12 @@ public class Mesh2D {
             int p2Index = trianglePointIndexes.getInt(triangleIndex * 3 + 1);
             int p3Index = trianglePointIndexes.getInt(triangleIndex * 3 + 2);
             
-            double p0x = pointCoords.getDouble(p1Index * 2);
-            double p0y = pointCoords.getDouble(p1Index * 2 + 1);
-            double p1x = pointCoords.getDouble(p2Index * 2);
-            double p1y = pointCoords.getDouble(p2Index * 2 + 1);
-            double p2x = pointCoords.getDouble(p3Index * 2);
-            double p2y = pointCoords.getDouble(p3Index * 2 + 1);
+            double p0x = pointCoords.getDoubleOr(p1Index * 2, 0D);
+            double p0y = pointCoords.getDoubleOr(p1Index * 2 + 1, 0D);
+            double p1x = pointCoords.getDoubleOr(p2Index * 2, 0D);
+            double p1y = pointCoords.getDoubleOr(p2Index * 2 + 1, 0D);
+            double p2x = pointCoords.getDoubleOr(p3Index * 2, 0D);
+            double p2y = pointCoords.getDoubleOr(p3Index * 2 + 1, 0D);
             
             double centerX = (p0x + p1x + p2x) / 3;
             double centerY = (p0y + p1y + p2y) / 3;
@@ -646,12 +646,12 @@ public class Mesh2D {
         int p2Index = trianglePointIndexes.getInt(triangleIndex * 3 + 1);
         int p3Index = trianglePointIndexes.getInt(triangleIndex * 3 + 2);
         
-        double p0x = pointCoords.getDouble(p1Index * 2);
-        double p0y = pointCoords.getDouble(p1Index * 2 + 1);
-        double p1x = pointCoords.getDouble(p2Index * 2);
-        double p1y = pointCoords.getDouble(p2Index * 2 + 1);
-        double p2x = pointCoords.getDouble(p3Index * 2);
-        double p2y = pointCoords.getDouble(p3Index * 2 + 1);
+        double p0x = pointCoords.getDoubleOr(p1Index * 2, 0D);
+        double p0y = pointCoords.getDoubleOr(p1Index * 2 + 1, 0D);
+        double p1x = pointCoords.getDoubleOr(p2Index * 2, 0D);
+        double p1y = pointCoords.getDoubleOr(p2Index * 2 + 1, 0D);
+        double p2x = pointCoords.getDoubleOr(p3Index * 2, 0D);
+        double p2y = pointCoords.getDoubleOr(p3Index * 2 + 1, 0D);
         
         boolean side0 = line.testSideBool(p0x, p0y);
         boolean side1 = line.testSideBool(p1x, p1y);
@@ -700,12 +700,12 @@ public class Mesh2D {
         int p1Index = trianglePointIndexes.getInt(triangleIndex * 3 + v1);
         int p2Index = trianglePointIndexes.getInt(triangleIndex * 3 + v2);
         
-        double p0x = pointCoords.getDouble(p0Index * 2);
-        double p0y = pointCoords.getDouble(p0Index * 2 + 1);
-        double p1x = pointCoords.getDouble(p1Index * 2);
-        double p1y = pointCoords.getDouble(p1Index * 2 + 1);
-        double p2x = pointCoords.getDouble(p2Index * 2);
-        double p2y = pointCoords.getDouble(p2Index * 2 + 1);
+        double p0x = pointCoords.getDoubleOr(p0Index * 2, 0D);
+        double p0y = pointCoords.getDoubleOr(p0Index * 2 + 1, 0D);
+        double p1x = pointCoords.getDoubleOr(p1Index * 2, 0D);
+        double p1y = pointCoords.getDoubleOr(p1Index * 2 + 1, 0D);
+        double p2x = pointCoords.getDoubleOr(p2Index * 2, 0D);
+        double p2y = pointCoords.getDoubleOr(p2Index * 2 + 1, 0D);
         
         GeometryUtil.Line2D line01 = GeometryUtil.Line2D.fromTwoPoints(p0x, p0y, p1x, p1y);
         GeometryUtil.Line2D line02 = GeometryUtil.Line2D.fromTwoPoints(p0x, p0y, p2x, p2y);
@@ -884,10 +884,10 @@ public class Mesh2D {
     }
     
     private double getDistanceSq(int p1Index, int p2Index) {
-        double p1x = pointCoords.getDouble(p1Index * 2);
-        double p1y = pointCoords.getDouble(p1Index * 2 + 1);
-        double p2x = pointCoords.getDouble(p2Index * 2);
-        double p2y = pointCoords.getDouble(p2Index * 2 + 1);
+        double p1x = pointCoords.getDoubleOr(p1Index * 2, 0D);
+        double p1y = pointCoords.getDoubleOr(p1Index * 2 + 1, 0D);
+        double p2x = pointCoords.getDoubleOr(p2Index * 2, 0D);
+        double p2y = pointCoords.getDoubleOr(p2Index * 2 + 1, 0D);
         
         return (p1x - p2x) * (p1x - p2x) + (p1y - p2y) * (p1y - p2y);
     }
@@ -917,8 +917,8 @@ public class Mesh2D {
         // remove all unused points from the grid map
         for (int i = 0; i < getStoredPointNum(); i++) {
             if (!isPointUsed(i)) {
-                double x = pointCoords.getDouble(i * 2);
-                double y = pointCoords.getDouble(i * 2 + 1);
+                double x = pointCoords.getDoubleOr(i * 2, 0D);
+                double y = pointCoords.getDoubleOr(i * 2 + 1, 0D);
                 long encodedGridIndex = encodeToGrid(x, y);
                 gridToPointIndex.remove(encodedGridIndex);
             }
@@ -972,8 +972,8 @@ public class Mesh2D {
         Validate.isTrue(!isPointUsed(destPointIndex));
         Validate.isTrue(isPointUsed(pointIndex));
         
-        double x = pointCoords.getDouble(pointIndex * 2);
-        double y = pointCoords.getDouble(pointIndex * 2 + 1);
+        double x = pointCoords.getDoubleOr(pointIndex * 2, 0D);
+        double y = pointCoords.getDoubleOr(pointIndex * 2 + 1, 0D);
         long gridCoord = encodeToGrid(x, y);
         int removedPointIndex = gridToPointIndex.remove(gridCoord);
         Validate.isTrue(
@@ -1036,12 +1036,12 @@ public class Mesh2D {
         int p1Index = trianglePointIndexes.getInt(ti * 3 + 1);
         int p2Index = trianglePointIndexes.getInt(ti * 3 + 2);
         
-        double p0x = pointCoords.getDouble(p0Index * 2);
-        double p0y = pointCoords.getDouble(p0Index * 2 + 1);
-        double p1x = pointCoords.getDouble(p1Index * 2);
-        double p1y = pointCoords.getDouble(p1Index * 2 + 1);
-        double p2x = pointCoords.getDouble(p2Index * 2);
-        double p2y = pointCoords.getDouble(p2Index * 2 + 1);
+        double p0x = pointCoords.getDoubleOr(p0Index * 2, 0D);
+        double p0y = pointCoords.getDoubleOr(p0Index * 2 + 1, 0D);
+        double p1x = pointCoords.getDoubleOr(p1Index * 2, 0D);
+        double p1y = pointCoords.getDoubleOr(p1Index * 2 + 1, 0D);
+        double p2x = pointCoords.getDoubleOr(p2Index * 2, 0D);
+        double p2y = pointCoords.getDoubleOr(p2Index * 2 + 1, 0D);
         
         double minX = Math.min(p0x, Math.min(p1x, p2x));
         double minY = Math.min(p0y, Math.min(p1y, p2y));
@@ -1063,12 +1063,12 @@ public class Mesh2D {
         int p1Index = trianglePointIndexes.getInt(triangleIndex * 3 + 1);
         int p2Index = trianglePointIndexes.getInt(triangleIndex * 3 + 2);
         
-        double p0x = pointCoords.getDouble(p0Index * 2);
-        double p0y = pointCoords.getDouble(p0Index * 2 + 1);
-        double p1x = pointCoords.getDouble(p1Index * 2);
-        double p1y = pointCoords.getDouble(p1Index * 2 + 1);
-        double p2x = pointCoords.getDouble(p2Index * 2);
-        double p2y = pointCoords.getDouble(p2Index * 2 + 1);
+        double p0x = pointCoords.getDoubleOr(p0Index * 2, 0D);
+        double p0y = pointCoords.getDoubleOr(p0Index * 2 + 1, 0D);
+        double p1x = pointCoords.getDoubleOr(p1Index * 2, 0D);
+        double p1y = pointCoords.getDoubleOr(p1Index * 2 + 1, 0D);
+        double p2x = pointCoords.getDoubleOr(p2Index * 2, 0D);
+        double p2y = pointCoords.getDoubleOr(p2Index * 2 + 1, 0D);
         
         double minX = Math.min(p0x, Math.min(p1x, p2x));
         double minY = Math.min(p0y, Math.min(p1y, p2y));
@@ -1093,12 +1093,12 @@ public class Mesh2D {
         int p1Index = trianglePointIndexes.getInt(triangleIndex * 3 + 1);
         int p2Index = trianglePointIndexes.getInt(triangleIndex * 3 + 2);
         
-        double p0x = pointCoords.getDouble(p0Index * 2);
-        double p0y = pointCoords.getDouble(p0Index * 2 + 1);
-        double p1x = pointCoords.getDouble(p1Index * 2);
-        double p1y = pointCoords.getDouble(p1Index * 2 + 1);
-        double p2x = pointCoords.getDouble(p2Index * 2);
-        double p2y = pointCoords.getDouble(p2Index * 2 + 1);
+        double p0x = pointCoords.getDoubleOr(p0Index * 2, 0D);
+        double p0y = pointCoords.getDoubleOr(p0Index * 2 + 1, 0D);
+        double p1x = pointCoords.getDoubleOr(p1Index * 2, 0D);
+        double p1y = pointCoords.getDoubleOr(p1Index * 2 + 1, 0D);
+        double p2x = pointCoords.getDoubleOr(p2Index * 2, 0D);
+        double p2y = pointCoords.getDoubleOr(p2Index * 2 + 1, 0D);
         
         double triMinX = Math.min(p0x, Math.min(p1x, p2x));
         double triMinY = Math.min(p0y, Math.min(p1y, p2y));
@@ -1173,12 +1173,12 @@ public class Mesh2D {
                 Validate.isTrue(getTriangleIdListInTriangleLookup(triangleIndex).contains(triangleIndex));
             }
             
-            double p0x = pointCoords.getDouble(p0Index * 2);
-            double p0y = pointCoords.getDouble(p0Index * 2 + 1);
-            double p1x = pointCoords.getDouble(p1Index * 2);
-            double p1y = pointCoords.getDouble(p1Index * 2 + 1);
-            double p2x = pointCoords.getDouble(p2Index * 2);
-            double p2y = pointCoords.getDouble(p2Index * 2 + 1);
+            double p0x = pointCoords.getDoubleOr(p0Index * 2, 0D);
+            double p0y = pointCoords.getDoubleOr(p0Index * 2 + 1, 0D);
+            double p1x = pointCoords.getDoubleOr(p1Index * 2, 0D);
+            double p1y = pointCoords.getDoubleOr(p1Index * 2 + 1, 0D);
+            double p2x = pointCoords.getDoubleOr(p2Index * 2, 0D);
+            double p2y = pointCoords.getDoubleOr(p2Index * 2 + 1, 0D);
             
             // ensure that it's counter-clockwise
             double w = Helper.crossProduct2D(
@@ -1212,12 +1212,12 @@ public class Mesh2D {
         int t1p1Index = trianglePointIndexes.getInt(ti1 * 3 + 1);
         int t1p2Index = trianglePointIndexes.getInt(ti1 * 3 + 2);
         
-        double t1p0x = pointCoords.getDouble(t1p0Index * 2);
-        double t1p0y = pointCoords.getDouble(t1p0Index * 2 + 1);
-        double t1p1x = pointCoords.getDouble(t1p1Index * 2);
-        double t1p1y = pointCoords.getDouble(t1p1Index * 2 + 1);
-        double t1p2x = pointCoords.getDouble(t1p2Index * 2);
-        double t1p2y = pointCoords.getDouble(t1p2Index * 2 + 1);
+        double t1p0x = pointCoords.getDoubleOr(t1p0Index * 2, 0D);
+        double t1p0y = pointCoords.getDoubleOr(t1p0Index * 2 + 1, 0D);
+        double t1p1x = pointCoords.getDoubleOr(t1p1Index * 2, 0D);
+        double t1p1y = pointCoords.getDoubleOr(t1p1Index * 2 + 1, 0D);
+        double t1p2x = pointCoords.getDoubleOr(t1p2Index * 2, 0D);
+        double t1p2y = pointCoords.getDoubleOr(t1p2Index * 2 + 1, 0D);
         
         return triangleIntersects(ti2, t1p0x, t1p0y, t1p1x, t1p1y, t1p2x, t1p2y);
     }
@@ -1229,12 +1229,12 @@ public class Mesh2D {
         int t2p1Index = trianglePointIndexes.getInt(ti * 3 + 1);
         int t2p2Index = trianglePointIndexes.getInt(ti * 3 + 2);
         
-        double t2p0x = pointCoords.getDouble(t2p0Index * 2);
-        double t2p0y = pointCoords.getDouble(t2p0Index * 2 + 1);
-        double t2p1x = pointCoords.getDouble(t2p1Index * 2);
-        double t2p1y = pointCoords.getDouble(t2p1Index * 2 + 1);
-        double t2p2x = pointCoords.getDouble(t2p2Index * 2);
-        double t2p2y = pointCoords.getDouble(t2p2Index * 2 + 1);
+        double t2p0x = pointCoords.getDoubleOr(t2p0Index * 2, 0D);
+        double t2p0y = pointCoords.getDoubleOr(t2p0Index * 2 + 1, 0D);
+        double t2p1x = pointCoords.getDoubleOr(t2p1Index * 2, 0D);
+        double t2p1y = pointCoords.getDoubleOr(t2p1Index * 2 + 1, 0D);
+        double t2p2x = pointCoords.getDoubleOr(t2p2Index * 2, 0D);
+        double t2p2y = pointCoords.getDoubleOr(t2p2Index * 2 + 1, 0D);
         
         return GeometryUtil.triangleIntersects(
             t1p0x, t1p0y, t1p1x, t1p1y, t1p2x, t1p2y,
@@ -1265,12 +1265,12 @@ public class Mesh2D {
             int p0Index = trianglePointIndexes.getInt(ti * 3);
             int p1Index = trianglePointIndexes.getInt(ti * 3 + 1);
             int p2Index = trianglePointIndexes.getInt(ti * 3 + 2);
-            double p0x = pointCoords.getDouble(p0Index * 2);
-            double p0y = pointCoords.getDouble(p0Index * 2 + 1);
-            double p1x = pointCoords.getDouble(p1Index * 2);
-            double p1y = pointCoords.getDouble(p1Index * 2 + 1);
-            double p2x = pointCoords.getDouble(p2Index * 2);
-            double p2y = pointCoords.getDouble(p2Index * 2 + 1);
+            double p0x = pointCoords.getDoubleOr(p0Index * 2, 0D);
+            double p0y = pointCoords.getDoubleOr(p0Index * 2 + 1, 0D);
+            double p1x = pointCoords.getDoubleOr(p1Index * 2, 0D);
+            double p1y = pointCoords.getDoubleOr(p1Index * 2 + 1, 0D);
+            double p2x = pointCoords.getDoubleOr(p2Index * 2, 0D);
+            double p2y = pointCoords.getDoubleOr(p2Index * 2 + 1, 0D);
             
             int ti_ = ti;
             @Nullable Unit unit = traverseNearbyTriangles(
@@ -1316,8 +1316,8 @@ public class Mesh2D {
                 continue;
             }
             
-            double x = pointCoords.getDouble(i * 2);
-            double y = pointCoords.getDouble(i * 2 + 1);
+            double x = pointCoords.getDoubleOr(i * 2, 0D);
+            double y = pointCoords.getDoubleOr(i * 2 + 1, 0D);
             
             int i_ = i;
             for (; ; ) {
@@ -1362,12 +1362,12 @@ public class Mesh2D {
     }
     
     public boolean isOnLineSegment(int p1Index, int p2Index, int p3Index) {
-        double p1x = pointCoords.getDouble(p1Index * 2);
-        double p1y = pointCoords.getDouble(p1Index * 2 + 1);
-        double p2x = pointCoords.getDouble(p2Index * 2);
-        double p2y = pointCoords.getDouble(p2Index * 2 + 1);
-        double p3x = pointCoords.getDouble(p3Index * 2);
-        double p3y = pointCoords.getDouble(p3Index * 2 + 1);
+        double p1x = pointCoords.getDoubleOr(p1Index * 2, 0D);
+        double p1y = pointCoords.getDoubleOr(p1Index * 2 + 1, 0D);
+        double p2x = pointCoords.getDoubleOr(p2Index * 2, 0D);
+        double p2y = pointCoords.getDoubleOr(p2Index * 2 + 1, 0D);
+        double p3x = pointCoords.getDoubleOr(p3Index * 2, 0D);
+        double p3y = pointCoords.getDoubleOr(p3Index * 2 + 1, 0D);
         
         return GeometryUtil.isOppositeVec(p1x - p2x, p1y - p2y, p3x - p2x, p3y - p2y);
     }
@@ -1385,12 +1385,12 @@ public class Mesh2D {
             int p1Index = trianglePointIndexes.getInt(triangleIndex * 3 + 1);
             int p2Index = trianglePointIndexes.getInt(triangleIndex * 3 + 2);
             
-            double p0x = pointCoords.getDouble(p0Index * 2);
-            double p0y = pointCoords.getDouble(p0Index * 2 + 1);
-            double p1x = pointCoords.getDouble(p1Index * 2);
-            double p1y = pointCoords.getDouble(p1Index * 2 + 1);
-            double p2x = pointCoords.getDouble(p2Index * 2);
-            double p2y = pointCoords.getDouble(p2Index * 2 + 1);
+            double p0x = pointCoords.getDoubleOr(p0Index * 2, 0D);
+            double p0y = pointCoords.getDoubleOr(p0Index * 2 + 1, 0D);
+            double p1x = pointCoords.getDoubleOr(p1Index * 2, 0D);
+            double p1y = pointCoords.getDoubleOr(p1Index * 2 + 1, 0D);
+            double p2x = pointCoords.getDoubleOr(p2Index * 2, 0D);
+            double p2y = pointCoords.getDoubleOr(p2Index * 2 + 1, 0D);
             
             sb.append(String.format(
                 "%d: (%.3f, %.3f) (%.3f, %.3f) (%.3f, %.3f)\n",
@@ -1412,8 +1412,8 @@ public class Mesh2D {
                 continue;
             }
             
-            double x = pointCoords.getDouble(i * 2);
-            double y = pointCoords.getDouble(i * 2 + 1);
+            double x = pointCoords.getDoubleOr(i * 2, 0D);
+            double y = pointCoords.getDoubleOr(i * 2 + 1, 0D);
             
             JsonArray point = new JsonArray();
             point.add(x);
@@ -1456,12 +1456,12 @@ public class Mesh2D {
             int p1Index = trianglePointIndexes.getInt(i * 3 + 1);
             int p2Index = trianglePointIndexes.getInt(i * 3 + 2);
             
-            double p0x = pointCoords.getDouble(p0Index * 2);
-            double p0y = pointCoords.getDouble(p0Index * 2 + 1);
-            double p1x = pointCoords.getDouble(p1Index * 2);
-            double p1y = pointCoords.getDouble(p1Index * 2 + 1);
-            double p2x = pointCoords.getDouble(p2Index * 2);
-            double p2y = pointCoords.getDouble(p2Index * 2 + 1);
+            double p0x = pointCoords.getDoubleOr(p0Index * 2, 0D);
+            double p0y = pointCoords.getDoubleOr(p0Index * 2 + 1, 0D);
+            double p1x = pointCoords.getDoubleOr(p1Index * 2, 0D);
+            double p1y = pointCoords.getDoubleOr(p1Index * 2 + 1, 0D);
+            double p2x = pointCoords.getDoubleOr(p2Index * 2, 0D);
+            double p2y = pointCoords.getDoubleOr(p2Index * 2 + 1, 0D);
             
             double weight = Helper.crossProduct2D(
                 p1x - p0x, p1y - p0y,
@@ -1494,8 +1494,8 @@ public class Mesh2D {
             if (!isPointUsed(i)) {
                 continue;
             }
-            double x = pointCoords.getDouble(i * 2);
-            double y = pointCoords.getDouble(i * 2 + 1);
+            double x = pointCoords.getDoubleOr(i * 2, 0D);
+            double y = pointCoords.getDoubleOr(i * 2 + 1, 0D);
             
             if (firstPoint) {
                 minX = x;
@@ -1526,12 +1526,12 @@ public class Mesh2D {
             int p1Index = trianglePointIndexes.getInt(i * 3 + 1);
             int p2Index = trianglePointIndexes.getInt(i * 3 + 2);
             
-            double p0x = pointCoords.getDouble(p0Index * 2);
-            double p0y = pointCoords.getDouble(p0Index * 2 + 1);
-            double p1x = pointCoords.getDouble(p1Index * 2);
-            double p1y = pointCoords.getDouble(p1Index * 2 + 1);
-            double p2x = pointCoords.getDouble(p2Index * 2);
-            double p2y = pointCoords.getDouble(p2Index * 2 + 1);
+            double p0x = pointCoords.getDoubleOr(p0Index * 2, 0D);
+            double p0y = pointCoords.getDoubleOr(p0Index * 2 + 1, 0D);
+            double p1x = pointCoords.getDoubleOr(p1Index * 2, 0D);
+            double p1y = pointCoords.getDoubleOr(p1Index * 2 + 1, 0D);
+            double p2x = pointCoords.getDoubleOr(p2Index * 2, 0D);
+            double p2y = pointCoords.getDoubleOr(p2Index * 2 + 1, 0D);
             
             double triangleAreaDoubled = Helper.crossProduct2D(
                 p1x - p0x, p1y - p0y,
@@ -1564,8 +1564,8 @@ public class Mesh2D {
         
         for (int i = 0; i < getStoredPointNum(); i++) {
             // Note: unused points are also transformed
-            double x = pointCoords.getDouble(i * 2);
-            double y = pointCoords.getDouble(i * 2 + 1);
+            double x = pointCoords.getDoubleOr(i * 2, 0D);
+            double y = pointCoords.getDoubleOr(i * 2 + 1, 0D);
             
             Vec2d transformed = transform.apply(new Vec2d(x, y));
             double transformedX = transformed.x();
@@ -1592,12 +1592,12 @@ public class Mesh2D {
                     int p1Index = getTrianglePointIndex(triangleId, 1);
                     int p2Index = getTrianglePointIndex(triangleId, 2);
                     
-                    double p0x = this.pointCoords.getDouble(p0Index * 2);
-                    double p0y = this.pointCoords.getDouble(p0Index * 2 + 1);
-                    double p1x = this.pointCoords.getDouble(p1Index * 2);
-                    double p1y = this.pointCoords.getDouble(p1Index * 2 + 1);
-                    double p2x = this.pointCoords.getDouble(p2Index * 2);
-                    double p2y = this.pointCoords.getDouble(p2Index * 2 + 1);
+                    double p0x = this.pointCoords.getDoubleOr(p0Index * 2, 0D);
+                    double p0y = this.pointCoords.getDoubleOr(p0Index * 2 + 1, 0D);
+                    double p1x = this.pointCoords.getDoubleOr(p1Index * 2, 0D);
+                    double p1y = this.pointCoords.getDoubleOr(p1Index * 2 + 1, 0D);
+                    double p2x = this.pointCoords.getDoubleOr(p2Index * 2, 0D);
+                    double p2y = this.pointCoords.getDoubleOr(p2Index * 2 + 1, 0D);
                     
                     if (GeometryUtil.triangleIntersectsWithAABB(
                         p0x, p0y, p1x, p1y, p2x, p2y,
@@ -1624,12 +1624,12 @@ public class Mesh2D {
                 int p2Index = trianglePointIndexes.getInt(ti * 3 + 2);
                 
                 mesh.addTriangle(
-                    pointCoords.getDouble(p0Index * 2),
-                    pointCoords.getDouble(p0Index * 2 + 1),
-                    pointCoords.getDouble(p1Index * 2),
-                    pointCoords.getDouble(p1Index * 2 + 1),
-                    pointCoords.getDouble(p2Index * 2),
-                    pointCoords.getDouble(p2Index * 2 + 1)
+                    pointCoords.getDoubleOr(p0Index * 2, 0D),
+                    pointCoords.getDoubleOr(p0Index * 2 + 1, 0D),
+                    pointCoords.getDoubleOr(p1Index * 2, 0D),
+                    pointCoords.getDoubleOr(p1Index * 2 + 1, 0D),
+                    pointCoords.getDoubleOr(p2Index * 2, 0D),
+                    pointCoords.getDoubleOr(p2Index * 2 + 1, 0D)
                 );
             }
         }
@@ -1657,8 +1657,8 @@ public class Mesh2D {
         ListTag trianglesTag = new ListTag();
         
         for (int i = 0; i < getStoredPointNum(); i++) {
-            double x = this.pointCoords.getDouble(i * 2);
-            double y = this.pointCoords.getDouble(i * 2 + 1);
+            double x = this.pointCoords.getDoubleOr(i * 2, 0D);
+            double y = this.pointCoords.getDoubleOr(i * 2 + 1, 0D);
             
             pointCoordsTag.add(DoubleTag.valueOf(x));
             pointCoordsTag.add(DoubleTag.valueOf(y));
@@ -1710,9 +1710,9 @@ public class Mesh2D {
                 pointCoords.getDoubleOr(p0Index * 2, 0D),
                 pointCoords.getDoubleOr(p0Index * 2 + 1, 0D),
                 pointCoords.getDoubleOr(p1Index * 2, 0D),
-                pointCoords.getDouble(p1Index * 2 + 1),
-                pointCoords.getDouble(p2Index * 2),
-                pointCoords.getDouble(p2Index * 2 + 1)
+                pointCoords.getDoubleOr(p1Index * 2 + 1, 0D),
+                pointCoords.getDoubleOr(p2Index * 2, 0D),
+                pointCoords.getDoubleOr(p2Index * 2 + 1, 0D)
             );
         }
         

@@ -97,7 +97,7 @@ public class CHelper {
         String link
     ) {
         Minecraft client = Minecraft.getInstance();
-        client.setScreen(new ConfirmLinkScreen(
+        client.gui.setScreen(new ConfirmLinkScreen(
             (result) -> {
                 if (result) {
                     try {

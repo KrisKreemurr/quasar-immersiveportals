@@ -4,7 +4,7 @@ package qouteall.q_misc_util;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.MultiLineLabel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -35,7 +35,7 @@ public class CustomTextOverlay {
 
     public static boolean remove(String key) { return false; }
 
-    public static void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {}
+    public static void render(GuiGraphicsExtractor guiGraphics, DeltaTracker deltaTracker) {}
 
 }
 

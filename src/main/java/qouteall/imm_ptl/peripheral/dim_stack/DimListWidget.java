@@ -35,7 +35,7 @@ public class DimListWidget {
         Screen parent,
         Type type,
         @Nullable DraggingCallback draggingCallback
-    ) { super(Minecraft.getInstance(), width, height, top, itemHeight); }
+    ) {}
 
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) { return false; }
 

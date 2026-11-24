@@ -151,7 +151,7 @@ public class ImmPtlClientChunkMap extends ClientChunkCache {
             loadChunkDataFromPacket(x, z, data, worldChunk);
         }
         
-        this.level.onChunkLoaded(worldChunk);
+        this.level.onChunkLoaded(new ChunkPos(x, z));
         O_O.postClientChunkLoadEvent(worldChunk);
         clientChunkLoadSignal.emit(worldChunk);
         

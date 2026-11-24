@@ -36,7 +36,7 @@ public class IPortalInitialScreen extends Screen {
 
     public void init() {}
 
-    protected IPortalInitialScreen() {}
+    protected IPortalInitialScreen() { super(net.minecraft.network.chat.Component.empty()); }
 
 }
 

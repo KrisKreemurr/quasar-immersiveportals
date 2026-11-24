@@ -209,7 +209,6 @@ public class Portal extends Entity implements
     }
 
     @Override
-    @Override
     public boolean hurtServer(net.minecraft.server.level.ServerLevel level, net.minecraft.world.damagesource.DamageSource source, float amount) {
         return false; // Quasar MC: 26.x split hurt() into hurtServer(); portals take no damage
     }
@@ -336,7 +335,7 @@ public class Portal extends Entity implements
         if (compoundTag.contains("commandsOnTeleported")) {
             ListTag list = compoundTag.getListOrEmpty("commandsOnTeleported");
             commandsOnTeleported = list.stream()
-                .map(t -> ((StringTag) t).getAsString()).collect(Collectors.toList());
+                .map(t -> ((StringTag) t).value()).collect(Collectors.toList());
         }
         else {
             commandsOnTeleported = null;
