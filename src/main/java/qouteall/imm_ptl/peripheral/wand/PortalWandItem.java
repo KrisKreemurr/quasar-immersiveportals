@@ -6,7 +6,6 @@ import de.nick1st.imm_ptl.events.ClientCleanupEvent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -16,7 +15,6 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -174,7 +172,7 @@ public class PortalWandItem extends Item {
 //    }
     
     @Override
-    public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
+    public InteractionResult use(Level world, Player player, InteractionHand hand) {
         ItemStack itemStack = player.getItemInHand(hand);
         Mode mode = itemStack.getOrDefault(COMPONENT_TYPE, Mode.FALLBACK);
         
@@ -183,7 +181,7 @@ public class PortalWandItem extends Item {
                 if (!PortalWandInteraction.isDragging(((ServerPlayer) player))) {
                     Mode nextMode = mode.next();
                     itemStack.set(COMPONENT_TYPE, nextMode);
-                    return new InteractionResultHolder<>(InteractionResult.SUCCESS, itemStack);
+                    return InteractionResult.SUCCESS;
                 }
             }
         }
@@ -216,9 +214,11 @@ public class PortalWandItem extends Item {
     @Override
     public void appendHoverText(
         ItemStack stack, Item.TooltipContext tooltipContext,
-        List<Component> tooltip, TooltipFlag tooltipFlag
+        net.minecraft.world.item.component.TooltipDisplay tooltipDisplay,
+        java.util.function.Consumer<Component> tooltipAdder, TooltipFlag tooltipFlag
     ) {
-        super.appendHoverText(stack, tooltipContext, tooltip, tooltipFlag);
+        super.appendHoverText(stack, tooltipContext, tooltipDisplay, tooltipAdder, tooltipFlag);
+        List<Component> tooltip = new java.util.ArrayList<>();
         
         tooltip.add(Component.translatable(
             "imm_ptl.wand.item_desc_1",
@@ -230,6 +230,7 @@ public class PortalWandItem extends Item {
             Minecraft.getInstance().options.keyShift.getTranslatedKeyMessage(),
             Minecraft.getInstance().options.keyAttack.getTranslatedKeyMessage()
         ));
+        tooltip.forEach(tooltipAdder);
     }
     
     @Override
@@ -287,7 +288,7 @@ public class PortalWandItem extends Item {
     
     //@OnlyIn(Dist.CLIENT)
     public static void clientRender(
-        net.minecraft.client.player.LocalPlayer player, ItemStack itemStack, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
+        net.minecraft.client.player.LocalPlayer player, ItemStack itemStack, PoseStack poseStack, qouteall.imm_ptl.core.mc_utils.WireBuffers bufferSource,
         double camX, double camY, double camZ
     ) {
         if (!instructionInformed) {

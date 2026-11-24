@@ -1,7 +1,6 @@
 package qouteall.imm_ptl.peripheral.wand;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -92,7 +91,7 @@ public class WandUtil {
     
     //@OnlyIn(Dist.CLIENT)
     public static void renderPortalAreaGridNew(
-        VertexConsumer vertexConsumer, Vec3 cameraPos,
+        qouteall.imm_ptl.core.mc_utils.WireSink vertexConsumer, Vec3 cameraPos,
         ProtoPortalSide protoPortalSide,
         int color1, int color2, PoseStack matrixStack
     ) {
@@ -194,7 +193,7 @@ public class WandUtil {
     
     //@OnlyIn(Dist.CLIENT)
     public static void renderPortalAreaGrid(
-        VertexConsumer vertexConsumer, Vec3 cameraPos,
+        qouteall.imm_ptl.core.mc_utils.WireSink vertexConsumer, Vec3 cameraPos,
         ProtoPortalSide protoPortalSide,
         int color, PoseStack matrixStack
     ) {

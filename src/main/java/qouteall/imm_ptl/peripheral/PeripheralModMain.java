@@ -49,6 +49,8 @@ public class PeripheralModMain {
         PortalWandItem.initClient();
         
         ClientPortalWandPortalDrag.init();
+        
+        qouteall.imm_ptl.peripheral.wand.WandPreviewRendering.init();
     }
     
     public static void init() {

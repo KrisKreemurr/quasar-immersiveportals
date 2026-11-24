@@ -1,14 +1,11 @@
 package qouteall.imm_ptl.peripheral.wand;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.logging.LogUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
@@ -834,7 +831,7 @@ public class ClientPortalWandPortalDrag {
     
     public static void render(
         PoseStack matrixStack,
-        MultiBufferSource.BufferSource bufferSource,
+        qouteall.imm_ptl.core.mc_utils.WireBuffers bufferSource,
         double camX, double camY, double camZ
     ) {
         LocalPlayer player = Minecraft.getInstance().player;
@@ -873,7 +870,7 @@ public class ClientPortalWandPortalDrag {
         
         Vec3 cameraPos = new Vec3(camX, camY, camZ);
         
-        VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.lines());
+        qouteall.imm_ptl.core.mc_utils.WireSink vertexConsumer = bufferSource.lines();
         
         Vec3 renderedCursor = getCursorToRender();
         if (renderedCursor != null) {
@@ -956,7 +953,7 @@ public class ClientPortalWandPortalDrag {
             renderWidthHeightLineSegment(matrixStack, cameraPos, vertexConsumer, rect);
         }
         
-        VertexConsumer debugLineStripConsumer = bufferSource.getBuffer(RenderType.debugLineStrip(1));
+        qouteall.imm_ptl.core.mc_utils.WireSink debugLineStripConsumer = bufferSource.lineStrip();
         
         RenderedPlane plane = renderedPlane.getCurrent();
         if (plane != null && plane.plane() != null && plane.plane().dimension() == currDim) {
@@ -1022,7 +1019,7 @@ public class ClientPortalWandPortalDrag {
     }
     
     public static void renderRect(
-        PoseStack matrixStack, Vec3 cameraPos, VertexConsumer vertexConsumer,
+        PoseStack matrixStack, Vec3 cameraPos, qouteall.imm_ptl.core.mc_utils.WireSink vertexConsumer,
         UnilateralPortalState rect
     ) {
         WireRenderingHelper.renderRectFrameFlow(matrixStack, cameraPos, vertexConsumer, rect, colorOfRect1, colorOfRect2);
@@ -1033,7 +1030,7 @@ public class ClientPortalWandPortalDrag {
     }
     
     private static void renderWidthHeightLock(
-        PoseStack matrixStack, Vec3 cameraPos, VertexConsumer vertexConsumer, UnilateralPortalState rect
+        PoseStack matrixStack, Vec3 cameraPos, qouteall.imm_ptl.core.mc_utils.WireSink vertexConsumer, UnilateralPortalState rect
     ) {
         matrixStack.pushPose();
         matrixStack.scale(0.5f, 0.5f, 0.5f); // make it closer to camera to see it through block
@@ -1082,7 +1079,7 @@ public class ClientPortalWandPortalDrag {
     }
     
     private static void renderWidthHeightLineSegment(
-        PoseStack matrixStack, Vec3 cameraPos, VertexConsumer vertexConsumer, UnilateralPortalState rect
+        PoseStack matrixStack, Vec3 cameraPos, qouteall.imm_ptl.core.mc_utils.WireSink vertexConsumer, UnilateralPortalState rect
     ) {
         matrixStack.pushPose();
         matrixStack.scale(0.5f, 0.5f, 0.5f); // make it closer to camera to see it through block

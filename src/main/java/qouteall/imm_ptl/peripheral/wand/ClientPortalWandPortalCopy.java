@@ -1,12 +1,9 @@
 package qouteall.imm_ptl.peripheral.wand;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
@@ -283,7 +280,7 @@ public class ClientPortalWandPortalCopy {
     
     public static void render(
         PoseStack matrixStack,
-        MultiBufferSource.BufferSource bufferSource,
+        qouteall.imm_ptl.core.mc_utils.WireBuffers bufferSource,
         double camX, double camY, double camZ
     ) {
         LocalPlayer player = Minecraft.getInstance().player;
@@ -298,7 +295,7 @@ public class ClientPortalWandPortalCopy {
         
         ResourceKey<Level> currDim = player.level().dimension();
         Vec3 cameraPos = new Vec3(camX, camY, camZ);
-        VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.lines());
+        qouteall.imm_ptl.core.mc_utils.WireSink vertexConsumer = bufferSource.lines();
         
         Vec3 cursorPos = null;
         RenderedPoint currentCursor = cursor.getCurrent();
