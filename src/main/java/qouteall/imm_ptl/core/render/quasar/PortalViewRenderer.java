@@ -7,6 +7,7 @@ import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.commands.GpuQueryPool;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.device.GpuDevice;
 import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
@@ -45,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -79,6 +81,7 @@ public final class PortalViewRenderer {
 
     private static Method mainCameraMethod;
     private static Method drawTerrainMethod;
+    private static Method lastSectionsMethod;
     private static boolean failed;
 
     private static final Target[] targets = new Target[MAX_PORTALS];
@@ -94,6 +97,12 @@ public final class PortalViewRenderer {
             mainCameraMethod = hook.getMethod("mainCamera");
             drawTerrainMethod = hook.getMethod("drawTerrain", CameraRenderState.class, GpuTextureView.class,
                 GpuTextureView.class, int.class, int.class);
+            try {
+                lastSectionsMethod = hook.getMethod("lastSections");
+            }
+            catch (NoSuchMethodException ignored) {
+                // older Quasar Meshelium: the F3 line shows no section count
+            }
             Field after = hook.getField("afterOpaque");
             after.set(null, (Runnable) PortalViewRenderer::renderAll);
             LOGGER.info("[Quasar Portals] live portal views on (Quasar Meshelium found)");
@@ -107,6 +116,10 @@ public final class PortalViewRenderer {
     private static void renderAll() {
         drawnThisFrame.clear();
         lastPixels = 0;
+        frameTerrainNs = 0;
+        frameSections = 0;
+        frameCoverage = 0;
+        long t0 = System.nanoTime();
         try {
             if (!failed) {
                 renderPortals();
@@ -118,6 +131,7 @@ public final class PortalViewRenderer {
         }
         drawnLastFrame.clear();
         drawnLastFrame.addAll(drawnThisFrame);
+        Stats.frame(System.nanoTime() - t0, frameTerrainNs, drawnThisFrame.size(), frameSections, frameCoverage);
     }
 
     private static void renderPortals() throws Exception {
@@ -155,6 +169,18 @@ public final class PortalViewRenderer {
 
         GpuDevice device = RenderSystem.getDevice();
         CommandEncoder encoder = device.createCommandEncoder();
+        int gpuSlot = Stats.gpuBegin(device, encoder);
+        try {
+            renderEach(portals, main, device, encoder, mainColor, mainDepth, w, h);
+        }
+        finally {
+            Stats.gpuEnd(encoder, gpuSlot);
+        }
+    }
+    
+    private static void renderEach(List<Portal> portals, CameraRenderState main, GpuDevice device,
+                                   CommandEncoder encoder, GpuTextureView mainColor, GpuTextureView mainDepth,
+                                   int w, int h) throws Exception {
 
         Matrix4f mainViewProj = new Matrix4f(main.projectionMatrix).mul(main.viewRotationMatrix);
         int n = Math.min(MAX_PORTALS, portals.size());
@@ -171,9 +197,15 @@ public final class PortalViewRenderer {
             
             // flat sky colour for now (the sky, clouds and far panorama come in later milestones)
             encoder.clearColorAndDepthTextures(t.color, new Vector4f(0.53f, 0.71f, 1.0f, 1.0f), t.depth, 0.0);
+            long tt = System.nanoTime();
             boolean drawn = (Boolean) drawTerrainMethod.invoke(null, virtual, t.colorView, t.depthView,
                 t.width, t.height);
+            frameTerrainNs += System.nanoTime() - tt;
             if (!drawn) continue;
+            if (lastSectionsMethod != null) {
+                frameSections += (Integer) lastSectionsMethod.invoke(null);
+            }
+            frameCoverage += (rect[2] - rect[0]) * (rect[3] - rect[1]) / 4f;
             
             composite(encoder, main, portal, t, rect, mainColor, mainDepth, w, h);
             drawnThisFrame.add(portal.getId());
@@ -182,6 +214,106 @@ public final class PortalViewRenderer {
     }
 
     static long lastPixels;
+    private static long frameTerrainNs;
+    private static int frameSections;
+    private static float frameCoverage;
+    
+    /** F3 line (read by Quasium's [Quasium] block through reflection). */
+    public static String f3Line() {
+        return Stats.line();
+    }
+    
+    /**
+     * Portal timings, averaged over ~half a second. CPU = the whole hook (culling + command recording + composite);
+     * "terrain" = Meshelium's part of it. GPU = timestamps around all portal work (clears, terrain, composite), read
+     * back a few frames later without waiting.
+     */
+    private static final class Stats {
+        private static final int RING = 8, LAG = 4;
+        private static GpuQueryPool pool;
+        private static boolean poolFailed;
+        private static long frameNo;
+        private static final long[] slotFrame = new long[RING];
+        
+        private static long sumCpu, sumTerrain, sumGpu, sumSections, frames, gpuFrames, liveFrames;
+        private static double sumCoverage;
+        private static int maxLive;
+        private static long windowStart = System.nanoTime();
+        private static String line = "Portals: idle";
+        
+        static int gpuBegin(GpuDevice device, CommandEncoder encoder) {
+            if (poolFailed) return -1;
+            try {
+                if (pool == null) {
+                    pool = device.createTimestampQueryPool(RING * 2);
+                    java.util.Arrays.fill(slotFrame, -1);
+                }
+                frameNo++;
+                readBack(device, frameNo - LAG);
+                int slot = (int) (frameNo % RING);
+                encoder.writeTimestamp(pool, slot * 2);
+                return slot;
+            }
+            catch (Throwable t) {
+                poolFailed = true;
+                LOGGER.warn("[Quasar Portals] GPU timer unavailable: {}", t.toString());
+                return -1;
+            }
+        }
+        
+        static void gpuEnd(CommandEncoder encoder, int slot) {
+            if (slot < 0 || pool == null) return;
+            encoder.writeTimestamp(pool, slot * 2 + 1);
+            slotFrame[slot] = frameNo;
+        }
+        
+        private static void readBack(GpuDevice device, long f) {
+            if (f < 1) return;
+            int slot = (int) (f % RING);
+            if (slotFrame[slot] != f) return;
+            slotFrame[slot] = -1;
+            OptionalLong[] v = pool.getValues(slot * 2, 2);
+            if (v.length == 2 && v[0].isPresent() && v[1].isPresent()) {
+                double period = device.getDeviceInfo().timestampPeriod();
+                long ns = (long) ((v[1].getAsLong() - v[0].getAsLong()) * period);
+                if (ns >= 0 && ns < 1_000_000_000L) {
+                    sumGpu += ns;
+                    gpuFrames++;
+                }
+            }
+        }
+        
+        static void frame(long cpuNs, long terrainNs, int live, int sections, float coverage) {
+            frames++;
+            sumCpu += cpuNs;
+            sumTerrain += terrainNs;
+            sumSections += sections;
+            sumCoverage += coverage;
+            if (live > 0) liveFrames++;
+            maxLive = Math.max(maxLive, live);
+            long now = System.nanoTime();
+            if (now - windowStart < 500_000_000L) return;
+            if (liveFrames == 0) {
+                line = "Portals: idle (no portal view this half second)";
+            }
+            else {
+                double f = frames;
+                line = String.format(java.util.Locale.ROOT,
+                    "Portals: %d live, CPU %.3f ms (terrain %.3f), GPU %s, %d sections, %.0f%% of screen",
+                    maxLive, sumCpu / f / 1e6, sumTerrain / f / 1e6,
+                    gpuFrames > 0 ? String.format(java.util.Locale.ROOT, "%.3f ms", sumGpu / (double) gpuFrames / 1e6) : "n/a",
+                    Math.round(sumSections / f), sumCoverage / f * 100);
+            }
+            sumCpu = sumTerrain = sumGpu = sumSections = frames = gpuFrames = liveFrames = 0;
+            sumCoverage = 0;
+            maxLive = 0;
+            windowStart = now;
+        }
+        
+        static String line() {
+            return line;
+        }
+    }
     
     /**
      * The portal's bounding rectangle on screen in NDC (x0, y0, x1, y1), padded by a couple of pixels and clamped to
