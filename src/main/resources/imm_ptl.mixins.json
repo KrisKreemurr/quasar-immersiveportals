@@ -58,7 +58,8 @@
     "common.position_sync.MixinServerboundMovePlayerPacketRot",
     "common.position_sync.MixinServerboundMovePlayerPacketStatusOnly",
     "common.position_sync.MixinServerboundMovePlayerPacket_S",
-    "common.registry.IERegistryDataLoader"
+    "common.registry.IERegistryDataLoader",
+    "common.entity_sync.MixinServerGamePacketListenerImpl_Redirect"
   ],
   "client": [
     "client.MixinAbstractClientPlayer",
