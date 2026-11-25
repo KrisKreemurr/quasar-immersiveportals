@@ -1,5 +1,7 @@
 package qouteall.imm_ptl.core;
 
+import java.util.HashMap;
+import qouteall.imm_ptl.core.render.quasar.SecondaryLevelExtractor;
 import de.nick1st.imm_ptl.events.ClientExitEvent;
 import de.nick1st.imm_ptl.events.DimensionEvents;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -350,13 +352,98 @@ public class ClientWorldLoader {
         }
     }
     
-    @SuppressWarnings("DataFlowIssue")
+    /** Quasar MC: the render-side listener of each background world (see {@link SecondaryLevelExtractor}). */
+    public static final Map<ResourceKey<Level>, SecondaryLevelExtractor> SECONDARY_EXTRACTORS = new HashMap<>();
+
+    /**
+     * Quasar MC (26.3): a background client world for another dimension (cross-dimension step 1).
+     * 26.x ClientLevel takes a LevelExtractor instead of a LevelRenderer; the world gets its own
+     * {@link SecondaryLevelExtractor} so its block changes never reach the main renderer. There is no
+     * second vanilla LevelRenderer: portal terrain is drawn by Meshelium (step 3), so the world map
+     * points at the main renderer only so that {@link #withSwitchedWorld} keeps working.
+     * Not yet shared with the main world: map data and the tick-rate manager (no 26.x accessors yet).
+     */
     private static ClientLevel createSecondaryClientWorld(ResourceKey<Level> dimension) {
-        // Quasar MC: cross-dimension portals need a second client world and renderer. Not ported to 26.3 yet
-        // (same-dimension portals come first; the original is in src/parked/ClientWorldLoader.java.txt).
-        throw new IllegalStateException("Quasar MC: cross-dimension portals are not ported yet (" + dimension.identifier() + ")");
+        Minecraft mc = Minecraft.getInstance();
+        Validate.notNull(mc.player, "player is null");
+        Validate.notNull(mc.level, "level is null");
+        Validate.isTrue(mc.isSameThread(), "not on client thread");
+
+        Set<ResourceKey<Level>> dimIds = getServerDimensions();
+        if (!dimIds.contains(dimension)) {
+            throw new RuntimeException("Cannot create invalid client dimension " + dimension.identifier());
+        }
+        Validate.notNull(dimIdToDimTypeId, "dimension type mapping is missing");
+        ResourceKey<DimensionType> dimensionTypeKey = dimIdToDimTypeId.get(dimension);
+        if (dimensionTypeKey == null) {
+            throw new IllegalStateException("Cannot find dimension type for %s in %s"
+                .formatted(dimension.identifier(), dimIdToDimTypeId));
+        }
+
+        isCreatingClientWorld = true;
+        net.minecraft.util.profiling.Profiler.get().push("create_world");
+        ClientLevel newWorld;
+        try {
+            ClientPacketListener mainNetHandler = mc.player.connection;
+            Holder<DimensionType> dimensionType = mainNetHandler.registryAccess()
+                .lookupOrThrow(Registries.DIMENSION_TYPE)
+                .getOrThrow(dimensionTypeKey);
+
+            // Separate level data: difficulty/hardcore copied, flat-world horizon off for other dimensions.
+            ClientLevel.ClientLevelData current = mc.level.getLevelData();
+            ClientLevel.ClientLevelData properties = new ClientLevel.ClientLevelData(
+                current.getDifficulty(), current.isHardcore(), false);
+
+            SecondaryLevelExtractor extractor = new SecondaryLevelExtractor(mc);
+            newWorld = new ClientLevel(
+                mainNetHandler,
+                properties,
+                dimension,
+                dimensionType,
+                3, // chunk radius: Immersive Portals' own chunk map decides what is kept
+                mc.level.getServerSimulationDistance(),
+                extractor,
+                mc.level.isDebug(),
+                biomeZoomSeed(mc.level),
+                seaLevelFor(dimension, mc.level)
+            );
+
+            CLIENT_WORLD_MAP.put(dimension, newWorld);
+            WORLD_RENDERER_MAP.put(dimension, mc.levelRenderer);
+            SECONDARY_EXTRACTORS.put(dimension, extractor);
+            LOGGER.info("Client World Created {}", dimension.identifier());
+        }
+        catch (Exception e) {
+            throw new IllegalStateException("Creating Client World " + dimension.identifier() + " " + CLIENT_WORLD_MAP.keySet(), e);
+        }
+        finally {
+            isCreatingClientWorld = false;
+            net.minecraft.util.profiling.Profiler.get().pop();
+        }
+
+        NeoForge.EVENT_BUS.post(new DimensionEvents.CLIENT_WORLD_LOAD_EVENT(newWorld));
+        return newWorld;
     }
-    
+
+    /** The hashed world seed vanilla passes to ClientLevel (only used for biome blending). */
+    private static long biomeZoomSeed(ClientLevel level) {
+        try {
+            java.lang.reflect.Field f = net.minecraft.world.level.biome.BiomeManager.class.getDeclaredField("biomeZoomSeed");
+            f.setAccessible(true);
+            return f.getLong(level.getBiomeManager());
+        }
+        catch (ReflectiveOperationException | RuntimeException e) {
+            return 0L;
+        }
+    }
+
+    /** Vanilla sea levels; the server doesn't send another dimension's, and it only affects client fog/horizon. */
+    private static int seaLevelFor(ResourceKey<Level> dimension, ClientLevel current) {
+        if (dimension == Level.NETHER) return 32;
+        if (dimension == Level.END) return 0;
+        return current.getSeaLevel();
+    }
+
     public static Set<ResourceKey<Level>> getServerDimensions() {
         assert Minecraft.getInstance().player != null;
         return Minecraft.getInstance().player.connection.levels();

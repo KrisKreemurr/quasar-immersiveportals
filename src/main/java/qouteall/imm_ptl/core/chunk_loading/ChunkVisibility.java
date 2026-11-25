@@ -193,9 +193,7 @@ public class ChunkVisibility {
         List<Portal> nearbyPortals = getNearbyPortals(
             ((ServerLevel) player.level()),
             player.position(),
-            // Quasar MC: the client holds only the player's own world (cross-dimension not ported), so a chunk
-            // from another dimension would be unpacked into it and break the connection. Same-dimension only.
-            portal -> portal.broadcastToPlayer(player) && portal.getDestDim() == player.level().dimension(),
+            portal -> portal.broadcastToPlayer(player),
             visiblePortalRangeChunks, 256
         );
         

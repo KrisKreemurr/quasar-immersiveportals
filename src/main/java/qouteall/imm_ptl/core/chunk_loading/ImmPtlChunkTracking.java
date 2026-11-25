@@ -178,11 +178,8 @@ public class ImmPtlChunkTracking {
 
         for (ChunkLoader chunkLoader : chunkLoaders) {
             ResourceKey<Level> dimension = chunkLoader.dimension();
-            if (dimension != player.level().dimension()) {
-                // Quasar MC: never send another dimension's chunks; the client has no second world to put them in
-                // (it would unpack them into the player's world and drop the connection). Lift with cross-dimension.
-                continue;
-            }
+            // Quasar MC: other dimensions' chunks are sent again (cross-dimension step 2); the client puts them
+            // into a background world (ClientWorldLoader.createSecondaryClientWorld).
             var chunkRecordMap = getDimChunkWatchRecords(dimension);
 
             ServerLevel world = server.getLevel(dimension);
