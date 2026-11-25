@@ -195,7 +195,7 @@ public final class PortalWorldTerrain {
     }
 
     /** Frees everything (world unloaded or session left). */
-    static void disposeAll() {
+    public static void disposeAll() {
         for (PortalWorldTerrain w : WORLDS.values()) w.dispose();
         WORLDS.clear();
     }
