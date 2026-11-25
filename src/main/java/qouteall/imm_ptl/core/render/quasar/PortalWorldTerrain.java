@@ -110,6 +110,10 @@ public final class PortalWorldTerrain {
     private final it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<Section> drawable =
         new it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<>();
     private long preparedFrame = -1;
+    /** this world's own lightmap (the Nether's ambient light, block-light tint, no sky), made on first draw */
+    private net.minecraft.client.renderer.Lightmap lightmap;
+    private final net.minecraft.client.renderer.state.LightmapRenderState lightState =
+        new net.minecraft.client.renderer.state.LightmapRenderState();
     // the last full scan: only redone when the camera changes section column, the radius changes, sections are
     // dirtied, chunks load/unload or the last scan left work for later
     private int scanSx = Integer.MIN_VALUE, scanSz = Integer.MIN_VALUE, scanRadius = -1, scanLoaded = -1;
@@ -219,6 +223,14 @@ public final class PortalWorldTerrain {
         for (Section s : sections.values()) freeMeshes(s);
         sections.clear();
         drawable.clear();
+        if (lightmap != null) {
+            try {
+                lightmap.close();
+            }
+            catch (Throwable ignored) {
+            }
+            lightmap = null;
+        }
         LOGGER.info("[Quasar Portals] portal terrain for {} freed", dimension.identifier());
     }
 
@@ -477,7 +489,7 @@ public final class PortalWorldTerrain {
             GpuTextureView atlasView = atlas.getTextureView();
             GpuSampler atlasSampler = atlas.getSampler() != null ? atlas.getSampler()
                 : RenderSystem.getSamplerCache().getRepeat(FilterMode.NEAREST, true);
-            GpuTextureView lightmap = mc.gameRenderer.lightmap();
+            GpuTextureView lightmap = updateLightmap(cam);
             GpuSampler lightSampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
 
             ByteBuffer tb = Scratch.small(80);
@@ -541,6 +553,48 @@ public final class PortalWorldTerrain {
             return false;
         }
     }
+
+    /**
+     * Renders this world's lightmap for the portal camera, the way vanilla's LightmapRenderStateExtractor does for
+     * the player's world, but with this world's light attributes (Nether: warm ambient, no sky light). Player
+     * effects that belong to the viewer (night vision, gamma) carry over; darkness/boss fog do not. Falls back to
+     * the main lightmap if anything is missing.
+     */
+    private GpuTextureView updateLightmap(Vec3 cam) {
+        Minecraft mc = Minecraft.getInstance();
+        try {
+            if (lightmap == null) lightmap = new net.minecraft.client.renderer.Lightmap();
+            var attrs = level.environmentAttributes();
+            net.minecraft.client.renderer.state.LightmapRenderState st = lightState;
+            st.needsUpdate = true;
+            st.blockFactor = 1.4f;
+            st.blockLightTint = attrs.getValue(net.minecraft.world.attribute.EnvironmentAttributes.BLOCK_LIGHT_TINT, cam);
+            st.skyFactor = attrs.getValue(net.minecraft.world.attribute.EnvironmentAttributes.SKY_LIGHT_FACTOR, cam);
+            st.skyLightColor = attrs.getValue(net.minecraft.world.attribute.EnvironmentAttributes.SKY_LIGHT_COLOR, cam);
+            st.ambientColor = attrs.getValue(net.minecraft.world.attribute.EnvironmentAttributes.AMBIENT_LIGHT_COLOR, cam);
+            st.brightness = mc.options.gamma().get().floatValue();
+            st.darknessEffectScale = 0f;
+            float nv = 0f;
+            if (mc.player != null && mc.player.hasEffect(net.minecraft.world.effect.MobEffects.NIGHT_VISION)) {
+                nv = net.minecraft.client.renderer.GameRenderer.nightVisionScale(mc.player,
+                    qouteall.imm_ptl.core.render.context_management.RenderStates.getPartialTick());
+            }
+            st.nightVisionEffectIntensity = nv;
+            st.nightVisionColor = attrs.getValue(net.minecraft.world.attribute.EnvironmentAttributes.NIGHT_VISION_COLOR, cam);
+            st.bossOverlayWorldDarkening = 0f;
+            lightmap.render(st);
+            return lightmap.getTextureView();
+        }
+        catch (Throwable t) {
+            if (!lightmapFailed) {
+                lightmapFailed = true;
+                LOGGER.warn("[Quasar Portals] {} lightmap failed, using the main one: {}", dimension.identifier(), t.toString());
+            }
+            return mc.gameRenderer.lightmap();
+        }
+    }
+
+    private boolean lightmapFailed;
 
     private static double dist2(Section s, Vec3 c) {
         double x = s.sx * 16 + 8 - c.x, y = s.sy * 16 + 8 - c.y, z = s.sz * 16 + 8 - c.z;
