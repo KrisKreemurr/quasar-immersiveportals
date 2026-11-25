@@ -10,7 +10,11 @@ import net.minecraft.client.renderer.fog.FogData;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.minecraft.client.renderer.state.level.SkyRenderState;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3fc;
 import org.joml.Matrix4fStack;
 import org.joml.Vector4f;
 import qouteall.imm_ptl.core.mixin.client.accessor.IELevelRenderer_QuasarSky;
@@ -92,5 +96,66 @@ public final class PortalSky {
         b.putFloat(24, start).putFloat(28, end);
         b.putFloat(32, f.skyEnd).putFloat(36, f.cloudEnd);
         return encoder.transientMemory().uploadGpu(b, 256, GpuBuffer.USAGE_UNIFORM);
+    }
+
+    // ------------------------------------------------------------------
+    // another dimension's fog (cross-dimension portals)
+    // ------------------------------------------------------------------
+
+    /** the fog colour of {@code level} at {@code pos} (what that dimension clears to), opaque */
+    static Vector4f background(ClientLevel level, Vec3 pos) {
+        try {
+            Vector3fc c = level.environmentAttributes().getValue(EnvironmentAttributes.FOG_COLOR, pos);
+            if (c != null) return new Vector4f(c.x(), c.y(), c.z(), 1.0f);
+        }
+        catch (Throwable ignored) {
+            // fall through
+        }
+        return new Vector4f(0f, 0f, 0f, 1f);
+    }
+
+    /**
+     * Vanilla's fog buffer for a portal into another dimension: that dimension's fog colour and environmental fog
+     * (the Nether's short red fog) at the portal camera, render-distance fog ending at the portal render distance.
+     * The main camera's fluid/blindness fog is not applied (it belongs to where you stand, not to the far side).
+     */
+    static GpuBufferSlice destinationFog(CommandEncoder encoder, ClientLevel level, Vec3 pos, CameraRenderState main,
+                                         int portalChunks) {
+        FogData f = main.fogData;
+        float distance = portalChunks > 0 ? portalChunks * 16f
+            : (f != null ? f.renderDistanceEnd : Minecraft.getInstance().options.getEffectiveRenderDistance() * 16f);
+        float rdEnd = distance;
+        float rdStart = rdEnd - Math.max(4f, Math.min(64f, rdEnd / 10f));
+        float envStart = 0f, envEnd = 1024f, skyEnd = rdEnd, cloudEnd = rdEnd;
+        try {
+            var attrs = level.environmentAttributes();
+            envStart = attrs.getValue(EnvironmentAttributes.FOG_START_DISTANCE, pos);
+            envEnd = attrs.getValue(EnvironmentAttributes.FOG_END_DISTANCE, pos);
+            skyEnd = Math.min(rdEnd, attrs.getValue(EnvironmentAttributes.SKY_FOG_END_DISTANCE, pos));
+            cloudEnd = Math.min(Minecraft.getInstance().options.cloudRange().get() * 16f,
+                attrs.getValue(EnvironmentAttributes.CLOUD_FOG_END_DISTANCE, pos));
+        }
+        catch (Throwable ignored) {
+            // keep the plain distance fog
+        }
+        Vector4f c = background(level, pos);
+        ByteBuffer b = ByteBuffer.allocateDirect(64).order(ByteOrder.nativeOrder());
+        b.putFloat(0, c.x).putFloat(4, c.y).putFloat(8, c.z).putFloat(12, 1f);
+        b.putFloat(16, envStart).putFloat(20, envEnd);
+        b.putFloat(24, rdStart).putFloat(28, rdEnd);
+        b.putFloat(32, skyEnd).putFloat(36, cloudEnd);
+        return encoder.transientMemory().uploadGpu(b, 256, GpuBuffer.USAGE_UNIFORM);
+    }
+
+    /**
+     * Whether this frame's sky state may be drawn through a portal into {@code dest}: only when the destination
+     * has the same kind of sky as the world you stand in (the sky state was extracted for that world). A dimension
+     * without a sky (the Nether) shows its fog colour; a sky world seen from a skyless one is fog colour for now.
+     */
+    static boolean skyMatches(ClientLevel dest) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return false;
+        DimensionType.Skybox a = mc.level.dimensionType().skybox(), b = dest.dimensionType().skybox();
+        return a == b && b != DimensionType.Skybox.NONE;
     }
 }

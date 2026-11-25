@@ -180,9 +180,12 @@ public class ClientWorldLoader {
         
         for (ClientLevel clientWorld : CLIENT_WORLD_MAP.values()) {
             ((IEClientWorld) clientWorld).ip_resetWorldRendererRef();
+            qouteall.imm_ptl.core.render.quasar.PortalWorldTerrain.unregisterForeignLevel(clientWorld);
         }
         
         CLIENT_WORLD_MAP.clear();
+        SECONDARY_EXTRACTORS.clear();
+        qouteall.imm_ptl.core.render.quasar.PortalWorldTerrain.disposeAll();
         WORLD_RENDERER_MAP.clear();
         
         disposeRenderHelpers();
@@ -219,6 +222,8 @@ public class ClientWorldLoader {
         ClientLevel clientWorld = CLIENT_WORLD_MAP.get(dimension);
         ((IEClientWorld) clientWorld).ip_resetWorldRendererRef();
         CLIENT_WORLD_MAP.remove(dimension);
+        SECONDARY_EXTRACTORS.remove(dimension);
+        qouteall.imm_ptl.core.render.quasar.PortalWorldTerrain.unregisterForeignLevel(clientWorld);
         
         DimensionRenderHelper renderHelper = RENDER_HELPER_MAP.remove(dimension);
         if (renderHelper != null) {
@@ -352,6 +357,12 @@ public class ClientWorldLoader {
         }
     }
     
+    /** Quasar MC: the client world held for {@code dimension}, or null; never creates one (render-side lookups). */
+    @Nullable
+    public static ClientLevel peekWorld(ResourceKey<Level> dimension) {
+        return isInitialized ? CLIENT_WORLD_MAP.get(dimension) : null;
+    }
+
     /** Quasar MC: the render-side listener of each background world (see {@link SecondaryLevelExtractor}). */
     public static final Map<ResourceKey<Level>, SecondaryLevelExtractor> SECONDARY_EXTRACTORS = new HashMap<>();
 
@@ -411,6 +422,8 @@ public class ClientWorldLoader {
             CLIENT_WORLD_MAP.put(dimension, newWorld);
             WORLD_RENDERER_MAP.put(dimension, mc.levelRenderer);
             SECONDARY_EXTRACTORS.put(dimension, extractor);
+            // Quasar Meshelium's far-field bookkeeping must ignore this world's chunk events
+            qouteall.imm_ptl.core.render.quasar.PortalWorldTerrain.registerForeignLevel(newWorld);
             LOGGER.info("Client World Created {}", dimension.identifier());
         }
         catch (Exception e) {

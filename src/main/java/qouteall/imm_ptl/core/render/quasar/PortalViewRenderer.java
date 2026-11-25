@@ -154,6 +154,7 @@ public final class PortalViewRenderer {
         frameHidden = 0;
         frameEntityNs = 0;
         PortalEntities.beginFrame();
+        PortalWorldTerrain.beginFrame();
         frameSections = 0;
         frameCoverage = 0;
         long t0 = System.nanoTime();
@@ -200,7 +201,9 @@ public final class PortalViewRenderer {
         List<Portal> portals = new ArrayList<>();
         for (Entity e : mc.level.entitiesForRendering()) {
             if (!(e instanceof Portal portal) || e.isRemoved()) continue;
-            if (portal.getDestDim() != mc.level.dimension()) continue;
+            // another dimension: only when its background world exists (cross-dimension step 3)
+            if (portal.getDestDim() != mc.level.dimension()
+                && PortalWorldTerrain.forDimension(portal.getDestDim()) == null) continue;
             if (portal.getOriginPos().distanceToSqr(camPos) > MAX_DISTANCE * MAX_DISTANCE) continue;
             if (!portal.isInFrontOfPortal(camPos)) continue;
             if (!main.cullFrustum.isVisible(portal.getBoundingBox().inflate(0.1))) continue;
@@ -319,68 +322,94 @@ public final class PortalViewRenderer {
             if (update) {
                 CameraRenderState virtual = virtualCamera(main, portal, rect);
                 if (virtual == null) continue;
-                
-                // background = fog colour, then vanilla's sky from the portal camera, then terrain with fog that
-                // ends at the portal render distance (clouds and the far panorama come later)
-                encoder.clearColorAndDepthTextures(t.color, PortalSky.background(main), t.depth, 0.0);
-                long ts = System.nanoTime();
-                PortalSky.drawSky(virtual, t.colorView, t.depthView);
-                frameSkyNs += System.nanoTime() - ts;
-                // far terrain (Quasar Horizons portal panorama) for the nearest portals, before the live terrain
-                boolean far = false;
-                if (PortalSettings.farTerrain && farSlots < PortalFarView.MAX_PORTALS) {
-                    farSlots++;
-                    long tf = System.nanoTime();
-                    far = PortalFarView.draw(encoder, portal.getId(), virtual, main, t.colorView, t.depthView, renderDistance);
-                    frameSkyNs += System.nanoTime() - tf;
-                }
-                long tt = System.nanoTime();
-                GpuBufferSlice mainFog = RenderSystem.getShaderFog();
-                // with far terrain behind it, the live terrain must not fade out at the portal distance
-                GpuBufferSlice fog = far ? null : PortalSky.portalFog(encoder, main, renderDistance);
-                // Meshelium's terrain shaders (and clouds) read vanilla's Projection buffer: give them the portal
-                // camera's oblique projection, so the portal plane clips the near side and every pass shares one depth
-                ByteBuffer pb = ByteBuffer.allocateDirect(64).order(ByteOrder.nativeOrder());
-                virtual.projectionMatrix.get(pb);
-                GpuBufferSlice projection = encoder.transientMemory().uploadGpu(pb, 256, GpuBuffer.USAGE_UNIFORM);
-                RenderSystem.backupProjectionMatrix();
                 boolean drawn;
-                try {
-                    RenderSystem.setProjectionMatrix(projection, com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
-                    if (fog != null) RenderSystem.setShaderFog(fog);
-                    drawn = (Boolean) drawTerrainMethod.invoke(null, virtual, t.colorView, t.depthView,
-                        t.width, t.height);
-                    if (drawn && PortalSettings.entities) {
-                        long te = System.nanoTime();
-                        PortalEntities.draw(encoder, virtual, t.colorView, t.depthView,
-                            qouteall.imm_ptl.core.render.context_management.RenderStates.getPartialTick());
-                        long de = System.nanoTime() - te;
-                        frameEntityNs += de;
-                        tt += de; // entities are reported on their own, not under terrain
+                long tt;
+                PortalWorldTerrain other = portal.getDestDim() != Minecraft.getInstance().level.dimension()
+                    ? PortalWorldTerrain.forDimension(portal.getDestDim()) : null;
+                if (other != null) {
+                    // another dimension: its fog colour, its sky only if it has the same kind as ours, its terrain
+                    // from the background world (no far terrain, clouds or entities from there yet)
+                    encoder.clearColorAndDepthTextures(t.color, PortalSky.background(other.level(), virtual.pos),
+                        t.depth, 0.0);
+                    long ts = System.nanoTime();
+                    if (PortalSky.skyMatches(other.level())) PortalSky.drawSky(virtual, t.colorView, t.depthView);
+                    frameSkyNs += System.nanoTime() - ts;
+                    tt = System.nanoTime();
+                    GpuBufferSlice mainFog = RenderSystem.getShaderFog();
+                    GpuBufferSlice fog = PortalSky.destinationFog(encoder, other.level(), virtual.pos, main, renderDistance);
+                    RenderSystem.backupProjectionMatrix();
+                    try {
+                        RenderSystem.setProjectionMatrix(projectionSlice(encoder, virtual),
+                            com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
+                        RenderSystem.setShaderFog(fog);
+                        drawn = other.draw(encoder, main, virtual, t.colorView, t.depthView, renderDistance);
+                        frameSections += PortalWorldTerrain.lastSections;
                     }
-                    if (drawn && PortalSettings.translucent && drawTranslucentMethod != null) {
-                        drawTranslucentMethod.invoke(null, virtual, t.colorView, t.depthView, t.width, t.height);
-                        frameSections += (Integer) lastTranslucentMethod.invoke(null);
-                    }
-                    if (drawn && PortalSettings.clouds) {
-                        long tc = System.nanoTime();
-                        PortalClouds.draw(encoder, main, virtual, t.colorView, t.depthView);
-                        frameSkyNs += System.nanoTime() - tc;
-                        tt += System.nanoTime() - tc; // clouds count under sky, not terrain
+                    finally {
+                        RenderSystem.setShaderFog(mainFog);
+                        RenderSystem.restoreProjectionMatrix();
                     }
                 }
-                finally {
-                    RenderSystem.setShaderFog(mainFog);
-                    RenderSystem.restoreProjectionMatrix();
+                else {
+                    // background = fog colour, then vanilla's sky from the portal camera, then terrain with fog that
+                    // ends at the portal render distance (clouds and the far panorama come later)
+                    encoder.clearColorAndDepthTextures(t.color, PortalSky.background(main), t.depth, 0.0);
+                    long ts = System.nanoTime();
+                    PortalSky.drawSky(virtual, t.colorView, t.depthView);
+                    frameSkyNs += System.nanoTime() - ts;
+                    // far terrain (Quasar Horizons portal panorama) for the nearest portals, before the live terrain
+                    boolean far = false;
+                    if (PortalSettings.farTerrain && farSlots < PortalFarView.MAX_PORTALS) {
+                        farSlots++;
+                        long tf = System.nanoTime();
+                        far = PortalFarView.draw(encoder, portal.getId(), virtual, main, t.colorView, t.depthView, renderDistance);
+                        frameSkyNs += System.nanoTime() - tf;
+                    }
+                    tt = System.nanoTime();
+                    GpuBufferSlice mainFog = RenderSystem.getShaderFog();
+                    // with far terrain behind it, the live terrain must not fade out at the portal distance
+                    GpuBufferSlice fog = far ? null : PortalSky.portalFog(encoder, main, renderDistance);
+                    // Meshelium's terrain shaders (and clouds) read vanilla's Projection buffer: give them the portal
+                    // camera's oblique projection, so the portal plane clips the near side and every pass shares one depth
+                    GpuBufferSlice projection = projectionSlice(encoder, virtual);
+                    RenderSystem.backupProjectionMatrix();
+                    try {
+                        RenderSystem.setProjectionMatrix(projection, com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
+                        if (fog != null) RenderSystem.setShaderFog(fog);
+                        drawn = (Boolean) drawTerrainMethod.invoke(null, virtual, t.colorView, t.depthView,
+                            t.width, t.height);
+                        if (drawn && PortalSettings.entities) {
+                            long te = System.nanoTime();
+                            PortalEntities.draw(encoder, virtual, t.colorView, t.depthView,
+                                qouteall.imm_ptl.core.render.context_management.RenderStates.getPartialTick());
+                            long de = System.nanoTime() - te;
+                            frameEntityNs += de;
+                            tt += de; // entities are reported on their own, not under terrain
+                        }
+                        if (drawn && PortalSettings.translucent && drawTranslucentMethod != null) {
+                            drawTranslucentMethod.invoke(null, virtual, t.colorView, t.depthView, t.width, t.height);
+                            frameSections += (Integer) lastTranslucentMethod.invoke(null);
+                        }
+                        if (drawn && PortalSettings.clouds) {
+                            long tc = System.nanoTime();
+                            PortalClouds.draw(encoder, main, virtual, t.colorView, t.depthView);
+                            frameSkyNs += System.nanoTime() - tc;
+                            tt += System.nanoTime() - tc; // clouds count under sky, not terrain
+                        }
+                    }
+                    finally {
+                        RenderSystem.setShaderFog(mainFog);
+                        RenderSystem.restoreProjectionMatrix();
+                    }
+                    if (drawn && lastSectionsMethod != null) {
+                        frameSections += (Integer) lastSectionsMethod.invoke(null);
+                    }
                 }
                 frameTerrainNs += System.nanoTime() - tt;
                 t.portalId = portal.getId();
                 t.valid = drawn;
                 t.mirrored = lastMirrored;
                 if (!drawn) continue;
-                if (lastSectionsMethod != null) {
-                    frameSections += (Integer) lastSectionsMethod.invoke(null);
-                }
             }
             frameCoverage += (rect[2] - rect[0]) * (rect[3] - rect[1]) / 4f;
             
@@ -388,6 +417,13 @@ public final class PortalViewRenderer {
             drawnThisFrame.add(portal.getId());
             lastPixels += (long) t.width * t.height;
         }
+    }
+
+    /** the portal camera's projection as vanilla's Projection uniform */
+    private static GpuBufferSlice projectionSlice(CommandEncoder encoder, CameraRenderState virtual) {
+        ByteBuffer pb = ByteBuffer.allocateDirect(64).order(ByteOrder.nativeOrder());
+        virtual.projectionMatrix.get(pb);
+        return encoder.transientMemory().uploadGpu(pb, 256, GpuBuffer.USAGE_UNIFORM);
     }
 
     static long lastPixels;
