@@ -83,8 +83,10 @@ public final class PortalWorldTerrain {
     /** new section meshes requested per frame and world (region copies happen on the render thread) */
     private static final int SCHEDULE_PER_FRAME = 6;
     private static final int WORKERS = 2;
-    /** frames a section may go unseen before its buffers are freed */
-    private static final int EVICT_AFTER_FRAMES = 1200;
+    /** sections farther than the radius plus this many chunks from the portal camera are freed */
+    private static final int EVICT_MARGIN_CHUNKS = 3;
+    /** finished compiles uploaded per frame (buffer creation runs on the render thread) */
+    private static final int UPLOADS_PER_FRAME = 12;
     /** frames to wait before closing a buffer (it may still be read by frames in flight) */
     private static final int CLOSE_LAG_FRAMES = 4;
 
@@ -104,7 +106,14 @@ public final class PortalWorldTerrain {
     private final ClientLevel level;
     private final Long2ObjectOpenHashMap<Section> sections = new Long2ObjectOpenHashMap<>();
     private final AtomicInteger inFlight = new AtomicInteger();
+    /** sections with geometry (drawn); the rest of {@link #sections} are empty or not built yet */
+    private final it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<Section> drawable =
+        new it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<>();
     private long preparedFrame = -1;
+    // the last full scan: only redone when the camera changes section column, the radius changes, sections are
+    // dirtied, chunks load/unload or the last scan left work for later
+    private int scanSx = Integer.MIN_VALUE, scanSz = Integer.MIN_VALUE, scanRadius = -1, scanLoaded = -1;
+    private boolean scanAgain = true;
     private int[] columnOrder = new int[0];
     private int columnOrderRadius = -1;
     private boolean disposed;
@@ -116,13 +125,14 @@ public final class PortalWorldTerrain {
         boolean built;     // a compile result has arrived at least once (possibly empty)
         boolean compiling;
         boolean dirty;
-        long lastWanted;
+        final AABB box;
 
         Section(long key) {
             this.key = key;
             this.sx = SectionPos.x(key);
             this.sy = SectionPos.y(key);
             this.sz = SectionPos.z(key);
+            this.box = new AABB(sx * 16.0, sy * 16.0, sz * 16.0, sx * 16.0 + 16, sy * 16.0 + 16, sz * 16.0 + 16);
         }
     }
 
@@ -160,7 +170,10 @@ public final class PortalWorldTerrain {
                     it.remove();
                 }
             }
-            for (Done d; (d = DONE.poll()) != null; ) {
+            // a few per frame: a burst of finished compiles (portal just opened) is spread over frames
+            for (int i = 0; i < UPLOADS_PER_FRAME; i++) {
+                Done d = DONE.poll();
+                if (d == null) break;
                 d.world.accept(d);
             }
             while (!PENDING_CLOSE.isEmpty() && PENDING_CLOSE.peekFirst().frame + CLOSE_LAG_FRAMES <= frame) {
@@ -205,6 +218,7 @@ public final class PortalWorldTerrain {
         disposed = true;
         for (Section s : sections.values()) freeMeshes(s);
         sections.clear();
+        drawable.clear();
         LOGGER.info("[Quasar Portals] portal terrain for {} freed", dimension.identifier());
     }
 
@@ -223,26 +237,40 @@ public final class PortalWorldTerrain {
         level.pollLightUpdates();
         level.getChunkSource().getLightEngine().runLightUpdates();
 
+        boolean changed = false;
         SecondaryLevelExtractor ext = ClientWorldLoader.SECONDARY_EXTRACTORS.get(dimension);
         if (ext != null) {
             LongOpenHashSet dirty = ext.drainDirtySections();
             if (dirty == null) {
                 for (Section s : sections.values()) s.dirty = true;
+                changed = true;
             }
-            else {
+            else if (!dirty.isEmpty()) {
                 for (it.unimi.dsi.fastutil.longs.LongIterator i = dirty.iterator(); i.hasNext(); ) {
                     Section s = sections.get(i.nextLong());
                     if (s != null) s.dirty = true;
                 }
+                changed = true; // also covers dirty sections not in the map yet
             }
         }
 
         int camSx = SectionPos.blockToSectionCoord(cam.x);
         int camSz = SectionPos.blockToSectionCoord(cam.z);
+        int loaded = level.getChunkSource().getLoadedChunksCount();
+        if (!changed && !scanAgain && camSx == scanSx && camSz == scanSz && radiusChunks == scanRadius
+                && loaded == scanLoaded) {
+            return; // nothing new since the last scan
+        }
+        scanSx = camSx;
+        scanSz = camSz;
+        scanRadius = radiusChunks;
+        scanLoaded = loaded;
+        scanAgain = false;
+
         int minSy = level.getMinSectionY(), maxSy = level.getMaxSectionY();
         int[] order = columnOrder(radiusChunks);
         int budget = SCHEDULE_PER_FRAME;
-        SectionCompiler compiler = budget > 0 ? compiler() : null;
+        SectionCompiler compiler = compiler();
         // fresh each batch, like vanilla: the cache keeps section copies, which would go stale
         RenderRegionCache regionCache = new RenderRegionCache();
         for (int i = 0; i < order.length; i += 2) {
@@ -253,52 +281,54 @@ public final class PortalWorldTerrain {
                 long key = SectionPos.asLong(cx, sy, cz);
                 Section s = sections.get(key);
                 if (!ready) {
-                    if (s != null && !s.compiling) {
-                        freeMeshes(s); // the chunk unloaded: drop what was drawn there
-                        sections.remove(key);
+                    if (s != null) {
+                        if (s.compiling) {
+                            scanAgain = true; // drop it once its compile is back
+                        }
+                        else {
+                            freeMeshes(s); // the chunk unloaded: drop what was drawn there
+                            sections.remove(key);
+                        }
                     }
                     continue;
                 }
                 if (s == null) {
                     LevelChunkSection cs = chunk.getSection(level.getSectionIndexFromSectionY(sy));
+                    s = new Section(key);
+                    sections.put(key, s);
                     if (cs == null || cs.hasOnlyAir()) {
-                        // nothing to draw; remember it as built-empty so it isn't checked again until changed
-                        s = new Section(key);
+                        // nothing to draw; remembered as built-empty so it isn't checked again until changed
                         s.built = true;
-                        sections.put(key, s);
-                        s.lastWanted = frame;
                         continue;
                     }
-                    s = new Section(key);
                     s.dirty = true;
-                    sections.put(key, s);
                 }
-                s.lastWanted = frame;
-                if (s.dirty && !s.compiling && budget > 0 && compiler != null
-                        && inFlight.get() < WORKERS * 4) {
-                    if (s.built && s.layers.isEmpty()) {
-                        // an empty section that changed: only compile if it isn't air any more
-                        LevelChunkSection cs = chunk.getSection(level.getSectionIndexFromSectionY(sy));
-                        if (cs == null || cs.hasOnlyAir()) {
-                            s.dirty = false;
-                            continue;
-                        }
+                if (!s.dirty) continue;
+                if (s.compiling || budget <= 0 || compiler == null || inFlight.get() >= WORKERS * 4) {
+                    scanAgain = true; // more to build: scan again next frame
+                    continue;
+                }
+                if (s.built && s.layers.isEmpty()) {
+                    // an empty section that changed: only compile if it isn't air any more
+                    LevelChunkSection cs = chunk.getSection(level.getSectionIndexFromSectionY(sy));
+                    if (cs == null || cs.hasOnlyAir()) {
+                        s.dirty = false;
+                        continue;
                     }
-                    schedule(s, compiler, regionCache, cam);
-                    budget--;
                 }
+                schedule(s, compiler, regionCache, cam);
+                budget--;
             }
         }
 
-        // forget sections nobody looked at for a while
-        if ((frame & 63) == 0) {
-            Iterator<Section> it = sections.values().iterator();
-            while (it.hasNext()) {
-                Section s = it.next();
-                if (!s.compiling && frame - s.lastWanted > EVICT_AFTER_FRAMES) {
-                    freeMeshes(s);
-                    it.remove();
-                }
+        // free what is well outside the portal camera's range
+        int keep = radiusChunks + EVICT_MARGIN_CHUNKS;
+        Iterator<Section> it = sections.values().iterator();
+        while (it.hasNext()) {
+            Section s = it.next();
+            if (!s.compiling && (Math.abs(s.sx - camSx) > keep || Math.abs(s.sz - camSz) > keep)) {
+                freeMeshes(s);
+                it.remove();
             }
         }
     }
@@ -360,6 +390,7 @@ public final class PortalWorldTerrain {
                 return;
             }
             if (disposed || sections.get(s.key) != s) return; // dropped while compiling
+            scanAgain = true; // a section may have been dirtied or unloaded while it compiled
             freeMeshes(s);
             s.built = true;
             GpuDevice device = RenderSystem.getDevice();
@@ -378,6 +409,7 @@ public final class PortalWorldTerrain {
                 }
                 s.layers.put(e.getKey(), new LayerMesh(vb, ib, ib != null ? ds.indexType() : null, ds.indexCount()));
             }
+            if (!s.layers.isEmpty()) drawable.add(s);
         }
         catch (Throwable t) {
             fail("uploading section meshes", t);
@@ -391,7 +423,8 @@ public final class PortalWorldTerrain {
         }
     }
 
-    private static void freeMeshes(Section s) {
+    private void freeMeshes(Section s) {
+        drawable.remove(s);
         for (LayerMesh m : s.layers.values()) {
             PENDING_CLOSE.addLast(new PendingClose(frame, m.vertices));
             if (m.indices != null) PENDING_CLOSE.addLast(new PendingClose(frame, m.indices));
@@ -421,11 +454,9 @@ public final class PortalWorldTerrain {
             // visible sections: in range, in the portal camera's (portal-narrowed) frustum
             int camSx = SectionPos.blockToSectionCoord(cam.x), camSz = SectionPos.blockToSectionCoord(cam.z);
             List<Section> visible = new ArrayList<>();
-            for (Section s : sections.values()) {
-                if (s.layers.isEmpty()) continue;
+            for (Section s : drawable) {
                 if (Math.abs(s.sx - camSx) > radius || Math.abs(s.sz - camSz) > radius) continue;
-                double x = s.sx * 16.0, y = s.sy * 16.0, z = s.sz * 16.0;
-                if (!virtual.cullFrustum.isVisible(new AABB(x, y, z, x + 16, y + 16, z + 16))) continue;
+                if (!virtual.cullFrustum.isVisible(s.box)) continue;
                 visible.add(s);
             }
             if (visible.isEmpty()) return true;
@@ -449,14 +480,14 @@ public final class PortalWorldTerrain {
             GpuTextureView lightmap = mc.gameRenderer.lightmap();
             GpuSampler lightSampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
 
-            ByteBuffer tb = ByteBuffer.allocateDirect(80).order(ByteOrder.nativeOrder());
+            ByteBuffer tb = Scratch.small(80);
             modelView.get(0, tb);
             tb.putInt(64, atlasView.getWidth(0));
             tb.putInt(68, atlasView.getHeight(0));
             GpuBufferSlice terrainUniform = encoder.transientMemory().uploadGpu(tb, 256, GpuBuffer.USAGE_UNIFORM);
 
             int n = visible.size();
-            ByteBuffer cb = ByteBuffer.allocateDirect(n * 256).order(ByteOrder.nativeOrder());
+            ByteBuffer cb = Scratch.large(n * 256);
             for (int i = 0; i < n; i++) {
                 Section s = visible.get(i);
                 int o = i * 256;

@@ -90,7 +90,7 @@ public final class PortalSky {
         if (f == null || f.color == null || portalChunks <= 0) return null;
         float end = Math.min(f.renderDistanceEnd, portalChunks * 16f);
         float start = Math.min(f.renderDistanceStart, end - Math.max(4f, Math.min(64f, end / 10f)));
-        ByteBuffer b = ByteBuffer.allocateDirect(64).order(ByteOrder.nativeOrder());
+        ByteBuffer b = Scratch.small(64);
         b.putFloat(0, f.color.x).putFloat(4, f.color.y).putFloat(8, f.color.z).putFloat(12, f.color.w);
         b.putFloat(16, f.environmentalStart).putFloat(20, f.environmentalEnd);
         b.putFloat(24, start).putFloat(28, end);
@@ -139,7 +139,7 @@ public final class PortalSky {
             // keep the plain distance fog
         }
         Vector4f c = background(level, pos);
-        ByteBuffer b = ByteBuffer.allocateDirect(64).order(ByteOrder.nativeOrder());
+        ByteBuffer b = Scratch.small(64);
         b.putFloat(0, c.x).putFloat(4, c.y).putFloat(8, c.z).putFloat(12, 1f);
         b.putFloat(16, envStart).putFloat(20, envEnd);
         b.putFloat(24, rdStart).putFloat(28, rdEnd);

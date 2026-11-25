@@ -421,7 +421,7 @@ public final class PortalViewRenderer {
 
     /** the portal camera's projection as vanilla's Projection uniform */
     private static GpuBufferSlice projectionSlice(CommandEncoder encoder, CameraRenderState virtual) {
-        ByteBuffer pb = ByteBuffer.allocateDirect(64).order(ByteOrder.nativeOrder());
+        ByteBuffer pb = Scratch.small(64);
         virtual.projectionMatrix.get(pb);
         return encoder.transientMemory().uploadGpu(pb, 256, GpuBuffer.USAGE_UNIFORM);
     }

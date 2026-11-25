@@ -67,7 +67,7 @@ public final class PortalClouds {
         float fy = (float) (state.cloudHeight - v.y);
         
         Vector4f c = ARGB.vector4fFromARGB32(state.cloudColor);
-        ByteBuffer b = ByteBuffer.allocateDirect(48).order(ByteOrder.nativeOrder());
+        ByteBuffer b = Scratch.small(48);
         b.putFloat(0, c.x).putFloat(4, c.y).putFloat(8, c.z).putFloat(12, c.w);
         b.putFloat(16, -fx).putFloat(20, fy).putFloat(24, -fz);
         b.putFloat(32, 12f).putFloat(36, 4f).putFloat(40, 12f);
