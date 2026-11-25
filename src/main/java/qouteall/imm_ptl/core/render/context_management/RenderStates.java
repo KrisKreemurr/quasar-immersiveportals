@@ -73,7 +73,8 @@ public class RenderStates {
     public static void updatePreRenderInfo(
         float newPartialTick
     ) {
-        ClientWorldLoader.initializeIfNeeded();
+        // Quasar MC: vanilla renders a frame mid dimension change; the world map is rebuilt on the next one.
+        if (!ClientWorldLoader.isSwitchingDimension()) ClientWorldLoader.initializeIfNeeded();
         Entity cameraEntity = Minecraft.getInstance().getCameraEntity();
         if (cameraEntity == null) {
             return;

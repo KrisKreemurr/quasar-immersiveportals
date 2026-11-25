@@ -19,7 +19,10 @@ public class IPCGlobal {
     
     public static boolean doUseAdvancedFrustumCulling = true;
     public static boolean useHackedChunkRenderDispatcher = true;
-    public static boolean isClientRemoteTickingEnabled = true;
+    // Quasar MC: off until portal views draw other dimensions (cross-dimension step 3). Ticking a background
+    // world moves the main camera to the far side of a nearby portal every tick (for its particles), which
+    // made the player's own animation stutter, and nothing shows the background world yet.
+    public static boolean isClientRemoteTickingEnabled = false;
     public static boolean useFrontClipping = true;
     public static boolean doDisableAlphaTestWhenRenderingFrameBuffer = true;
     public static boolean lateClientLightUpdate = true;

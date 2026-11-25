@@ -547,7 +547,24 @@ public class ClientWorldLoader {
         });
     }
     
+    /**
+     * Quasar MC: true in the gap of a vanilla dimension change (respawn packet), where Minecraft already
+     * holds the new world but the player still belongs to the old one. The world map can't be built then.
+     */
+    public static boolean isSwitchingDimension() {
+        Minecraft mc = Minecraft.getInstance();
+        return mc.player != null && mc.level != null && mc.player.level() != mc.level;
+    }
+
     public static void withSwitchedWorldFailSoft(ResourceKey<Level> dim, Runnable runnable) {
+        if (isSwitchingDimension()) {
+            // Quasar MC: during a vanilla dimension change, apply packets for the new world directly and drop
+            // the rest (another dimension's chunks are re-sent once the world map is rebuilt).
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level.dimension() == dim) runnable.run();
+            else LOGGER.debug("Dropped redirected task for {} during a dimension change", dim.identifier());
+            return;
+        }
         ClientLevel world = getOptionalWorld(dim);
 
         if (runnable == null)
