@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.renderpearl.api.commands.CommandEncoder;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
+import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.RenderBuffers;
@@ -102,7 +103,7 @@ public final class PortalEntities {
                 if (!erd.shouldRender(e, virtual.cullFrustum, cam.x, cam.y, cam.z, partialTick)) continue;
                 EntityRenderState state = frameStates.get(e);
                 if (state == null) {
-                    state = erd.extractEntity(e, partialTick);
+                    state = extract(mc, erd, e, partialTick);
                     frameStates.put(e, state);
                 }
                 erd.submit(state, virtual, state.x - cam.x, state.y - cam.y, state.z - cam.z, pose, storage);
@@ -147,6 +148,23 @@ public final class PortalEntities {
         catch (Throwable t) {
             failed = true;
             org.slf4j.LoggerFactory.getLogger("Quasar Portals").error("[Quasar Portals] entities through portals failed; turned off", t);
+        }
+    }
+
+    /**
+     * Extracts an entity's render state for portal views. The camera entity is extracted as if
+     * the camera were in third person: first-person body mods (FirstPerson) hide the helmet and
+     * held items while the camera entity is extracted in first person, which is right for the
+     * main view but wrong for a mirror or portal looking back at you.
+     */
+    private static EntityRenderState extract(Minecraft mc, EntityRenderDispatcher erd, Entity e, float partialTick) {
+        CameraType type = mc.options.getCameraType();
+        if (e != mc.getCameraEntity() || !type.isFirstPerson()) return erd.extractEntity(e, partialTick);
+        mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+        try {
+            return erd.extractEntity(e, partialTick);
+        } finally {
+            mc.options.setCameraType(type);
         }
     }
 }
