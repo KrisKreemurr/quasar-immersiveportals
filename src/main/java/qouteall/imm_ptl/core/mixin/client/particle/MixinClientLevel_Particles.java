@@ -7,7 +7,9 @@ import net.minecraft.client.particle.ParticleEngine;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import qouteall.imm_ptl.core.render.quasar.PortalParticles;
 
 /**
@@ -43,5 +45,14 @@ public abstract class MixinClientLevel_Particles {
             if (observer != null) return observer;
         }
         return camera.position();
+    }
+
+    /**
+     * Rain/snow splashes and rain sounds are spawned around the main camera: for a background world that is the
+     * wrong place (the player would hear the Overworld's rain while standing in the Nether). Skipped there.
+     */
+    @Inject(method = "tickWeatherEffects", at = @At("HEAD"), cancellable = true, require = 0)
+    private void quasar$noBackgroundWeather(CallbackInfo ci) {
+        if (PortalParticles.isBackground((ClientLevel) (Object) this)) ci.cancel();
     }
 }

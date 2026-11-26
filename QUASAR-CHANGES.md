@@ -47,3 +47,5 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
     for background worlds, and runs `animateTick` there. `tickRemoteWorld` ticks the world's own engine.
   - Cross-dimension portal views draw the destination world's particles.
   - Engines are dropped when their world is disposed or becomes the player's world.
+  - `tickWeatherEffects` is skipped for background worlds (it spawns rain splashes and rain sounds around the
+    main camera: Overworld rain was audible from the Nether).
