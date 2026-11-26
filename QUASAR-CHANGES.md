@@ -63,3 +63,7 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   with that world's lightmap (the one `PortalWorldTerrain` lights its terrain with): `MixinGameRenderer_PortalLightmap`
   returns `PortalEntities.lightmapOverride()` from `GameRenderer.lightmap()` while they draw. With the Overworld's
   lightmap, Nether mobs and chests came out near black.
+
+- 2026-11-26: background-world entity/world ticking is off again (player animations were choppy with it on, and
+  background mobs stood still anyway). Background worlds now always get `tickRemoteWorldLight`: their queued light
+  packets (inside `withSwitchedWorld`), their own particle engine, and ambient particles around the portal.

@@ -100,6 +100,15 @@ public class ClientWorldLoader {
     }
     
     public static void tick() {
+        // Quasar MC: background worlds always get the light work: their queued light packets (inside
+        // withSwitchedWorld, they are packet handlers bound to the listener's world), their own particle engine and
+        // ambient particles around the portal. The full entity/world tick stays behind isClientRemoteTickingEnabled:
+        // turned on (2026-11-25), it made the player's own animations choppy again, cause not found yet.
+        CLIENT_WORLD_MAP.values().forEach(world -> {
+            if (Minecraft.getInstance().level != world) {
+                tickRemoteWorldLight(world);
+            }
+        });
         if (IPCGlobal.isClientRemoteTickingEnabled) {
             isClientRemoteTicking = true;
             CLIENT_WORLD_MAP.values().forEach(world -> {
@@ -109,9 +118,21 @@ public class ClientWorldLoader {
             });
             isClientRemoteTicking = false;
         }
-        
-        // Quasar MC: per-dimension lightmaps belonged to the parked renderer.
-        
+    }
+    
+    private static void tickRemoteWorldLight(ClientLevel newWorld) {
+        try {
+            withSwitchedWorld(newWorld, newWorld::pollLightUpdates);
+            if (!Minecraft.getInstance().isPaused()) {
+                tickRemoteWorldRandomTicksClient(newWorld, CHelper.getClientNearbyPortals(10).collect(Collectors.toList()));
+                qouteall.imm_ptl.core.render.quasar.PortalParticles.tick(newWorld);
+            }
+        }
+        catch (Throwable e) {
+            if (LOG_LIMIT.tryDecrement()) {
+                LOGGER.error("", e);
+            }
+        }
     }
     
     public static void disposeRenderHelpers() {
@@ -124,16 +145,9 @@ public class ClientWorldLoader {
         
         withSwitchedWorld(newWorld, () -> {
             try {
+                // light, particles and ambient particles: tickRemoteWorldLight (every tick, ticking on or off)
                 newWorld.tickEntities();
                 newWorld.tick(() -> true);
-                
-                if (!Minecraft.getInstance().isPaused()) {
-                    tickRemoteWorldRandomTicksClient(newWorld, nearbyPortals);
-                    // Quasar MC: the background world's own particle engine (see PortalParticles)
-                    qouteall.imm_ptl.core.render.quasar.PortalParticles.tick(newWorld);
-                }
-                
-                newWorld.pollLightUpdates();
             }
             catch (Throwable e) {
                 if (LOG_LIMIT.tryDecrement()) {

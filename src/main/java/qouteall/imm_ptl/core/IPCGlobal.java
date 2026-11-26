@@ -24,7 +24,9 @@ public class IPCGlobal {
     // is gone (background worlds have their own particle engine, see PortalParticles). Without ticking, background
     // entities never advance their previous position (they jumped back and forth in portal views), the world's
     // queued light packets are never applied, and its particles never spawn or age.
-    public static boolean isClientRemoteTickingEnabled = true;
+    // 2026-11-26: back off: with it on, the player's own animations were choppy again (cause still unknown) and
+    // background mobs still stood still (so their movement problem is elsewhere, likely server side).
+    public static boolean isClientRemoteTickingEnabled = false;
     public static boolean useFrontClipping = true;
     public static boolean doDisableAlphaTestWhenRenderingFrameBuffer = true;
     public static boolean lateClientLightUpdate = true;
