@@ -271,7 +271,8 @@ public final class PortalWorldTerrain {
         if (w == null) return;
         Minecraft mc = Minecraft.getInstance();
         if (w.level != mc.level || System.nanoTime() > standInEndNanos) {
-            endStandIn(w.level != mc.level ? "left the world" : "timed out");
+            endStandIn(w.level != mc.level ? "left the world"
+                : "timed out, " + w.lastUnskipped + " of " + w.drawable.size() + " sections never rebuilt by the main renderer");
             return;
         }
         Object viewArea = viewArea(mc);
