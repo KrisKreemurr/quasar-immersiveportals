@@ -345,12 +345,11 @@ public final class PortalViewRenderer {
                         drawn = other.draw(encoder, main, virtual, t.colorView, t.depthView, renderDistance);
                         frameSections += PortalWorldTerrain.lastSections;
                         if (drawn && PortalSettings.entities) {
-                            // the destination world's mobs, items and block entities (no particles: those
-                            // only exist for the player's own world)
+                            // the destination world's mobs, items, block entities and its own particles
                             long te = System.nanoTime();
                             PortalEntities.draw(encoder, virtual, t.colorView, t.depthView,
                                 qouteall.imm_ptl.core.render.context_management.RenderStates.getPartialTick(),
-                                other.level(), false);
+                                other.level(), PortalParticles.existing(other.level()));
                             frameEntityNs += System.nanoTime() - te;
                         }
                     }

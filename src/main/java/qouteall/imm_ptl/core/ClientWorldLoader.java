@@ -129,6 +129,8 @@ public class ClientWorldLoader {
                 
                 if (!Minecraft.getInstance().isPaused()) {
                     tickRemoteWorldRandomTicksClient(newWorld, nearbyPortals);
+                    // Quasar MC: the background world's own particle engine (see PortalParticles)
+                    qouteall.imm_ptl.core.render.quasar.PortalParticles.tick(newWorld);
                 }
                 
                 newWorld.pollLightUpdates();
@@ -141,36 +143,30 @@ public class ClientWorldLoader {
         });
     }
     
-    // show nether particles through portal
-    // TODO optimize it in future version?
+    /**
+     * Ambient particles (lava pops, ash, drips) of a background world around where the player would be in it,
+     * when a nearby portal leads there. Quasar MC: no more moving the main camera or ticking the main particle
+     * engine a second time; the world has its own engine, and the particle distance check uses the observer
+     * position set here.
+     */
     private static void tickRemoteWorldRandomTicksClient(
         ClientLevel newWorld, List<Portal> nearbyPortals
     ) {
-        nearbyPortals.stream().filter(
-            portal -> portal.getDestDim() == newWorld.dimension()
-        ).findFirst().ifPresent(portal -> {
-            assert Minecraft.getInstance().player != null;
-            Vec3 playerPos = Minecraft.getInstance().player.position();
-            Vec3 center = portal.transformPoint(playerPos);
-            
-            Camera camera = Minecraft.getInstance().gameRenderer.mainCamera();
-            Vec3 oldCameraPos = camera.position();
-            
-            if (camera instanceof IECamera quasarCam) quasarCam.portal_setPos(center);
-            
-            if (newWorld.getGameTime() % 2 == 0) {
-                // it costs some CPU time
-                newWorld.animateTick(
-                    (int) center.x, (int) center.y, (int) center.z
-                );
-            }
-            
-            Minecraft.getInstance().particleEngine.tick();
-            
-            if (camera instanceof IECamera quasarCam) quasarCam.portal_setPos(oldCameraPos);
-        });
+        Portal portal = nearbyPortals.stream()
+            .filter(p -> p.getDestDim() == newWorld.dimension())
+            .findFirst().orElse(null);
+        if (portal == null) {
+            qouteall.imm_ptl.core.render.quasar.PortalParticles.setObserver(newWorld, null);
+            return;
+        }
+        assert Minecraft.getInstance().player != null;
+        Vec3 center = portal.transformPoint(Minecraft.getInstance().player.position());
+        qouteall.imm_ptl.core.render.quasar.PortalParticles.setObserver(newWorld, center);
         
-        
+        if (newWorld.getGameTime() % 2 == 0) {
+            // it costs some CPU time
+            newWorld.animateTick((int) center.x, (int) center.y, (int) center.z);
+        }
     }
     
     public static void cleanUp() {
@@ -185,6 +181,7 @@ public class ClientWorldLoader {
         
         CLIENT_WORLD_MAP.clear();
         SECONDARY_EXTRACTORS.clear();
+        qouteall.imm_ptl.core.render.quasar.PortalParticles.disposeAll();
         qouteall.imm_ptl.core.render.quasar.PortalWorldTerrain.disposeAll();
         WORLD_RENDERER_MAP.clear();
         
@@ -224,6 +221,7 @@ public class ClientWorldLoader {
         CLIENT_WORLD_MAP.remove(dimension);
         SECONDARY_EXTRACTORS.remove(dimension);
         qouteall.imm_ptl.core.render.quasar.PortalWorldTerrain.unregisterForeignLevel(clientWorld);
+        qouteall.imm_ptl.core.render.quasar.PortalParticles.dispose(clientWorld);
         
         DimensionRenderHelper renderHelper = RENDER_HELPER_MAP.remove(dimension);
         if (renderHelper != null) {

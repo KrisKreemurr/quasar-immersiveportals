@@ -77,6 +77,7 @@
     "client.debug.MixinClientPacketListener_Debug",
     "client.interaction.MixinItem_Interaction_Client",
     "client.particle.IEParticle",
+    "client.particle.MixinClientLevel_Particles",
     "client.sound.MixinClientLevel_Sound",
     "client.sync.IEBlockStatePredictionHandler",
     "client.sync.MixinBlockStatePredictionHandler",

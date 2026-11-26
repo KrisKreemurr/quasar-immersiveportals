@@ -299,4 +299,23 @@ public abstract class MixinClientPacketListener implements IEClientPlayNetworkHa
             );
         }
     }
+
+    /**
+     * Quasar MC: particles a packet for a background world creates (crits, item pickups, emitters) go to that
+     * world's own particle engine while Immersive Portals handles the packet with the world switched.
+     */
+    @Redirect(
+        method = "*",
+        at = @At(
+            value = "FIELD",
+            target = "Lnet/minecraft/client/Minecraft;particleEngine:Lnet/minecraft/client/particle/ParticleEngine;",
+            opcode = org.objectweb.asm.Opcodes.GETFIELD
+        ),
+        require = 0
+    )
+    private net.minecraft.client.particle.ParticleEngine quasar$particleEngine(Minecraft mc) {
+        net.minecraft.client.particle.ParticleEngine own =
+            qouteall.imm_ptl.core.render.quasar.PortalParticles.engineFor(level);
+        return own != null ? own : mc.particleEngine;
+    }
 }

@@ -81,16 +81,17 @@ public final class PortalEntities {
     
     static void draw(CommandEncoder encoder, CameraRenderState virtual, GpuTextureView color, GpuTextureView depth,
                      float partialTick) {
-        draw(encoder, virtual, color, depth, partialTick, Minecraft.getInstance().level, true);
+        draw(encoder, virtual, color, depth, partialTick, Minecraft.getInstance().level,
+            Minecraft.getInstance().particleEngine);
     }
     
     /**
      * Draws {@code level}'s entities and block entities as seen from {@code virtual}. For a cross-dimension portal
-     * {@code level} is the background world of the destination; particles only exist for the player's world, so
-     * they are drawn only when {@code particles} is true.
+     * {@code level} is the background world of the destination and {@code particleEngine} its own engine
+     * ({@link PortalParticles}); null draws no particles.
      */
     static void draw(CommandEncoder encoder, CameraRenderState virtual, GpuTextureView color, GpuTextureView depth,
-                     float partialTick, ClientLevel level, boolean particles) {
+                     float partialTick, ClientLevel level, net.minecraft.client.particle.ParticleEngine particleEngine) {
         if (failed) return;
         Minecraft mc = Minecraft.getInstance();
         if (level == null) return;
@@ -121,11 +122,11 @@ public final class PortalEntities {
             n += submitBlockEntities(mc, level, virtual, cam, maxDist2, partialTick, pose, storage);
             lastCount += n;
             boolean hasParticles = false;
-            if (particles && PortalSettings.particles) {
+            if (particleEngine != null && PortalSettings.particles) {
                 if (particleCamera == null) particleCamera = new PortalParticleCamera();
                 particleCamera.setTo(virtual);
                 particleState.reset();
-                mc.particleEngine.extract(particleState, virtual.cullFrustum, particleCamera, partialTick);
+                particleEngine.extract(particleState, virtual.cullFrustum, particleCamera, partialTick);
                 if (!particleState.particles.isEmpty()) {
                     particleState.submit(storage, virtual);
                     hasParticles = true;

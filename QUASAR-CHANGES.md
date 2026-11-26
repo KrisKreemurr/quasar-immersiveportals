@@ -35,3 +35,15 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
     entity distance, extracted with vanilla's `BlockEntityRenderDispatcher` (camera position moved to the portal
     camera, then restored) and submitted like vanilla's `submitBlockEntities`. New setting "Block Entities
     Through Portals" (on by default).
+
+- 2026-11-25: background worlds tick their particles without Immersive Portals' camera hack.
+  - New `PortalParticles`: each background world (another dimension seen through a portal) gets its own
+    `ParticleEngine`. `MixinClientLevel_Particles` and `MixinClientPacketListener` route a background world's
+    `Minecraft.particleEngine` reads to it, so its particles (lava pops, ash, mob crits, block-break bits) no longer
+    appear in the player's world at the other world's coordinates.
+  - `tickRemoteWorldRandomTicksClient` no longer moves the main camera or ticks the main particle engine a second
+    time (particles near a portal used to age twice as fast). It sets the background world's observer position (the
+    player mapped through the portal), which the particle distance check in `ClientLevel.doAddParticle` now uses
+    for background worlds, and runs `animateTick` there. `tickRemoteWorld` ticks the world's own engine.
+  - Cross-dimension portal views draw the destination world's particles.
+  - Engines are dropped when their world is disposed or becomes the player's world.
