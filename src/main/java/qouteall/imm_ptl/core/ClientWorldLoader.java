@@ -162,6 +162,10 @@ public class ClientWorldLoader {
     
     private static void tickRemoteWorldLight(ClientLevel newWorld) {
         try {
+            // Quasar: time packets only reach the player's world; background worlds share its game time
+            // (day/night clocks are shared through the connection's ClockManager on 26.x)
+            ClientLevel main = Minecraft.getInstance().level;
+            if (main != null) newWorld.getLevelData().setGameTime(main.getGameTime());
             withSwitchedWorld(newWorld, newWorld::pollLightUpdates);
             if (!IPCGlobal.isClientRemoteTickingEnabled && !Minecraft.getInstance().isPaused()) {
                 stepRemoteEntities(newWorld);
@@ -459,6 +463,8 @@ public class ClientWorldLoader {
             ClientLevel.ClientLevelData current = mc.level.getLevelData();
             ClientLevel.ClientLevelData properties = new ClientLevel.ClientLevelData(
                 current.getDifficulty(), current.isHardcore(), false);
+            // same game time as the player's world, so crossing doesn't jump the clock back to 0
+            properties.setGameTime(current.getGameTime());
 
             SecondaryLevelExtractor extractor = new SecondaryLevelExtractor(mc);
             newWorld = new ClientLevel(

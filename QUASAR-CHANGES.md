@@ -90,3 +90,6 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   sound stop and camera reset). `MixinClientLevel` exposes the extractor field (`IEClientWorld.ip_get/setLevelExtractor`).
 - 2026-11-26: removed the guard in `Portal.canTeleportEntity` that kept cross-dimension portals from teleporting
   (it was waiting for step 4).
+- 2026-11-26: background client worlds now share the player's world game time (copied at creation and every tick).
+  Time packets only reach the listener's level, so a background world sat at game time 0 and crossing into it reset
+  `StableClientTimer` ("target time is too far behind"). Day/night clocks are already shared via `ClientClockManager`.
