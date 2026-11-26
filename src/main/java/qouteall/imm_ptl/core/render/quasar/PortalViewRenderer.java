@@ -222,7 +222,7 @@ public final class PortalViewRenderer {
             if (portal.getDestDim() != mc.level.dimension()
                 && PortalWorldTerrain.forDimension(portal.getDestDim()) == null) continue;
             if (portal.getOriginPos().distanceToSqr(camPos) > MAX_DISTANCE * MAX_DISTANCE) continue;
-            if (!portal.isInFrontOfPortal(camPos)) continue;
+            if (!portal.isInFrontOfPortal(camPos) && !crossing(portal, camPos)) continue;
             if (!main.cullFrustum.isVisible(portal.getBoundingBox().inflate(0.1))) continue;
             portals.add(portal);
         }
@@ -310,6 +310,24 @@ public final class PortalViewRenderer {
         missingFrames.keySet().removeIf(id -> !seen.contains(id));
     }
 
+    /**
+     * The camera is passing through this portal: within a quarter block in front of its plane (or half a block past
+     * it - the teleport only happens on the next tick) and inside its frame. The portal's surface is then nearer than
+     * the near clip plane (or behind the camera), so the quad would be clipped away and the world behind the portal
+     * would flash for a frame or two; the destination view is drawn over the whole screen instead.
+     */
+    static boolean crossing(Portal portal, Vec3 cam) {
+        if (portal instanceof qouteall.imm_ptl.core.portal.Mirror) return false;
+        double dist = portal.getDistanceToPlane(cam);
+        if (dist >= 0.25 || dist <= -0.5) return false;
+        Vec3 v = cam.subtract(portal.getOriginPos());
+        return Math.abs(v.dot(portal.getAxisW())) <= portal.getWidth() / 2 + 0.05
+            && Math.abs(v.dot(portal.getAxisH())) <= portal.getHeight() / 2 + 0.05;
+    }
+
+    /** set around {@link #virtualCamera} for the portal being drawn */
+    private static boolean crossingNow;
+
     private static void renderEach(List<Portal> portals, CameraRenderState main, GpuDevice device,
                                    CommandEncoder encoder, GpuTextureView mainColor, GpuTextureView mainDepth,
                                    int w, int h) throws Exception {
@@ -321,15 +339,16 @@ public final class PortalViewRenderer {
             Portal portal = portals.get(i);
             
             // only the part of the screen the portal covers: its NDC rectangle (x0, y0, x1, y1)
-            float[] rect = screenRect(mainViewProj, main.pos, portal);
+            boolean through = crossing(portal, main.pos);
+            float[] rect = through ? new float[]{-1f, -1f, 1f, 1f} : screenRect(mainViewProj, main.pos, portal);
             if (rect == null) continue; // off screen
             // half resolution (a quarter of the pixels, clears and shading); the composite maps by screen fraction, so
             // the image size does not change the picture's placement
             Target t = target(i, device, Math.max(1, Math.round(w * resolutionScale)),
                 Math.max(1, Math.round(h * resolutionScale)));
             
-            boolean update = !t.valid || t.portalId != portal.getId() || (viewFrame + i) % updateEvery == 0;
-            if (isHidden(portal)) {
+            boolean update = through || !t.valid || t.portalId != portal.getId() || (viewFrame + i) % updateEvery == 0;
+            if (!through && isHidden(portal)) {
                 // behind something: no redraw. Keep pasting its last picture (depth-tested, so invisible while it
                 // really is hidden; if the visibility search was ever wrong, a stale view shows instead of nothing)
                 frameHidden++;
@@ -337,7 +356,9 @@ public final class PortalViewRenderer {
                 update = false;
             }
             if (update) {
+                crossingNow = through;
                 CameraRenderState virtual = virtualCamera(main, portal, rect);
+                crossingNow = false;
                 if (virtual == null) continue;
                 boolean drawn;
                 long tt;
@@ -438,7 +459,7 @@ public final class PortalViewRenderer {
             }
             frameCoverage += (rect[2] - rect[0]) * (rect[3] - rect[1]) / 4f;
             
-            composite(encoder, main, portal, t, rect, t.mirrored, mainColor, mainDepth, w, h);
+            composite(encoder, main, portal, t, rect, t.mirrored, mainColor, mainDepth, w, h, through);
             drawnThisFrame.add(portal.getId());
             lastPixels += (long) t.width * t.height;
         }
@@ -623,7 +644,8 @@ public final class PortalViewRenderer {
         Vec3 q = portal.getDestPos().subtract(vPos);
         float d = (float) -(n.dot(q));
         if (d >= 0) {
-            return null; // the virtual camera is not behind the destination portal (player not in front)
+            if (!crossingNow) return null; // the virtual camera is not behind the destination portal (player not in front)
+            d = -0.05f; // a hair past the plane before the teleport tick: clip just ahead of the camera
         }
         Vector3f nv = view.transformDirection(new Vector3f((float) n.x, (float) n.y, (float) n.z));
         Vector4f clip = new Vector4f(nv.x, nv.y, nv.z, d);
@@ -724,20 +746,31 @@ public final class PortalViewRenderer {
     // ------------------------------------------------------------------
 
     private static void composite(CommandEncoder encoder, CameraRenderState main, Portal portal, Target t,
-                                  float[] rect, boolean mirrored, GpuTextureView mainColor, GpuTextureView mainDepth, int w, int h) {
+                                  float[] rect, boolean mirrored, GpuTextureView mainColor, GpuTextureView mainDepth, int w, int h,
+                                  boolean fullScreen) {
         ensurePipeline();
         Vec3 cam = main.pos;
-        // Never exactly on the portal plane (a mirror sits on the glass face and would z-fight with it):
-        // mirrors go 3 mm BEHIND the glass face, so the glass texture's own pixels draw over the reflection
-        // (the original mod's look); other portals go 3 mm in front, since they may sit flush on a wall.
-        double nudge = portal instanceof qouteall.imm_ptl.core.portal.Mirror ? -0.003 : 0.003;
-        Vec3 o = portal.getOriginPos().subtract(cam).add(portal.getNormal().scale(nudge));
-        Vec3 aw = portal.getAxisW().scale(portal.getWidth() / 2);
-        Vec3 ah = portal.getAxisH().scale(portal.getHeight() / 2);
-        Vec3 a = o.subtract(aw).subtract(ah);
-        Vec3 b = o.add(aw).subtract(ah);
-        Vec3 c = o.add(aw).add(ah);
-        Vec3 d = o.subtract(aw).add(ah);
+        Vec3 a, b, c, d;
+        if (fullScreen) {
+            // passing through: a quad over the whole screen just beyond the near plane (reverse-Z: depth 1 = near)
+            Matrix4f inv = new Matrix4f(main.projectionMatrix).mul(main.viewRotationMatrix).invert();
+            a = unproject(inv, -1f, -1f);
+            b = unproject(inv, 1f, -1f);
+            c = unproject(inv, 1f, 1f);
+            d = unproject(inv, -1f, 1f);
+        } else {
+            // Never exactly on the portal plane (a mirror sits on the glass face and would z-fight with it):
+            // mirrors go 3 mm BEHIND the glass face, so the glass texture's own pixels draw over the reflection
+            // (the original mod's look); other portals go 3 mm in front, since they may sit flush on a wall.
+            double nudge = portal instanceof qouteall.imm_ptl.core.portal.Mirror ? -0.003 : 0.003;
+            Vec3 o = portal.getOriginPos().subtract(cam).add(portal.getNormal().scale(nudge));
+            Vec3 aw = portal.getAxisW().scale(portal.getWidth() / 2);
+            Vec3 ah = portal.getAxisH().scale(portal.getHeight() / 2);
+            a = o.subtract(aw).subtract(ah);
+            b = o.add(aw).subtract(ah);
+            c = o.add(aw).add(ah);
+            d = o.subtract(aw).add(ah);
+        }
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             ByteBuffer vb = stack.malloc(6 * 3 * 4);
@@ -767,6 +800,12 @@ public final class PortalViewRenderer {
                 pass.draw(6, 1, 0, 0);
             }
         }
+    }
+
+    /** camera-relative world position of screen point (x, y) in NDC, just beyond the near plane */
+    private static Vec3 unproject(Matrix4f invViewProj, float x, float y) {
+        Vector4f p = invViewProj.transform(new Vector4f(x, y, 0.99f, 1f));
+        return new Vec3(p.x / p.w, p.y / p.w, p.z / p.w);
     }
 
     private static void putVec(ByteBuffer b, Vec3 v) {

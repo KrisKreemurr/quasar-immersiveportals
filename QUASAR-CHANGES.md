@@ -105,3 +105,8 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   camera into the main target after the main opaque terrain, skipping every section the main renderer has had a
   mesh for at least 4 frames (`ViewArea.getRenderSectionAt`, found by type via reflection; origin must match,
   mesh != `CompiledSectionMesh.UNCOMPILED`). Freed when nothing is left, after 10 s, or on leaving that world.
+- 2026-11-26: passing through a portal no longer flashes the source world. For the last frame or two before the
+  teleport tick the camera is within the near clip distance of the portal plane (or just past it), so the composite
+  quad was clipped away / the portal was skipped. `PortalViewRenderer.crossing(portal, cam)` (within 0.25 in front
+  to 0.5 behind the plane, inside the frame, not mirrors) now draws that portal's view every frame over the whole
+  screen (full-screen quad just past the near plane), and `virtualCamera` clamps the clip plane instead of giving up.
