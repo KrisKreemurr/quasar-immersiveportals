@@ -100,3 +100,8 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
 - 2026-11-26: `ImmPtlClientChunkMap.onLightUpdate` dirtied sections in `Minecraft.levelExtractor` for every world, so a
   background world's light rebuilt the player's world's sections at the same coordinates (and never reached the
   portal terrain). It now uses the chunk map's own world's extractor.
+- 2026-11-26: crossing stand-in. `swapRenderWorlds` calls `PortalWorldTerrain.beginStandIn(toWorld)`: the entered
+  world's portal terrain is kept (taken out of `WORLDS`) and `PortalViewRenderer.renderAll` draws it with the main
+  camera into the main target after the main opaque terrain, skipping every section the main renderer has had a
+  mesh for at least 4 frames (`ViewArea.getRenderSectionAt`, found by type via reflection; origin must match,
+  mesh != `CompiledSectionMesh.UNCOMPILED`). Freed when nothing is left, after 10 s, or on leaving that world.

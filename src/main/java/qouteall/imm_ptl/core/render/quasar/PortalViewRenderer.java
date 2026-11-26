@@ -155,6 +155,7 @@ public final class PortalViewRenderer {
         frameEntityNs = 0;
         PortalEntities.beginFrame();
         PortalWorldTerrain.beginFrame();
+        drawCrossingStandIn();
         frameSections = 0;
         frameCoverage = 0;
         long t0 = System.nanoTime();
@@ -182,6 +183,22 @@ public final class PortalViewRenderer {
         drawnLastFrame.clear();
         drawnLastFrame.addAll(drawnThisFrame);
         Stats.frame(System.nanoTime() - t0, frameTerrainNs, frameSkyNs, frameEntityNs, PortalEntities.lastCount, frameHidden, drawnThisFrame.size(), frameSections, frameCoverage);
+    }
+
+    /** The world just entered, as its portal view had built it, until the main renderer has rebuilt it. */
+    private static void drawCrossingStandIn() {
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level == null) return;
+            CameraRenderState main = (CameraRenderState) mainCameraMethod.invoke(null);
+            if (main == null || !main.initialized || main.pos == null || main.cullFrustum == null) return;
+            RenderTarget mainTarget = mc.gameRenderer.mainRenderTarget();
+            PortalWorldTerrain.drawStandIn(RenderSystem.getDevice().createCommandEncoder(), main,
+                mainTarget.getColorTextureView(), mainTarget.getDepthTextureView());
+        }
+        catch (Throwable t) {
+            LOGGER.warn("[Quasar Portals] crossing stand-in failed: {}", t.toString());
+        }
     }
 
     private static void renderPortals() throws Exception {

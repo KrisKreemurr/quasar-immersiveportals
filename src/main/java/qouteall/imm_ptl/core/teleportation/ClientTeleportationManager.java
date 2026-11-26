@@ -537,6 +537,8 @@ public class ClientTeleportationManager {
         secondary.allChanged();
         ClientWorldLoader.SECONDARY_EXTRACTORS.put(fromDim, secondary);
         
+        // what the portal view built around the exit stays on screen while the main renderer rebuilds
+        qouteall.imm_ptl.core.render.quasar.PortalWorldTerrain.beginStandIn(toWorld);
         main.setLevel(toWorld);
         if (toWorld.getChunkSource() instanceof qouteall.imm_ptl.core.chunk_loading.ImmPtlClientChunkMap map) {
             map.ip_reannounceAllChunks(); // the fresh tracker must learn about chunks loaded while it was background

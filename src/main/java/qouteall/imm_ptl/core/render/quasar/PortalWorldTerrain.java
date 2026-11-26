@@ -27,6 +27,7 @@ import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
@@ -215,6 +216,133 @@ public final class PortalWorldTerrain {
     public static void disposeAll() {
         for (PortalWorldTerrain w : WORLDS.values()) w.dispose();
         WORLDS.clear();
+        endStandIn("session left");
+    }
+
+    // ------------------------------------------------------------------
+    // crossing stand-in (seamless crossing)
+    // ------------------------------------------------------------------
+    // Crossing a portal makes the main renderer rebuild the entered world from nothing (LevelExtractor.allChanged).
+    // The portal view had already built the area around the exit, so instead of freeing it, it keeps drawing - with
+    // the main camera, into the main target - every section the main renderer has no mesh for yet. A section drops
+    // out a few frames after the main renderer compiled it (Meshelium uploads just after; drawing both meanwhile is
+    // the same geometry at the same depth). Freed when nothing is left to stand in for, after a timeout, or when the
+    // player leaves that world again.
+
+    private static PortalWorldTerrain standIn;
+    private static long standInEndNanos;
+    private static long standInFrames;
+    private static final it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap STAND_IN_SEEN =
+        new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap();
+    private static final long STAND_IN_MAX_NANOS = 10_000_000_000L;
+    /** frames a section must have a main-renderer mesh before its stand-in stops (Meshelium's upload lag) */
+    private static final int STAND_IN_COVER_FRAMES = 4;
+    private static java.lang.reflect.Field viewAreaField;
+    private static Object viewAreaOwner;
+    private static boolean viewAreaMissing;
+
+    /** Crossing into {@code entered}: keep its portal terrain as the stand-in (call before the main renderer switches). */
+    public static void beginStandIn(ClientLevel entered) {
+        endStandIn("replaced");
+        if (failed || entered == null) return;
+        PortalWorldTerrain w = WORLDS.get(entered.dimension());
+        if (w == null || w.level != entered || w.disposed || w.drawable.isEmpty()) return;
+        WORLDS.remove(entered.dimension());
+        standIn = w;
+        standInEndNanos = System.nanoTime() + STAND_IN_MAX_NANOS;
+        standInFrames = 0;
+        STAND_IN_SEEN.clear();
+        LOGGER.info("[Quasar Portals] crossing stand-in: {} built sections of {} kept on screen",
+            w.drawable.size(), entered.dimension().identifier());
+    }
+
+    private static void endStandIn(String why) {
+        if (standIn == null) return;
+        PortalWorldTerrain w = standIn;
+        standIn = null;
+        STAND_IN_SEEN.clear();
+        LOGGER.info("[Quasar Portals] crossing stand-in ended after {} frames ({})", standInFrames, why);
+        w.dispose();
+    }
+
+    /** Draws the stand-in into the main target with the main camera (after the main opaque terrain). */
+    static void drawStandIn(CommandEncoder encoder, CameraRenderState main, GpuTextureView color, GpuTextureView depth) {
+        PortalWorldTerrain w = standIn;
+        if (w == null) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (w.level != mc.level || System.nanoTime() > standInEndNanos) {
+            endStandIn(w.level != mc.level ? "left the world" : "timed out");
+            return;
+        }
+        Object viewArea = viewArea(mc);
+        if (viewArea == null) {
+            endStandIn("main renderer's sections not reachable");
+            return;
+        }
+        standInFrames++;
+        BlockPos.MutableBlockPos probe = new BlockPos.MutableBlockPos();
+        java.util.function.LongPredicate covered = key -> {
+            int sx = SectionPos.x(key), sy = SectionPos.y(key), sz = SectionPos.z(key);
+            probe.set(sx << 4, sy << 4, sz << 4);
+            net.minecraft.client.renderer.chunk.SectionRenderDispatcher.RenderSection rs =
+                ((net.minecraft.client.renderer.ViewArea) viewArea).getRenderSectionAt(probe);
+            if (rs == null) return true; // outside the main renderer's area: nothing to stand in for
+            if (!rs.getRenderOrigin().equals(probe)) {
+                STAND_IN_SEEN.remove(key); // the slot holds another position for now
+                return false;
+            }
+            if (rs.getSectionMesh() == net.minecraft.client.renderer.chunk.CompiledSectionMesh.UNCOMPILED) {
+                STAND_IN_SEEN.remove(key);
+                return false;
+            }
+            return STAND_IN_SEEN.addTo(key, 1) + 1 >= STAND_IN_COVER_FRAMES;
+        };
+        int radius = Math.max(2, mc.options.getEffectiveRenderDistance());
+        int sectionsBefore = lastSections;
+        boolean ok = w.draw(encoder, main, main, color, depth, radius, false, covered);
+        lastSections = sectionsBefore; // the F3 portal line counts portal views only
+        if (!ok) {
+            endStandIn("draw failed");
+        } else if (w.lastUnskipped == 0) {
+            endStandIn("main renderer caught up");
+        }
+    }
+
+    /** The main renderer's ViewArea (found by type: LevelRenderer or LevelExtractor), or null. */
+    private static Object viewArea(Minecraft mc) {
+        if (viewAreaMissing) return null;
+        try {
+            if (viewAreaField == null) {
+                for (Object owner : new Object[]{mc.levelRenderer, mc.levelExtractor}) {
+                    for (Class<?> c = owner.getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
+                        for (java.lang.reflect.Field f : c.getDeclaredFields()) {
+                            if (f.getType() == net.minecraft.client.renderer.ViewArea.class
+                                && !java.lang.reflect.Modifier.isStatic(f.getModifiers())) {
+                                f.setAccessible(true);
+                                viewAreaField = f;
+                                viewAreaOwner = owner;
+                                break;
+                            }
+                        }
+                        if (viewAreaField != null) break;
+                    }
+                    if (viewAreaField != null) break;
+                }
+                if (viewAreaField == null) {
+                    viewAreaMissing = true;
+                    LOGGER.warn("[Quasar Portals] no ViewArea field found; crossing stand-in off");
+                    return null;
+                }
+                LOGGER.info("[Quasar Portals] main sections via {}.{}", viewAreaOwner.getClass().getSimpleName(),
+                    viewAreaField.getName());
+            }
+            return viewAreaField.get(viewAreaOwner);
+        }
+        catch (Throwable t) {
+            viewAreaMissing = true;
+            LOGGER.warn("[Quasar Portals] crossing stand-in off: {}", t.toString());
+            return null;
+        }
     }
 
     private void dispose() {
@@ -458,22 +586,39 @@ public final class PortalWorldTerrain {
      */
     boolean draw(CommandEncoder encoder, CameraRenderState main, CameraRenderState virtual,
                  GpuTextureView color, GpuTextureView depth, int radiusChunks) {
+        return draw(encoder, main, virtual, color, depth, radiusChunks, true, null);
+    }
+
+    /** Sections left to draw by the last {@link #draw} with a skip test (in range, not skipped; any frustum). */
+    private int lastUnskipped;
+
+    /**
+     * As above; {@code build} false draws only what is already built (no light work, no new compiles), and
+     * {@code skip} leaves out sections by packed section position.
+     */
+    private boolean draw(CommandEncoder encoder, CameraRenderState main, CameraRenderState virtual,
+                         GpuTextureView color, GpuTextureView depth, int radiusChunks, boolean build,
+                         java.util.function.LongPredicate skip) {
         lastSections = 0;
         if (failed || disposed) return false;
         try {
             int radius = radiusChunks > 0 ? radiusChunks
                 : Math.max(2, Minecraft.getInstance().options.getEffectiveRenderDistance());
             Vec3 cam = virtual.pos;
-            prepare(cam, radius);
+            if (build) prepare(cam, radius);
 
             // visible sections: in range, in the portal camera's (portal-narrowed) frustum
             int camSx = SectionPos.blockToSectionCoord(cam.x), camSz = SectionPos.blockToSectionCoord(cam.z);
             List<Section> visible = new ArrayList<>();
+            int unskipped = 0;
             for (Section s : drawable) {
                 if (Math.abs(s.sx - camSx) > radius || Math.abs(s.sz - camSz) > radius) continue;
+                if (skip != null && skip.test(s.key)) continue;
+                unskipped++;
                 if (!virtual.cullFrustum.isVisible(s.box)) continue;
                 visible.add(s);
             }
+            lastUnskipped = unskipped;
             if (visible.isEmpty()) return true;
             // near to far (opaque: early depth rejects); translucent is drawn far to near below
             visible.sort((a, b) -> Double.compare(dist2(a, cam), dist2(b, cam)));
