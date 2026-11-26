@@ -49,3 +49,7 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   - Engines are dropped when their world is disposed or becomes the player's world.
   - `tickWeatherEffects` is skipped for background worlds (it spawns rain splashes and rain sounds around the
     main camera: Overworld rain was audible from the Nether).
+
+- 2026-11-25: portal views decide entity visibility with the entity renderer's own frustum check instead of
+  `EntityRenderDispatcher.shouldRender`. Occlusion-culling mods (Entity Culling) hook the dispatcher and answer for the
+  player's eye in the player's world; through a portal that made mobs blink as their culled flag flipped.

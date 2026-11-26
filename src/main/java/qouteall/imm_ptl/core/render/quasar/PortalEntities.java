@@ -110,7 +110,10 @@ public final class PortalEntities {
             int n = 0;
             for (Entity e : level.entitiesForRendering()) {
                 if (e.isRemoved() || e.distanceToSqr(cam) > maxDist2) continue;
-                if (!erd.shouldRender(e, virtual.cullFrustum, cam.x, cam.y, cam.z, partialTick)) continue;
+                // the renderer's own frustum check, not the dispatcher's: occlusion-culling mods (Entity Culling)
+                // hook the dispatcher and answer for the player's eye in the player's world, which is wrong for a
+                // portal camera (mobs blinked in portal views as their culled flag flipped)
+                if (!shouldRenderFromPortal(erd, e, virtual, cam, partialTick)) continue;
                 EntityRenderState state = frameStates.get(e);
                 if (state == null) {
                     state = extract(mc, erd, e, partialTick);
@@ -162,6 +165,13 @@ public final class PortalEntities {
         }
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static boolean shouldRenderFromPortal(EntityRenderDispatcher erd, Entity e, CameraRenderState virtual,
+                                                  Vec3 cam, float partialTick) {
+        net.minecraft.client.renderer.entity.EntityRenderer renderer = erd.getRenderer(e);
+        return renderer != null && renderer.shouldRender(e, virtual.cullFrustum, cam.x, cam.y, cam.z, partialTick);
+    }
+    
     /**
      * Chests, signs, banners, beds, skulls and other block entities within the portal entity distance of the portal
      * camera: extracted with vanilla's dispatcher (its camera position moved to the portal camera for the distance
