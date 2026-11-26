@@ -170,3 +170,4 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   camera at the portal views' range (a PortalWorldTerrain for mc.level, kept only while requested). After crossing it
   is that world's portal terrain, so the portal back shows it at once instead of loading from blank; its extractor
   starts all-dirty, so it rebuilds in the background while drawing the old meshes.
+- 2026-11-26: the crossing hold (drawn after the portals) no longer hides them: this frame's portal pictures are pasted again over it (the portal you came through showed the world behind it until the hold ended).

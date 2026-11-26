@@ -148,6 +148,7 @@ public final class PortalViewRenderer {
 
     private static void renderAll() {
         drawnThisFrame.clear();
+        compositedThisFrame.clear();
         lastPixels = 0;
         frameTerrainNs = 0;
         frameSkyNs = 0;
@@ -195,6 +196,10 @@ public final class PortalViewRenderer {
      */
     /** within this many blocks of a portal into another world, that world is built out to the full render distance */
     private static final double PREWARM_BLOCKS = 24.0;
+
+    /** the portal pictures pasted this frame (pasted again over the crossing hold, which is drawn after them) */
+    private record Composited(Portal portal, Target t, float[] rect, boolean fullScreen, boolean camThrough) {}
+    private static final List<Composited> compositedThisFrame = new ArrayList<>();
 
     /** a portal was within reach of the camera this frame (the frame may be the last before a crossing) */
     private static boolean nearCrossing;
@@ -253,6 +258,14 @@ public final class PortalViewRenderer {
                     mc.level, mc.particleEngine, hold.lastLightmap());
             }
             compositeHold(encoder, main, t.colorView, alpha, mainColor, mainDepth, w, h, null);
+            // the hold picture has no portals in it: paste this frame's portal pictures over it again (the portal
+            // you just came through would otherwise show the world behind it until the hold ends)
+            for (Composited c : compositedThisFrame) {
+                if (c.t().valid && c.t().portalId == c.portal().getId()) {
+                    composite(encoder, main, c.portal(), c.t(), c.rect(), c.t().mirrored, mainColor, mainDepth, w, h,
+                        c.fullScreen(), c.camThrough());
+                }
+            }
         }
         catch (Throwable t) {
             LOGGER.warn("[Quasar Portals] crossing hold failed: {}", t.toString());
@@ -665,6 +678,7 @@ public final class PortalViewRenderer {
             frameCoverage += (rect[2] - rect[0]) * (rect[3] - rect[1]) / 4f;
             
             composite(encoder, main, portal, t, rect, t.mirrored, mainColor, mainDepth, w, h, through, camThrough);
+            compositedThisFrame.add(new Composited(portal, t, rect, through, camThrough));
             drawnThisFrame.add(portal.getId());
             lastPixels += (long) t.width * t.height;
         }
