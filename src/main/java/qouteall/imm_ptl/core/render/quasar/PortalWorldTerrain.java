@@ -277,7 +277,7 @@ public final class PortalWorldTerrain {
     private static final int HOLD_READY_UNCOVERED = 2;
     private static final int HOLD_READY_FRAMES = 3;
     private static final long HOLD_MAX_NANOS = 350_000_000L; // a frozen picture: keep it short
-    private static final long HOLD_FADE_NANOS = 150_000_000L;
+    private static final long HOLD_FADE_NANOS = 250_000_000L;
 
     /** The stand-in world's terrain while a crossing hold is on (null otherwise). */
     static PortalWorldTerrain holdTerrain() {

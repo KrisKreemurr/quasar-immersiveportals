@@ -14,6 +14,7 @@ layout(std140) uniform PortalUniforms
     vec4 uOrigin;    // portal centre, camera-relative; w = mode: 0 surface, 1 per-pixel ray test, 2 whole screen
     vec4 uAxisW;     // xyz = unit width axis, w = half width
     vec4 uAxisH;     // xyz = unit height axis, w = half height
+    mat4 uPictureViewProj; // mode 3: projection * view rotation the picture was taken with
 };
 
 layout(location = 0) out vec3 vRay;

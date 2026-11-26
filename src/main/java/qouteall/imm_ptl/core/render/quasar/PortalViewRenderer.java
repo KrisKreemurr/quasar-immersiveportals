@@ -312,11 +312,13 @@ public final class PortalViewRenderer {
             putVec(vb, a); putVec(vb, b); putVec(vb, c);
             putVec(vb, a); putVec(vb, c); putVec(vb, d);
             vb.flip();
-            ByteBuffer ub = stack.calloc(144);
+            ByteBuffer ub = stack.calloc(208);
             new Matrix4f(main.projectionMatrix).mul(main.viewRotationMatrix).get(0, ub);
             ub.putFloat(64, (float) w).putFloat(68, (float) h).putFloat(72, 0f).putFloat(76, alpha);
             ub.putFloat(80, -1f).putFloat(84, -1f).putFloat(88, 1f).putFloat(92, 1f);
-            ub.putFloat(108, 2f); // mode 2: the whole screen
+            // mode 2: the whole screen; mode 3: the whole screen, the picture turned with the camera since it was taken
+            ub.putFloat(108, pictureViewProj != null ? 3f : 2f);
+            if (pictureViewProj != null) pictureViewProj.get(144, ub);
             GpuBufferSlice vertices = encoder.transientMemory().uploadGpu(vb, 16, GpuBuffer.USAGE_VERTEX);
             GpuBufferSlice uniforms = encoder.transientMemory().uploadGpu(ub, 256, GpuBuffer.USAGE_UNIFORM);
             try (RenderPass pass = encoder.createRenderPass(() -> "quasar crossing hold",
