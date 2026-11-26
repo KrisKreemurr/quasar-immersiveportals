@@ -569,7 +569,7 @@ public final class PortalViewRenderer {
                     "Portals: %d live, %d hidden (every %d), CPU %.3f ms (terrain %.3f, sky+clouds %.3f, %d entities %.3f), GPU %s, %d sections, %.0f%% of screen",
                     maxLive, maxHidden, updateEvery, sumCpu / f / 1e6, sumTerrain / f / 1e6, sumSky / f / 1e6, Math.round(sumEntities / f), sumEntity / f / 1e6,
                     gpuFrames > 0 ? String.format(java.util.Locale.ROOT, "%.3f ms", sumGpu / (double) gpuFrames / 1e6) : "n/a",
-                    Math.round(sumSections / f), sumCoverage / f * 100) + PortalParticles.debugSummary();
+                    Math.round(sumSections / f), sumCoverage / f * 100) + PortalParticles.debugSummary() + backgroundEntities();
             }
             sumCpu = sumTerrain = sumSky = sumEntity = sumEntities = sumGpu = sumSections = frames = gpuFrames = liveFrames = 0;
             sumCoverage = 0;
@@ -800,6 +800,25 @@ public final class PortalViewRenderer {
                 pass.draw(6, 1, 0, 0);
             }
         }
+    }
+
+    /** F3: entities each background world holds on this client (0 = the server never sent them) */
+    private static String backgroundEntities() {
+        StringBuilder sb = new StringBuilder(", other-world entities:");
+        Minecraft mc = Minecraft.getInstance();
+        boolean any = false;
+        for (net.minecraft.client.multiplayer.ClientLevel l : qouteall.imm_ptl.core.ClientWorldLoader.getClientWorlds()) {
+            if (l == mc.level) continue;
+            any = true;
+            int all = 0, living = 0;
+            for (net.minecraft.world.entity.Entity e : l.entitiesForRendering()) {
+                all++;
+                if (e instanceof net.minecraft.world.entity.LivingEntity) living++;
+            }
+            sb.append(' ').append(l.dimension().identifier().getPath()).append(' ').append(all)
+                .append(" (").append(living).append(" mobs)");
+        }
+        return any ? sb.toString() : ", other-world entities: none";
     }
 
     /** camera-relative world position of screen point (x, y) in NDC, just beyond the near plane */
