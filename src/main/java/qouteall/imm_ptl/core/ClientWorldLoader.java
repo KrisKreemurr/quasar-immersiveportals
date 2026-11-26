@@ -120,9 +120,33 @@ public class ClientWorldLoader {
         }
     }
     
+    /**
+     * Quasar MC: the movement part of an entity tick only, for background worlds while full ticking is off. Each
+     * tick the previous position/rotation becomes the current one (without this, portal views drew mobs between a
+     * stale old position and the new one: they jumped back and forth), then the entity moves one step toward the
+     * position the server last sent (its interpolation). No AI, animation or world logic runs.
+     */
+    private static void stepRemoteEntities(ClientLevel world) {
+        for (net.minecraft.world.entity.Entity e : world.entitiesForRendering()) {
+            if (e.isRemoved()) continue;
+            e.setOldPosAndRot();
+            if (e instanceof net.minecraft.world.entity.LivingEntity le) {
+                le.yHeadRotO = le.yHeadRot;
+                le.yBodyRotO = le.yBodyRot;
+            }
+            net.minecraft.world.entity.InterpolationHandler interpolation = e.getInterpolation();
+            if (interpolation != null && interpolation.hasActiveInterpolation()) {
+                interpolation.interpolate();
+            }
+        }
+    }
+    
     private static void tickRemoteWorldLight(ClientLevel newWorld) {
         try {
             withSwitchedWorld(newWorld, newWorld::pollLightUpdates);
+            if (!IPCGlobal.isClientRemoteTickingEnabled && !Minecraft.getInstance().isPaused()) {
+                stepRemoteEntities(newWorld);
+            }
             if (!Minecraft.getInstance().isPaused()) {
                 tickRemoteWorldRandomTicksClient(newWorld, CHelper.getClientNearbyPortals(10).collect(Collectors.toList()));
                 qouteall.imm_ptl.core.render.quasar.PortalParticles.tick(newWorld);

@@ -67,3 +67,7 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
 - 2026-11-26: background-world entity/world ticking is off again (player animations were choppy with it on, and
   background mobs stood still anyway). Background worlds now always get `tickRemoteWorldLight`: their queued light
   packets (inside `withSwitchedWorld`), their own particle engine, and ambient particles around the portal.
+
+- 2026-11-26: with full background ticking off, background entities still get the movement part of a tick
+  (`ClientWorldLoader.stepRemoteEntities`): previous position/rotation (and head/body yaw) set to current, then one
+  interpolation step toward the server's last position. Stops mobs jumping back and forth in portal views.
