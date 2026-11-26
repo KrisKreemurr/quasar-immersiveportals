@@ -81,6 +81,7 @@
     "client.particle.IEParticle",
     "client.particle.MixinClientLevel_Particles",
     "client.render.MixinGameRenderer_PortalLightmap",
+    "client.render.MixinLevelRenderer_CrossingHold",
     "client.sound.MixinClientLevel_Sound",
     "client.sync.IEBlockStatePredictionHandler",
     "client.sync.MixinBlockStatePredictionHandler",

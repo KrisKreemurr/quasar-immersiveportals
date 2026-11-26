@@ -10,7 +10,7 @@
 layout(std140) uniform PortalUniforms
 {
     mat4 uViewProj;
-    vec4 uScreen;    // xy = screen size, z = 1 for mirrors
+    vec4 uScreen;    // xy = screen size, z = 1 for mirrors, w = opacity (crossing hold)
     vec4 uRect;
     vec4 uOrigin;    // w = mode
     vec4 uAxisW;
@@ -40,5 +40,6 @@ void main()
     if (uScreen.z > 0.5) {
         uv.x = 1.0 - uv.x; // mirror: the view was rendered unreflected
     }
-    fragColor = vec4(texture(PortalColor, uv).rgb, 1.0);
+    // w: opacity for the crossing hold's fade-out (0 = not set: opaque)
+    fragColor = vec4(texture(PortalColor, uv).rgb, uScreen.w > 0.0 ? uScreen.w : 1.0);
 }

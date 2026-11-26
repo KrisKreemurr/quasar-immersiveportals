@@ -251,6 +251,9 @@ public final class PortalWorldTerrain {
         standIn = w;
         standInEndNanos = System.nanoTime() + STAND_IN_MAX_NANOS;
         standInFrames = 0;
+        holdStartNanos = System.nanoTime();
+        holdFadeNanos = 0;
+        holdReadyFrames = 0;
         STAND_IN_SEEN.clear();
         LOGGER.info("[Quasar Portals] crossing stand-in: {} built sections of {} kept on screen",
             w.drawable.size(), entered.dimension().identifier());
@@ -263,6 +266,50 @@ public final class PortalWorldTerrain {
         STAND_IN_SEEN.clear();
         LOGGER.info("[Quasar Portals] crossing stand-in ended after {} frames ({})", standInFrames, why);
         w.dispose();
+    }
+
+    // ---- crossing hold: the whole picture from the stand-in until the main renderer has the view ----
+    private static long holdStartNanos, holdFadeNanos;
+    private static int holdReadyFrames;
+    /** sections in view still without a main-renderer mesh that the hold tolerates when handing over */
+    private static final int HOLD_READY_UNCOVERED = 2;
+    private static final int HOLD_READY_FRAMES = 3;
+    private static final long HOLD_MAX_NANOS = 1_500_000_000L;
+    private static final long HOLD_FADE_NANOS = 200_000_000L;
+
+    /** The stand-in world's terrain while a crossing hold is on (null otherwise). */
+    static PortalWorldTerrain holdTerrain() {
+        return standIn;
+    }
+
+    /**
+     * How strongly the crossing hold covers the frame: 1 = fully, fading to 0 over 0.2 s once the main renderer has
+     * (almost) every section in view for a few frames, or after 1.5 s at the latest; 0 = no hold.
+     */
+    static float holdAlpha() {
+        if (standIn == null || holdStartNanos == 0) return 0f;
+        long now = System.nanoTime();
+        if (holdFadeNanos == 0 && (holdReadyFrames >= HOLD_READY_FRAMES || now - holdStartNanos > HOLD_MAX_NANOS)) {
+            holdFadeNanos = now;
+            LOGGER.info("[Quasar Portals] crossing hold handing over after {} ms ({})",
+                (now - holdStartNanos) / 1_000_000, holdReadyFrames >= HOLD_READY_FRAMES ? "main renderer ready" : "time limit");
+        }
+        if (holdFadeNanos == 0) return 1f;
+        float a = 1f - (now - holdFadeNanos) / (float) HOLD_FADE_NANOS;
+        if (a <= 0f) {
+            holdStartNanos = 0; // done for this crossing
+            return 0f;
+        }
+        return a;
+    }
+
+    /** The hold's picture: everything the stand-in has built, from the main camera, into the given images. */
+    boolean drawHold(CommandEncoder encoder, CameraRenderState main, GpuTextureView color, GpuTextureView depth) {
+        int radius = Math.max(2, Minecraft.getInstance().options.getEffectiveRenderDistance());
+        int before = lastSections;
+        boolean ok = draw(encoder, main, main, color, depth, radius, false, null);
+        lastSections = before;
+        return ok;
     }
 
     /** Draws the stand-in into the main target with the main camera (after the main opaque terrain). */
@@ -301,7 +348,10 @@ public final class PortalWorldTerrain {
         int radius = Math.max(2, mc.options.getEffectiveRenderDistance());
         int sectionsBefore = lastSections;
         boolean ok = w.draw(encoder, main, main, color, depth, radius, false, covered);
+        int uncoveredInView = lastSections;
         lastSections = sectionsBefore; // the F3 portal line counts portal views only
+        // the crossing hold may hand over once (almost) everything in view has a main-renderer mesh
+        holdReadyFrames = ok && uncoveredInView <= HOLD_READY_UNCOVERED ? holdReadyFrames + 1 : 0;
         if (!ok) {
             endStandIn("draw failed");
         } else if (w.lastUnskipped == 0) {

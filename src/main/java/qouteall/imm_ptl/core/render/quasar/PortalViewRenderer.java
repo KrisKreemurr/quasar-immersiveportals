@@ -185,6 +185,92 @@ public final class PortalViewRenderer {
         Stats.frame(System.nanoTime() - t0, frameTerrainNs, frameSkyNs, frameEntityNs, PortalEntities.lastCount, frameHidden, drawnThisFrame.size(), frameSections, frameCoverage);
     }
 
+    private static RenderPipeline holdPipeline;
+
+    /**
+     * Crossing hold (at the end of the world pass): for a moment after crossing a portal the whole frame is drawn the
+     * way the portal showed the new world - its sky, the terrain the portal view had built, its mobs and particles,
+     * from your camera - over whatever the main renderer produced while it switches worlds, then faded out once the
+     * main renderer has what you are looking at. One consistent picture through the crossing instead of a flash.
+     */
+    public static void drawCrossingHold() {
+        try {
+            float alpha = PortalWorldTerrain.holdAlpha();
+            if (alpha <= 0f) return;
+            PortalWorldTerrain hold = PortalWorldTerrain.holdTerrain();
+            Minecraft mc = Minecraft.getInstance();
+            if (hold == null || mc.level == null || mainCameraMethod == null) return;
+            CameraRenderState main = (CameraRenderState) mainCameraMethod.invoke(null);
+            if (main == null || !main.initialized || main.pos == null || main.cullFrustum == null) return;
+            RenderTarget mainTarget = mc.gameRenderer.mainRenderTarget();
+            int w = mainTarget.width, h = mainTarget.height;
+            GpuTextureView mainColor = mainTarget.getColorTextureView(), mainDepth = mainTarget.getDepthTextureView();
+            if (mainColor == null || mainDepth == null || w <= 0 || h <= 0) return;
+            GpuDevice device = RenderSystem.getDevice();
+            CommandEncoder encoder = device.createCommandEncoder();
+            Target t = target(MAX_PORTALS - 1, device, w, h);
+            encoder.clearColorAndDepthTextures(t.color, PortalSky.background(main), t.depth, 0.0);
+            PortalSky.drawSky(main, t.colorView, t.depthView);
+            if (!hold.drawHold(encoder, main, t.colorView, t.depthView)) return;
+            if (PortalSettings.entities) {
+                PortalEntities.draw(encoder, main, t.colorView, t.depthView,
+                    qouteall.imm_ptl.core.render.context_management.RenderStates.getPartialTick(),
+                    mc.level, mc.particleEngine, hold.lastLightmap());
+            }
+            compositeHold(encoder, main, t, alpha, mainColor, mainDepth, w, h);
+        }
+        catch (Throwable t) {
+            LOGGER.warn("[Quasar Portals] crossing hold failed: {}", t.toString());
+        }
+    }
+
+    private static void compositeHold(CommandEncoder encoder, CameraRenderState main, Target t, float alpha,
+                                      GpuTextureView mainColor, GpuTextureView mainDepth, int w, int h) {
+        ensurePipeline();
+        if (holdPipeline == null) {
+            holdPipeline = RenderPipeline.builder()
+                .withLocation(Identifier.parse("immersive_portals:pipeline/portal_crossing_hold"))
+                .withVertexShader(Identifier.parse("immersive_portals:portal_composite"))
+                .withFragmentShader(Identifier.parse("immersive_portals:portal_composite"))
+                .withBindGroupLayout(BindGroupLayout.builder()
+                    .withUniform("PortalColor", UniformType.COMBINED_IMAGE_SAMPLER)
+                    .withUniform("PortalUniforms", UniformType.UNIFORM_BUFFER)
+                    .build())
+                .withCull(false)
+                .withPolygonMode(PolygonMode.FILL)
+                .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, false))
+                .withColorTargetState(new ColorTargetState(
+                    Optional.of(com.mojang.renderpearl.api.pipeline.BlendFunction.TRANSLUCENT), GpuFormat.RGBA8_UNORM,
+                    ColorTargetState.WRITE_ALL))
+                .withVertexBinding(0, VertexFormat.builder(0).addAttribute("Position", GpuFormat.RGB32_FLOAT).build())
+                .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
+                .build();
+        }
+        Matrix4f inv = new Matrix4f(main.projectionMatrix).mul(main.viewRotationMatrix).invert();
+        Vec3 a = unproject(inv, -1f, -1f), b = unproject(inv, 1f, -1f), c = unproject(inv, 1f, 1f), d = unproject(inv, -1f, 1f);
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            ByteBuffer vb = stack.malloc(6 * 3 * 4);
+            putVec(vb, a); putVec(vb, b); putVec(vb, c);
+            putVec(vb, a); putVec(vb, c); putVec(vb, d);
+            vb.flip();
+            ByteBuffer ub = stack.calloc(144);
+            new Matrix4f(main.projectionMatrix).mul(main.viewRotationMatrix).get(0, ub);
+            ub.putFloat(64, (float) w).putFloat(68, (float) h).putFloat(72, 0f).putFloat(76, alpha);
+            ub.putFloat(80, -1f).putFloat(84, -1f).putFloat(88, 1f).putFloat(92, 1f);
+            ub.putFloat(108, 2f); // mode 2: the whole screen
+            GpuBufferSlice vertices = encoder.transientMemory().uploadGpu(vb, 16, GpuBuffer.USAGE_VERTEX);
+            GpuBufferSlice uniforms = encoder.transientMemory().uploadGpu(ub, 256, GpuBuffer.USAGE_UNIFORM);
+            try (RenderPass pass = encoder.createRenderPass(() -> "quasar crossing hold",
+                mainColor, Optional.empty(), mainDepth, OptionalDouble.empty())) {
+                pass.setPipeline(RenderSystem.getCompiledPipeline(holdPipeline));
+                pass.setUniform("PortalColor", t.colorView, sampler);
+                pass.setUniform("PortalUniforms", uniforms);
+                pass.setVertexBuffer(0, vertices);
+                pass.draw(6, 1, 0, 0);
+            }
+        }
+    }
+
     /** The world just entered, as its portal view had built it, until the main renderer has rebuilt it. */
     private static void drawCrossingStandIn() {
         try {

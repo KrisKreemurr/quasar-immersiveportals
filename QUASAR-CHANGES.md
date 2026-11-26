@@ -120,3 +120,10 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   the destination fills the screen and its view uses the plain near plane instead of the portal clip plane.
 - 2026-11-26: portal views within 16 blocks or covering over 5% of the screen redraw every frame (others keep the
   adaptive every-N rate); a reused picture slid against the portal frame while moving.
+- 2026-11-26: crossing hold. For a moment after crossing, `MixinLevelRenderer_CrossingHold` (LevelRenderer.render
+  TAIL, after the whole world pass) has `PortalViewRenderer.drawCrossingHold` draw the new world the way the portal
+  showed it - sky, the stand-in's terrain, entities/particles, from the main camera - into an offscreen image and
+  paste it over the whole frame (`portal_crossing_hold` pipeline: blended, no depth). The main renderer's mixed-world
+  frames (old terrain with the new sky, then an empty frame) never reach the screen. Hands over (0.2 s fade, alpha in
+  the composite uniform's `uScreen.w`) once at most 2 sections in view lack a main-renderer mesh for 3 frames, or
+  after 1.5 s.
