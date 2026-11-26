@@ -83,7 +83,11 @@ public final class PortalWorldTerrain {
 
     /** new section meshes requested per frame and world (region copies happen on the render thread) */
     private static final int SCHEDULE_PER_FRAME = 6;
-    private static final int WORKERS = 2;
+    /** while pre-warming (player near a portal into this world): more compiles and uploads per frame */
+    private static final int PREWARM_SCHEDULE_PER_FRAME = 32;
+    private static final int PREWARM_UPLOADS_PER_FRAME = 32;
+    /** a third of the cores (2..6): pre-warming builds a whole render distance while you walk up to a portal */
+    private static final int WORKERS = Math.max(2, Math.min(6, Runtime.getRuntime().availableProcessors() / 3));
     /** sections farther than the radius plus this many chunks from the portal camera are freed */
     private static final int EVICT_MARGIN_CHUNKS = 3;
     /** finished compiles uploaded per frame (buffer creation runs on the render thread) */
@@ -175,8 +179,28 @@ public final class PortalWorldTerrain {
                     it.remove();
                 }
             }
+            // pre-warm: the world the player is about to walk into is built out to the full render distance around
+            // the exit, nearest first, so the crossing stand-in covers the whole view
+            boolean warming = prewarmDim != null && prewarmFrame >= frame - 1;
+            if (warming) {
+                PortalWorldTerrain w = forDimension(prewarmDim);
+                if (w != null && !w.disposed) {
+                    w.warming = true;
+                    w.prepare(prewarmCam, Math.max(2, mc.options.getEffectiveRenderDistance()));
+                    w.warming = false;
+                    if (w.warmLogged != prewarmDim) {
+                        w.warmLogged = prewarmDim;
+                        LOGGER.info("[Quasar Portals] pre-warming {} around the portal exit ({} chunks)",
+                            prewarmDim.identifier(), mc.options.getEffectiveRenderDistance());
+                    }
+                }
+            }
+            else {
+                prewarmDim = null;
+            }
             // a few per frame: a burst of finished compiles (portal just opened) is spread over frames
-            for (int i = 0; i < UPLOADS_PER_FRAME; i++) {
+            int uploads = warming ? PREWARM_UPLOADS_PER_FRAME : UPLOADS_PER_FRAME;
+            for (int i = 0; i < uploads; i++) {
                 Done d = DONE.poll();
                 if (d == null) break;
                 d.world.accept(d);
@@ -189,6 +213,32 @@ public final class PortalWorldTerrain {
         catch (Throwable t) {
             fail("frame bookkeeping", t);
         }
+    }
+
+    // ---- pre-warm ----
+    private static ResourceKey<Level> prewarmDim;
+    private static Vec3 prewarmCam;
+    private static long prewarmFrame = -10;
+    private boolean warming;
+    private ResourceKey<Level> warmLogged;
+
+    /**
+     * The player is near a portal into {@code dim}: build that world out to the full render distance around
+     * {@code exitCam} (where the camera will be after crossing). Call every frame while it applies; it stops a frame
+     * after the calls stop (the portal views then shrink it back to their own range).
+     */
+    static void requestPrewarm(ResourceKey<Level> dim, Vec3 exitCam) {
+        prewarmDim = dim;
+        prewarmCam = exitCam;
+        prewarmFrame = frame;
+    }
+
+    /** F3: sections built / with geometry for the pre-warmed world, or null */
+    static String prewarmStatus() {
+        if (prewarmDim == null) return null;
+        PortalWorldTerrain w = WORLDS.get(prewarmDim);
+        return w == null ? null : "pre-warm " + w.drawable.size() + " drawn / " + w.sections.size() + " sections, "
+            + w.inFlight.get() + " compiling";
     }
 
     /** The terrain of {@code dim}'s background world, or null when there is none (or it is the player's world). */
@@ -479,7 +529,7 @@ public final class PortalWorldTerrain {
 
         int minSy = level.getMinSectionY(), maxSy = level.getMaxSectionY();
         int[] order = columnOrder(radiusChunks);
-        int budget = SCHEDULE_PER_FRAME;
+        int budget = warming ? PREWARM_SCHEDULE_PER_FRAME : SCHEDULE_PER_FRAME;
         SectionCompiler compiler = compiler();
         // fresh each batch, like vanilla: the cache keeps section copies, which would go stale
         RenderRegionCache regionCache = new RenderRegionCache();

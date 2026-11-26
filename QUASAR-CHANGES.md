@@ -157,3 +157,7 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   through, it was in the other world looking back - right, but it looked broken. Freeze-frame switched off (the user
   preferred the live hold, back to max 1.5 s / 0.2 s fade).
 - 2026-11-26: crossing hold hands over with a cut, no fade.
+- 2026-11-26: plan B, pre-warm. Within 24 blocks of (in front of) a portal into another world, that world's portal
+  terrain is built out to the full render distance around the exit (the camera's position after crossing), nearest
+  first, with 32 compiles/uploads per frame and a third of the cores (2..6) as builders. The crossing stand-in then
+  covers the whole view while the main renderer rebuilds. F3 portal line: "pre-warm N drawn / M sections, K compiling".

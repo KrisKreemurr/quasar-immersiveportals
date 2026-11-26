@@ -193,6 +193,9 @@ public final class PortalViewRenderer {
      * from your camera - over whatever the main renderer produced while it switches worlds, then faded out once the
      * main renderer has what you are looking at. One consistent picture through the crossing instead of a flash.
      */
+    /** within this many blocks of a portal into another world, that world is built out to the full render distance */
+    private static final double PREWARM_BLOCKS = 24.0;
+
     /** a portal was within reach of the camera this frame (the frame may be the last before a crossing) */
     private static boolean nearCrossing;
     /** the last world picture taken at a portal (before hand and HUD), shown frozen just after crossing */
@@ -366,10 +369,21 @@ public final class PortalViewRenderer {
 
         List<Portal> portals = new ArrayList<>();
         List<Portal> doorways = new ArrayList<>();
+        Portal warmPortal = null;
+        double warmDist = PREWARM_BLOCKS;
         for (Entity e : mc.level.entitiesForRendering()) {
             if (!(e instanceof Portal portal) || e.isRemoved()) continue;
             if (portal.getDestDim() != mc.level.dimension()
-                && portal.getOriginPos().distanceToSqr(camPos) < 64.0 * 64.0) doorways.add(portal);
+                && portal.getOriginPos().distanceToSqr(camPos) < 64.0 * 64.0) {
+                doorways.add(portal);
+                // the nearest portal into another world, from its front: pre-warm that world
+                double d = portal.getDistanceToNearestPointInPortal(camPos);
+                if (d < warmDist && !(portal instanceof qouteall.imm_ptl.core.portal.Mirror)
+                    && (portal.isInFrontOfPortal(camPos) || crossing(portal, camPos))) {
+                    warmDist = d;
+                    warmPortal = portal;
+                }
+            }
             // another dimension: only when its background world exists (cross-dimension step 3)
             if (portal.getDestDim() != mc.level.dimension()
                 && PortalWorldTerrain.forDimension(portal.getDestDim()) == null) continue;
@@ -380,6 +394,9 @@ public final class PortalViewRenderer {
             portals.add(portal);
         }
         PortalEntities.crossDimensionPortals = doorways;
+        if (warmPortal != null) {
+            PortalWorldTerrain.requestPrewarm(warmPortal.getDestDim(), warmPortal.transformPoint(camPos));
+        }
         if (portals.isEmpty()) {
             return;
         }
@@ -663,7 +680,8 @@ public final class PortalViewRenderer {
     
     /** F3 line (read by Quasium's [Quasium] block through reflection). */
     public static String f3Line() {
-        return Stats.line();
+        String warm = PortalWorldTerrain.prewarmStatus();
+        return warm == null ? Stats.line() : Stats.line() + " | " + warm;
     }
     
     /**
