@@ -71,3 +71,9 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
 - 2026-11-26: with full background ticking off, background entities still get the movement part of a tick
   (`ClientWorldLoader.stepRemoteEntities`): previous position/rotation (and head/body yaw) set to current, then one
   interpolation step toward the server's last position. Stops mobs jumping back and forth in portal views.
+
+- 2026-11-26: mobs seen through a portal from another dimension keep wandering. Vanilla resets a mob's idle timer
+  (`noActionTime`) only when a player in the same dimension is within 32 blocks; otherwise `RandomStrollGoal` stops after
+  100 ticks (mobs in the portal-loaded Nether stood still, only looking around). `MixinMob_PortalWatchers` (end of
+  `Mob.checkDespawn`) also resets it when a player in another dimension watches the mob's chunk within two chunks of the
+  portal's far side (`ImmPtlChunkTracking` watch record, loaded to the player).
