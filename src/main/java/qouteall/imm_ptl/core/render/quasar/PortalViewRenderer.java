@@ -200,6 +200,8 @@ public final class PortalViewRenderer {
     private static GpuTextureView freezeView;
     private static int freezeW, freezeH;
     private static boolean freezeValid, freezeFailed;
+    /** the freeze-frame crossing: off (the user found the live hold looked better); kept for comparison */
+    private static final boolean FREEZE = false;
     /** projection * view rotation of the camera when the frozen picture was taken (for turning with the camera) */
     private static final Matrix4f freezeViewProj = new Matrix4f();
 
@@ -210,7 +212,7 @@ public final class PortalViewRenderer {
                 // not crossing: while at a portal keep a copy of the finished world picture for the next crossing
                 boolean near = nearCrossing;
                 nearCrossing = false;
-                if (near && !freezeFailed) captureFreeze(Minecraft.getInstance().gameRenderer.mainRenderTarget());
+                if (near && FREEZE && !freezeFailed) captureFreeze(Minecraft.getInstance().gameRenderer.mainRenderTarget());
                 else if (!near) freezeValid = false;
                 return;
             }

@@ -276,8 +276,8 @@ public final class PortalWorldTerrain {
     /** sections in view still without a main-renderer mesh that the hold tolerates when handing over */
     private static final int HOLD_READY_UNCOVERED = 2;
     private static final int HOLD_READY_FRAMES = 3;
-    private static final long HOLD_MAX_NANOS = 350_000_000L; // a frozen picture: keep it short
-    private static final long HOLD_FADE_NANOS = 250_000_000L;
+    private static final long HOLD_MAX_NANOS = 1_500_000_000L;
+    private static final long HOLD_FADE_NANOS = 200_000_000L;
 
     /** The stand-in world's terrain while a crossing hold is on (null otherwise). */
     static PortalWorldTerrain holdTerrain() {

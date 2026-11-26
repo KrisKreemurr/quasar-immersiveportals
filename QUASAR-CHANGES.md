@@ -153,3 +153,6 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   its frame): the destination world is drawn over the whole screen except where the view looks back through the portal
   (composite mode 4), so you see the other world around you and your own world (and yourself) through the doorway.
   Fix: composite() uploads the full 208-byte uniform block (it was 144 since uPictureViewProj was added).
+- 2026-11-26: the third-person camera stops at a portal surface like at a wall (mixin Camera.getMaxZoom): pulled
+  through, it was in the other world looking back - right, but it looked broken. Freeze-frame switched off (the user
+  preferred the live hold, back to max 1.5 s / 0.2 s fade).
