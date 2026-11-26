@@ -493,6 +493,7 @@ public final class PortalWorldTerrain {
             GpuSampler atlasSampler = atlas.getSampler() != null ? atlas.getSampler()
                 : RenderSystem.getSamplerCache().getRepeat(FilterMode.NEAREST, true);
             GpuTextureView lightmap = updateLightmap(cam);
+            lastLightmap = lightmap;
             GpuSampler lightSampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
 
             ByteBuffer tb = Scratch.small(80);
@@ -563,6 +564,14 @@ public final class PortalWorldTerrain {
      * effects that belong to the viewer (night vision, gamma) carry over; darkness/boss fog do not. Falls back to
      * the main lightmap if anything is missing.
      */
+    /** This world's lightmap as last built for a portal camera (null before the first draw). */
+    private GpuTextureView lastLightmap;
+
+    /** The lightmap the last {@link #draw} lit this world's terrain with, for its entities in the same view. */
+    public GpuTextureView lastLightmap() {
+        return lastLightmap;
+    }
+
     private GpuTextureView updateLightmap(Vec3 cam) {
         Minecraft mc = Minecraft.getInstance();
         try {

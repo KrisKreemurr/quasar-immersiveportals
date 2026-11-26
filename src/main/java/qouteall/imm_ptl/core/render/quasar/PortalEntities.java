@@ -45,6 +45,17 @@ public final class PortalEntities {
     private static final Map<Entity, EntityRenderState> frameStates = new IdentityHashMap<>();
     static int lastCount;
     
+    /**
+     * While set, {@code GameRenderer.lightmap()} returns this (mixin): entities and block entities of a background
+     * world in a cross-dimension portal view are lit with that world's lightmap, like its terrain, instead of the
+     * player's world's (the Nether's mobs and chests came out near black with the Overworld's).
+     */
+    private static volatile GpuTextureView lightmapOverride;
+    
+    public static GpuTextureView lightmapOverride() {
+        return lightmapOverride;
+    }
+    
     /** a vanilla Camera placed at the portal camera: particles are made camera-relative and billboarded from it */
     private static final class PortalParticleCamera extends net.minecraft.client.Camera {
         void setTo(CameraRenderState virtual) {
@@ -90,6 +101,18 @@ public final class PortalEntities {
      * {@code level} is the background world of the destination and {@code particleEngine} its own engine
      * ({@link PortalParticles}); null draws no particles.
      */
+    static void draw(CommandEncoder encoder, CameraRenderState virtual, GpuTextureView color, GpuTextureView depth,
+                     float partialTick, ClientLevel level, net.minecraft.client.particle.ParticleEngine particleEngine,
+                     GpuTextureView lightmap) {
+        lightmapOverride = lightmap;
+        try {
+            draw(encoder, virtual, color, depth, partialTick, level, particleEngine);
+        }
+        finally {
+            lightmapOverride = null;
+        }
+    }
+    
     static void draw(CommandEncoder encoder, CameraRenderState virtual, GpuTextureView color, GpuTextureView depth,
                      float partialTick, ClientLevel level, net.minecraft.client.particle.ParticleEngine particleEngine) {
         if (failed) return;

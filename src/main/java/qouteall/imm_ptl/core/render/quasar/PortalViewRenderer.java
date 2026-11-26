@@ -349,7 +349,7 @@ public final class PortalViewRenderer {
                             long te = System.nanoTime();
                             PortalEntities.draw(encoder, virtual, t.colorView, t.depthView,
                                 qouteall.imm_ptl.core.render.context_management.RenderStates.getPartialTick(),
-                                other.level(), PortalParticles.existing(other.level()));
+                                other.level(), PortalParticles.existing(other.level()), other.lastLightmap());
                             frameEntityNs += System.nanoTime() - te;
                         }
                     }

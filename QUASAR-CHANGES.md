@@ -58,3 +58,8 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   turned off because of the camera hack removed above. Without it, background entities never advanced their previous
   position (mobs jumped back and forth in portal views), queued light packets of background worlds were never applied
   (`PortalWorldTerrain` no longer polls them), and background particles never spawned or aged.
+
+- 2026-11-25: entities, block entities and particles of a background world in a cross-dimension portal view are lit
+  with that world's lightmap (the one `PortalWorldTerrain` lights its terrain with): `MixinGameRenderer_PortalLightmap`
+  returns `PortalEntities.lightmapOverride()` from `GameRenderer.lightmap()` while they draw. With the Overworld's
+  lightmap, Nether mobs and chests came out near black.

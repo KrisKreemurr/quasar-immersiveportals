@@ -78,6 +78,7 @@
     "client.interaction.MixinItem_Interaction_Client",
     "client.particle.IEParticle",
     "client.particle.MixinClientLevel_Particles",
+    "client.render.MixinGameRenderer_PortalLightmap",
     "client.sound.MixinClientLevel_Sound",
     "client.sync.IEBlockStatePredictionHandler",
     "client.sync.MixinBlockStatePredictionHandler",
