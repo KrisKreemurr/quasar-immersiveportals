@@ -138,6 +138,11 @@ public class ClientWorldLoader {
             if (interpolation != null && interpolation.hasActiveInterpolation()) {
                 interpolation.interpolate();
             }
+            e.tickCount++;
+            if (e instanceof net.minecraft.world.entity.LivingEntity le) {
+                // legs swing from how far it moved this step (vanilla does this in LivingEntity.tick)
+                le.calculateEntityAnimation(le instanceof net.minecraft.world.entity.animal.FlyingAnimal);
+            }
         }
     }
     

@@ -77,3 +77,5 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   100 ticks (mobs in the portal-loaded Nether stood still, only looking around). `MixinMob_PortalWatchers` (end of
   `Mob.checkDespawn`) also resets it when a player in another dimension watches the mob's chunk within two chunks of the
   portal's far side (`ImmPtlChunkTracking` watch record, loaded to the player).
+- 2026-11-26: `stepRemoteEntities` also advances `tickCount` and the walk animation (`calculateEntityAnimation`), so
+  background mobs' legs move.
