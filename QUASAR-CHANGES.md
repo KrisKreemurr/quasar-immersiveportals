@@ -139,3 +139,6 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   the picture's projection * rotation), and fades out over 0.25 s instead of 0.15 s.
 - 2026-11-26: the crossing freeze-frame turns with the camera (composite mode 3 reprojects each pixel's view ray into
   the picture's projection * rotation), and fades out over 0.25 s instead of 0.15 s.
+- 2026-11-26: your other half: entities of the player's world standing in a cross-dimension portal's doorway (you in
+  third person, mobs) are also drawn in that portal's view, moved through it (translation-only portals, i.e. Nether
+  portals); the portal camera's oblique near plane cuts off the part still on this side.

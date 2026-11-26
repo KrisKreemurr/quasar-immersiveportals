@@ -104,13 +104,59 @@ public final class PortalEntities {
     static void draw(CommandEncoder encoder, CameraRenderState virtual, GpuTextureView color, GpuTextureView depth,
                      float partialTick, ClientLevel level, net.minecraft.client.particle.ParticleEngine particleEngine,
                      GpuTextureView lightmap) {
+        draw(encoder, virtual, color, depth, partialTick, level, particleEngine, lightmap, null);
+    }
+
+    /**
+     * As above; {@code through} (a cross-dimension portal) also draws the player's-world entities standing in that
+     * portal's doorway, moved through it: the part past the portal plane shows on the other side (the portal camera's
+     * oblique near plane cuts off the part still on this side).
+     */
+    static void draw(CommandEncoder encoder, CameraRenderState virtual, GpuTextureView color, GpuTextureView depth,
+                     float partialTick, ClientLevel level, net.minecraft.client.particle.ParticleEngine particleEngine,
+                     GpuTextureView lightmap, qouteall.imm_ptl.core.portal.Portal through) {
         lightmapOverride = lightmap;
+        visitorsThrough = through;
         try {
             draw(encoder, virtual, color, depth, partialTick, level, particleEngine);
         }
         finally {
             lightmapOverride = null;
+            visitorsThrough = null;
         }
+    }
+
+    private static qouteall.imm_ptl.core.portal.Portal visitorsThrough;
+
+    /** entities of the player's world in {@code portal}'s doorway, submitted at their place on the other side */
+    private static int submitVisitors(Minecraft mc, EntityRenderDispatcher erd, qouteall.imm_ptl.core.portal.Portal portal,
+                                      CameraRenderState virtual, Vec3 cam, float partialTick, PoseStack pose,
+                                      SubmitNodeStorage storage) {
+        ClientLevel here = mc.level;
+        if (here == null || portal.getRotation() != null || Math.abs(portal.getScale() - 1.0) > 1e-6) return 0;
+        // translation-only portal (rotation and scale ruled out above)
+        Vec3 offset = portal.transformPoint(portal.getOriginPos()).subtract(portal.getOriginPos());
+        net.minecraft.world.phys.AABB near = portal.getBoundingBox().inflate(2.0);
+        int n = 0;
+        for (Entity e : here.getEntities((Entity) null, near, x -> !(x instanceof qouteall.imm_ptl.core.portal.Portal))) {
+            if (e.isRemoved()) continue;
+            // you in first person: no body to show (the camera is inside it)
+            if (e == mc.getCameraEntity() && mc.options.getCameraType().isFirstPerson()) continue;
+            net.minecraft.world.phys.AABB box = e.getBoundingBox();
+            Vec3 c = box.getCenter();
+            double reach = Math.max(box.getXsize(), Math.max(box.getYsize(), box.getZsize())) * 0.5 + 0.1;
+            // only what is actually in the doorway: within its own size of the portal rectangle
+            if (portal.getDistanceToNearestPointInPortal(c) > reach) continue;
+            EntityRenderState state = frameStates.get(e);
+            if (state == null) {
+                state = extract(mc, erd, e, partialTick);
+                frameStates.put(e, state);
+            }
+            erd.submit(state, virtual, state.x + offset.x - cam.x, state.y + offset.y - cam.y,
+                state.z + offset.z - cam.z, pose, storage);
+            n++;
+        }
+        return n;
     }
     
     static void draw(CommandEncoder encoder, CameraRenderState virtual, GpuTextureView color, GpuTextureView depth,
@@ -144,6 +190,9 @@ public final class PortalEntities {
                 }
                 erd.submit(state, virtual, state.x - cam.x, state.y - cam.y, state.z - cam.z, pose, storage);
                 n++;
+            }
+            if (visitorsThrough != null && level != mc.level) {
+                n += submitVisitors(mc, erd, visitorsThrough, virtual, cam, partialTick, pose, storage);
             }
             n += submitBlockEntities(mc, level, virtual, cam, maxDist2, partialTick, pose, storage);
             lastCount += n;
