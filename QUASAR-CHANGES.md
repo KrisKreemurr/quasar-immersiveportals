@@ -93,3 +93,10 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
 - 2026-11-26: background client worlds now share the player's world game time (copied at creation and every tick).
   Time packets only reach the listener's level, so a background world sat at game time 0 and crossing into it reset
   `StableClientTimer` ("target time is too far behind"). Day/night clocks are already shared via `ClientClockManager`.
+- 2026-11-26: crossing back into a world showed no terrain (F3 `C: 0/26136`). 26.x's `LevelExtractor.allChanged`
+  starts a fresh `SectionUpdateTracker` that only learns chunks from the chunk cache's added-chunk/empty-section
+  sets; the world's chunks had been announced before it went to the background. `swapRenderWorlds` now calls
+  `ImmPtlClientChunkMap.ip_reannounceAllChunks()` after `main.setLevel`.
+- 2026-11-26: `ImmPtlClientChunkMap.onLightUpdate` dirtied sections in `Minecraft.levelExtractor` for every world, so a
+  background world's light rebuilt the player's world's sections at the same coordinates (and never reached the
+  portal terrain). It now uses the chunk map's own world's extractor.

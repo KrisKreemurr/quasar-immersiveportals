@@ -538,6 +538,9 @@ public class ClientTeleportationManager {
         ClientWorldLoader.SECONDARY_EXTRACTORS.put(fromDim, secondary);
         
         main.setLevel(toWorld);
+        if (toWorld.getChunkSource() instanceof qouteall.imm_ptl.core.chunk_loading.ImmPtlClientChunkMap map) {
+            map.ip_reannounceAllChunks(); // the fresh tracker must learn about chunks loaded while it was background
+        }
         mc.particleEngine.setLevel(toWorld);
         mc.gameRenderer.setLevel(toWorld);
         qouteall.imm_ptl.core.render.quasar.PortalParticles.dispose(toWorld);

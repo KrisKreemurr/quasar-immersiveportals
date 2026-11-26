@@ -52,6 +52,7 @@ public class ImmPtlClientChunkMap extends ClientChunkCache {
         new Long2ObjectOpenHashMap<>();
     
     public final Thread mainThread;
+    private final ClientLevel ip_level;
     
     public static final SignalArged<LevelChunk> clientChunkLoadSignal = new SignalArged<>();
     public static final SignalArged<LevelChunk> clientChunkUnloadSignal = new SignalArged<>();
@@ -59,6 +60,7 @@ public class ImmPtlClientChunkMap extends ClientChunkCache {
     public ImmPtlClientChunkMap(ClientLevel clientWorld, int loadDistance) {
         super(clientWorld, 1);
         // the chunk array is unused. make it small by passing 1 as load distance to super constructor
+        this.ip_level = clientWorld;
         
         mainThread = ((IEMinecraftClient) Minecraft.getInstance()).ip_getRunningThread();
     }
@@ -225,7 +227,9 @@ public class ImmPtlClientChunkMap extends ClientChunkCache {
     
     @Override
     public void onLightUpdate(LightLayer lightType, SectionPos chunkSectionPos) {
-        Minecraft.getInstance().levelExtractor.setSectionDirty(chunkSectionPos.x(), chunkSectionPos.y(), chunkSectionPos.z());
+        // Quasar: this world's own extractor (a background world's light must not dirty the player's world)
+        ((qouteall.imm_ptl.core.ducks.IEClientWorld) ip_level).ip_getLevelExtractor()
+            .setSectionDirty(chunkSectionPos.x(), chunkSectionPos.y(), chunkSectionPos.z());
     }
     
 
@@ -297,6 +301,21 @@ public class ImmPtlClientChunkMap extends ClientChunkCache {
         for (int i = 0; i < sections.length; i++) {
             ip_markSectionEmpty(SectionPos.asLong(cp.x(), chunk.getSectionYFromSectionIndex(i), cp.z()));
         }
+    }
+    
+    /**
+     * Quasar (seamless crossing): announce every loaded chunk and section emptiness again. The main extractor's
+     * {@code allChanged} starts a fresh SectionUpdateTracker that only learns about chunks from these sets; a world
+     * entered through a portal already has its chunks, announced earlier (or to its background extractor, which
+     * never reads them), so without this the renderer thinks nothing is loaded (F3 {@code C: 0/...}).
+     */
+    public void ip_reannounceAllChunks() {
+        int n = 0;
+        for (LevelChunk chunk : getCopiedChunkList()) {
+            ip_onChunkAdded(chunk);
+            n++;
+        }
+        LOGGER.info("[Quasar Portals] re-announced {} loaded chunks to the renderer", n);
     }
     
     private void ip_refreshEmptySections(LevelChunk chunk) {
