@@ -643,11 +643,14 @@ public final class PortalViewRenderer {
         Vec3 n = portal.getContentDirection().normalize();
         Vec3 q = portal.getDestPos().subtract(vPos);
         float d = (float) -(n.dot(q));
+        boolean past = false;
         if (d >= 0) {
             if (!crossingNow) return null; // the virtual camera is not behind the destination portal (player not in front)
-            d = -0.05f; // a hair past the plane before the teleport tick: clip just ahead of the camera
+            past = true; // a hair past the plane before the teleport tick: already "in" the destination, nothing to cut
         }
-        Vector3f nv = view.transformDirection(new Vector3f((float) n.x, (float) n.y, (float) n.z));
+        Vector3f nv = past ? new Vector3f(0f, 0f, -1f)
+            : view.transformDirection(new Vector3f((float) n.x, (float) n.y, (float) n.z));
+        if (past) d = -0.05f; // the ordinary near plane (view space looks down -z)
         Vector4f clip = new Vector4f(nv.x, nv.y, nv.z, d);
 
         // zoom the projection onto the portal's screen rectangle: rows 0/1 remapped so the rectangle fills the image
@@ -777,7 +780,7 @@ public final class PortalViewRenderer {
             putVec(vb, a); putVec(vb, b); putVec(vb, c);
             putVec(vb, a); putVec(vb, c); putVec(vb, d);
             vb.flip();
-            ByteBuffer ub = stack.calloc(96);
+            ByteBuffer ub = stack.calloc(144);
             Matrix4f viewProj = new Matrix4f(main.projectionMatrix).mul(main.viewRotationMatrix);
             viewProj.get(0, ub);
             ub.putFloat(64, (float) w);   // main screen size
@@ -787,6 +790,14 @@ public final class PortalViewRenderer {
             ub.putFloat(84, rect[1]);
             ub.putFloat(88, rect[2]);
             ub.putFloat(92, rect[3]);
+            // portal rectangle for the per-pixel test (mode 1), camera-relative
+            Vec3 po = portal.getOriginPos().subtract(cam), pw = portal.getAxisW(), ph = portal.getAxisH();
+            int mode = !fullScreen ? 0 : portal.getDistanceToPlane(cam) >= 0 ? 1 : 2;
+            ub.putFloat(96, (float) po.x).putFloat(100, (float) po.y).putFloat(104, (float) po.z).putFloat(108, mode);
+            ub.putFloat(112, (float) pw.x).putFloat(116, (float) pw.y).putFloat(120, (float) pw.z)
+                .putFloat(124, (float) (portal.getWidth() / 2));
+            ub.putFloat(128, (float) ph.x).putFloat(132, (float) ph.y).putFloat(136, (float) ph.z)
+                .putFloat(140, (float) (portal.getHeight() / 2));
 
             GpuBufferSlice vertices = encoder.transientMemory().uploadGpu(vb, 16, GpuBuffer.USAGE_VERTEX);
             GpuBufferSlice uniforms = encoder.transientMemory().uploadGpu(ub, 256, GpuBuffer.USAGE_UNIFORM);

@@ -114,3 +114,7 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   world, so the first frames after crossing don't use the old world's sky/fog colours (blended per tick).
 - 2026-11-26: step 5 - Nether portals are Immersive Portals portals again: `IPConfig` applies the configured
   `netherPortalMode` (default `adaptive`) instead of forcing vanilla. End portals still forced vanilla.
+- 2026-11-26: the passing-through composite is exact: a full-screen quad whose fragment shader keeps the portal
+  view only where the pixel's view ray crosses the portal rectangle (camera in front, mode 1), so standing in the
+  frame looking along it shows each world on its own side. Just past the plane (before the teleport tick, mode 2)
+  the destination fills the screen and its view uses the plain near plane instead of the portal clip plane.
