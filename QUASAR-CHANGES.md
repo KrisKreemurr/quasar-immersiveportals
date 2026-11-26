@@ -156,3 +156,4 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
 - 2026-11-26: the third-person camera stops at a portal surface like at a wall (mixin Camera.getMaxZoom): pulled
   through, it was in the other world looking back - right, but it looked broken. Freeze-frame switched off (the user
   preferred the live hold, back to max 1.5 s / 0.2 s fade).
+- 2026-11-26: crossing hold hands over with a cut, no fade.

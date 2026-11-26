@@ -277,7 +277,7 @@ public final class PortalWorldTerrain {
     private static final int HOLD_READY_UNCOVERED = 2;
     private static final int HOLD_READY_FRAMES = 3;
     private static final long HOLD_MAX_NANOS = 1_500_000_000L;
-    private static final long HOLD_FADE_NANOS = 200_000_000L;
+    private static final long HOLD_FADE_NANOS = 0L; // no fade: the user wants a clean cut
 
     /** The stand-in world's terrain while a crossing hold is on (null otherwise). */
     static PortalWorldTerrain holdTerrain() {
@@ -297,6 +297,10 @@ public final class PortalWorldTerrain {
                 (now - holdStartNanos) / 1_000_000, holdReadyFrames >= HOLD_READY_FRAMES ? "main renderer ready" : "time limit");
         }
         if (holdFadeNanos == 0) return 1f;
+        if (HOLD_FADE_NANOS <= 0) {
+            holdStartNanos = 0; // done for this crossing
+            return 0f;
+        }
         float a = 1f - (now - holdFadeNanos) / (float) HOLD_FADE_NANOS;
         if (a <= 0f) {
             holdStartNanos = 0; // done for this crossing
