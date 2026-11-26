@@ -26,14 +26,20 @@ layout(location = 0) out vec4 fragColor;
 
 void main()
 {
-    if (uOrigin.w > 0.5 && uOrigin.w < 1.5) {
+    bool rayTest = uOrigin.w > 0.5 && uOrigin.w < 1.5;
+    bool lookBack = uOrigin.w > 3.5; // mode 4: third-person camera through the portal
+    if (rayTest || lookBack) {
         vec3 n = cross(uAxisW.xyz, uAxisH.xyz);
         float denom = dot(vRay, n);
-        if (abs(denom) < 1e-7) discard;
-        float t = dot(uOrigin.xyz, n) / denom;
-        if (t <= 0.0) discard;
-        vec3 p = vRay * t - uOrigin.xyz;
-        if (abs(dot(p, uAxisW.xyz)) > uAxisW.w || abs(dot(p, uAxisH.xyz)) > uAxisH.w) discard;
+        bool hits = false;
+        if (abs(denom) >= 1e-7) {
+            float t = dot(uOrigin.xyz, n) / denom;
+            vec3 p = vRay * t - uOrigin.xyz;
+            hits = t > 0.0 && abs(dot(p, uAxisW.xyz)) <= uAxisW.w && abs(dot(p, uAxisH.xyz)) <= uAxisH.w;
+        }
+        // mode 1 keeps only what goes through the portal; mode 4 keeps everything else (looking back through the
+        // portal shows the player's own world, already in the main image)
+        if (hits == lookBack) discard;
     }
     // the view was rendered with the screen's projection rows (at a fraction of the screen's size): the same screen
     // fraction is the same texture position

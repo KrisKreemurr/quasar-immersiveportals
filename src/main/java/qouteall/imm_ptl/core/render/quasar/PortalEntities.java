@@ -149,7 +149,8 @@ public final class PortalEntities {
             double reach = Math.max(box.getXsize(), Math.max(box.getYsize(), box.getZsize())) * 0.5 + 0.1;
             if (portal.getDistanceToNearestPointInPortal(c) > reach || !portal.isInFrontOfPortal(c)) continue;
             if (cam == null) cam = new Vec3(camX, camY, camZ);
-            if (!portal.isInFrontOfPortal(cam)) return true;
+            // third-person camera through this portal: it looks back at you through it, so you stay visible
+            if (!portal.isInFrontOfPortal(cam) && !PortalViewRenderer.cameraThrough(portal, cam)) return true;
         }
         return false;
     }

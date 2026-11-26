@@ -372,8 +372,9 @@ public final class PortalViewRenderer {
             if (portal.getDestDim() != mc.level.dimension()
                 && PortalWorldTerrain.forDimension(portal.getDestDim()) == null) continue;
             if (portal.getOriginPos().distanceToSqr(camPos) > MAX_DISTANCE * MAX_DISTANCE) continue;
-            if (!portal.isInFrontOfPortal(camPos) && !crossing(portal, camPos)) continue;
-            if (!main.cullFrustum.isVisible(portal.getBoundingBox().inflate(0.1))) continue;
+            boolean camThrough = cameraThrough(portal, camPos);
+            if (!portal.isInFrontOfPortal(camPos) && !crossing(portal, camPos) && !camThrough) continue;
+            if (!camThrough && !main.cullFrustum.isVisible(portal.getBoundingBox().inflate(0.1))) continue;
             portals.add(portal);
         }
         PortalEntities.crossDimensionPortals = doorways;
@@ -476,6 +477,25 @@ public final class PortalViewRenderer {
             && Math.abs(v.dot(portal.getAxisH())) <= portal.getHeight() / 2 + 0.05;
     }
 
+    /**
+     * Third person: the line from the player's eye back to the camera goes through this portal (eye in front of it,
+     * camera behind it, crossing inside the frame). The camera is then really in the portal's destination world: that
+     * world is drawn over the whole screen except where the view looks back through the portal, which keeps the
+     * player's world (composite mode 4).
+     */
+    public static boolean cameraThrough(Portal portal, Vec3 cam) {
+        if (portal instanceof qouteall.imm_ptl.core.portal.Mirror) return false;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.options.getCameraType().isFirstPerson() || mc.getCameraEntity() == null) return false;
+        Vec3 eye = mc.getCameraEntity().getEyePosition(
+            qouteall.imm_ptl.core.render.context_management.RenderStates.getPartialTick());
+        double de = portal.getDistanceToPlane(eye), dc = portal.getDistanceToPlane(cam);
+        if (de <= 0 || dc >= 0) return false;
+        Vec3 hit = eye.add(cam.subtract(eye).scale(de / (de - dc))).subtract(portal.getOriginPos());
+        return Math.abs(hit.dot(portal.getAxisW())) <= portal.getWidth() / 2
+            && Math.abs(hit.dot(portal.getAxisH())) <= portal.getHeight() / 2;
+    }
+
     /** set around {@link #virtualCamera} for the portal being drawn */
     private static boolean crossingNow;
 
@@ -490,7 +510,8 @@ public final class PortalViewRenderer {
             Portal portal = portals.get(i);
             
             // only the part of the screen the portal covers: its NDC rectangle (x0, y0, x1, y1)
-            boolean through = crossing(portal, main.pos);
+            boolean camThrough = cameraThrough(portal, main.pos);
+            boolean through = camThrough || crossing(portal, main.pos);
             if (through || portal.getDistanceToNearestPointInPortal(main.pos) < 1.5) nearCrossing = true;
             float[] rect = through ? new float[]{-1f, -1f, 1f, 1f} : screenRect(mainViewProj, main.pos, portal);
             if (rect == null) continue; // off screen
@@ -616,7 +637,7 @@ public final class PortalViewRenderer {
             }
             frameCoverage += (rect[2] - rect[0]) * (rect[3] - rect[1]) / 4f;
             
-            composite(encoder, main, portal, t, rect, t.mirrored, mainColor, mainDepth, w, h, through);
+            composite(encoder, main, portal, t, rect, t.mirrored, mainColor, mainDepth, w, h, through, camThrough);
             drawnThisFrame.add(portal.getId());
             lastPixels += (long) t.width * t.height;
         }
@@ -907,7 +928,7 @@ public final class PortalViewRenderer {
 
     private static void composite(CommandEncoder encoder, CameraRenderState main, Portal portal, Target t,
                                   float[] rect, boolean mirrored, GpuTextureView mainColor, GpuTextureView mainDepth, int w, int h,
-                                  boolean fullScreen) {
+                                  boolean fullScreen, boolean camThrough) {
         ensurePipeline();
         Vec3 cam = main.pos;
         Vec3 a, b, c, d;
@@ -937,7 +958,7 @@ public final class PortalViewRenderer {
             putVec(vb, a); putVec(vb, b); putVec(vb, c);
             putVec(vb, a); putVec(vb, c); putVec(vb, d);
             vb.flip();
-            ByteBuffer ub = stack.calloc(144);
+            ByteBuffer ub = stack.calloc(208); // the block's full size (uPictureViewProj unused here)
             Matrix4f viewProj = new Matrix4f(main.projectionMatrix).mul(main.viewRotationMatrix);
             viewProj.get(0, ub);
             ub.putFloat(64, (float) w);   // main screen size
@@ -949,7 +970,7 @@ public final class PortalViewRenderer {
             ub.putFloat(92, rect[3]);
             // portal rectangle for the per-pixel test (mode 1), camera-relative
             Vec3 po = portal.getOriginPos().subtract(cam), pw = portal.getAxisW(), ph = portal.getAxisH();
-            int mode = !fullScreen ? 0 : portal.getDistanceToPlane(cam) >= 0 ? 1 : 2;
+            int mode = !fullScreen ? 0 : camThrough ? 4 : portal.getDistanceToPlane(cam) >= 0 ? 1 : 2;
             ub.putFloat(96, (float) po.x).putFloat(100, (float) po.y).putFloat(104, (float) po.z).putFloat(108, mode);
             ub.putFloat(112, (float) pw.x).putFloat(116, (float) pw.y).putFloat(120, (float) pw.z)
                 .putFloat(124, (float) (portal.getWidth() / 2));

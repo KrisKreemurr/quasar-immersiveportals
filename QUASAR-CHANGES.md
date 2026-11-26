@@ -149,3 +149,7 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
 - 2026-11-26: an entity standing in a cross-dimension doorway is not drawn in the main view when the camera is behind
   the face it walks into (its far half is in the other world, its near half behind the portal surface) - you were
   visible from both sides (mixin EntityRenderDispatcher.shouldRender).
+- 2026-11-26: third-person camera through a portal (the line from the eye back to the camera crosses a portal inside
+  its frame): the destination world is drawn over the whole screen except where the view looks back through the portal
+  (composite mode 4), so you see the other world around you and your own world (and yourself) through the doorway.
+  Fix: composite() uploads the full 208-byte uniform block (it was 144 since uPictureViewProj was added).
