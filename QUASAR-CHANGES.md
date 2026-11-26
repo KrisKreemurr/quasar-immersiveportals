@@ -15,3 +15,9 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   environment attributes; sky only when both worlds have the same kind of sky. Background worlds run their own light
   updates there. Background worlds are registered with Quasar Meshelium so its far field ignores their chunks.
   Not yet: entities/block entities from the other world, its own lightmap, clouds/far terrain there.
+
+- 2026-11-25: fixed black Overworld chunks near cross-dimension portals. `PortalWorldTerrain.prepare` called the
+  background world's `pollLightUpdates()` outside `withSwitchedWorld`; those queued tasks are vanilla packet
+  handlers that write light data into the packet listener's current world, so the Nether's light (no sky light)
+  was written into the Overworld chunks at the same coordinates. Removed; `tickRemoteWorld` already polls them
+  each tick with the world switched. The light engine's own `runLightUpdates()` stays.

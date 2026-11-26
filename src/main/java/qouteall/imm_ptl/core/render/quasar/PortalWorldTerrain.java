@@ -245,8 +245,11 @@ public final class PortalWorldTerrain {
         if (preparedFrame == frame) return;
         preparedFrame = frame;
 
-        // the world is never extracted by the main renderer, so its queued light work runs here
-        level.pollLightUpdates();
+        // The world is never extracted by the main renderer, so its light engine's pending work runs here.
+        // Not pollLightUpdates(): the queued tasks are vanilla packet handlers that apply light data to the
+        // packet listener's *current* world, which outside withSwitchedWorld is the player's world. Run here,
+        // the Nether's light (no sky light) landed on the Overworld chunks at the same coordinates and turned
+        // them black. ClientWorldLoader.tickRemoteWorld polls them each tick inside withSwitchedWorld.
         level.getChunkSource().getLightEngine().runLightUpdates();
 
         boolean changed = false;
