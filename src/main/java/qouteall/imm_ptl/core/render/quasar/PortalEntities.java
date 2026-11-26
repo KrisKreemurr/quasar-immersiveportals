@@ -199,7 +199,7 @@ public final class PortalEntities {
             }
         }
         finally {
-            bed.prepare(mc.gameRenderer.getMainCamera().position());
+            bed.prepare(mc.gameRenderer.mainCamera().position());
         }
         return n;
     }
