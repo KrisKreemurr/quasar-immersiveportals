@@ -129,7 +129,8 @@ public final class PortalEntities {
     private static qouteall.imm_ptl.core.portal.Portal visitorsThrough;
 
     /** entities of the player's world in {@code portal}'s doorway, submitted at their place on the other side */
-    private static int submitVisitors(Minecraft mc, EntityRenderDispatcher erd, qouteall.imm_ptl.core.portal.Portal portal,
+    private static int submitVisitors(Minecraft mc, EntityRenderDispatcher erd, ClientLevel there,
+                                      qouteall.imm_ptl.core.portal.Portal portal,
                                       CameraRenderState virtual, Vec3 cam, float partialTick, PoseStack pose,
                                       SubmitNodeStorage storage) {
         ClientLevel here = mc.level;
@@ -150,11 +151,15 @@ public final class PortalEntities {
             // a Nether portal is two portals back to back: only the one the entity is walking into from its front
             // carries the part past the plane (from behind, that part belongs to the back-facing portal)
             if (!portal.isInFrontOfPortal(c)) continue;
-            EntityRenderState state = frameStates.get(e);
-            if (state == null) {
-                state = extract(mc, erd, e, partialTick);
-                frameStates.put(e, state);
-            }
+            // its own render state (not the shared one): its light is the other world's
+            EntityRenderState state = extract(mc, erd, e, partialTick);
+            // lit where that half is: the destination world's light there (the lightmap in use is the destination's;
+            // the entity's own sky light from the Overworld came out near black with the Nether's lightmap)
+            net.minecraft.core.BlockPos lp = net.minecraft.core.BlockPos.containing(c.add(offset));
+            int block = there.getBrightness(net.minecraft.world.level.LightLayer.BLOCK, lp);
+            int sky = there.getBrightness(net.minecraft.world.level.LightLayer.SKY, lp);
+            if (e.isOnFire()) block = 15;
+            state.lightCoords = (block << 4) | (sky << 20);
             erd.submit(state, virtual, state.x + offset.x - cam.x, state.y + offset.y - cam.y,
                 state.z + offset.z - cam.z, pose, storage);
             n++;
@@ -195,7 +200,7 @@ public final class PortalEntities {
                 n++;
             }
             if (visitorsThrough != null && level != mc.level) {
-                n += submitVisitors(mc, erd, visitorsThrough, virtual, cam, partialTick, pose, storage);
+                n += submitVisitors(mc, erd, level, visitorsThrough, virtual, cam, partialTick, pose, storage);
             }
             n += submitBlockEntities(mc, level, virtual, cam, maxDist2, partialTick, pose, storage);
             lastCount += n;

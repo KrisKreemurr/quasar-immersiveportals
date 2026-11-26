@@ -144,3 +144,5 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   portals); the portal camera's oblique near plane cuts off the part still on this side.
 - 2026-11-26: doorway entities only go through the portal face they are entering from its front side (a Nether portal
   is two back-to-back portals; from behind you were drawn in the front face too).
+- 2026-11-26: doorway entities are lit with the destination world's block/sky light where their other half is (with
+  the Nether's lightmap your Overworld sky light came out near black: "the body disappears").
