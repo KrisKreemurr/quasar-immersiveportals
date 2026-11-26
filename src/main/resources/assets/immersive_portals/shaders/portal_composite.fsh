@@ -19,7 +19,7 @@ layout(std140) uniform PortalUniforms
 
 uniform sampler2D PortalColor;
 
-in vec3 vRay;
+layout(location = 0) in vec3 vRay;
 
 layout(location = 0) out vec4 fragColor;
 

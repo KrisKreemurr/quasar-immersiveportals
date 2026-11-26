@@ -16,7 +16,7 @@ layout(std140) uniform PortalUniforms
     vec4 uAxisH;     // xyz = unit height axis, w = half height
 };
 
-out vec3 vRay;
+layout(location = 0) out vec3 vRay;
 
 void main()
 {

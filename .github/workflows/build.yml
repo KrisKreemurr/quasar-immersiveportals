@@ -16,6 +16,17 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: false
+      - name: Shader check (Quasar portal shaders, Vulkan rules like the game's compiler)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq glslang-tools >/dev/null
+          fail=0
+          for f in src/main/resources/assets/immersive_portals/shaders/*.vsh src/main/resources/assets/immersive_portals/shaders/*.fsh; do
+            grep -q '#moj_import' "$f" && { echo "skip (imports): $f"; continue; }
+            case "$f" in *.vsh) st=vert;; *) st=frag;; esac
+            if glslangValidator -V --auto-map-bindings -S $st -o /tmp/s.spv "$f" > /tmp/s.log 2>&1; then echo "ok   $f"
+            else echo "FAIL $f"; cat /tmp/s.log; fail=1; fi
+          done
+          exit $fail
       - name: Build
         run: ./gradlew build --stacktrace 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
       - name: Error summary
