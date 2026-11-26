@@ -697,12 +697,8 @@ public class Portal extends Entity implements
         if (!teleportable) {
             return false;
         }
-        // Quasar MC: crossing into another dimension needs the client to switch worlds seamlessly
-        // (cross-dimension step 4, not ported yet). Until then the server would move the player while
-        // the client keeps showing the old world, so cross-dimension portals don't teleport.
-        if (getDestDim() != level().dimension()) {
-            return false;
-        }
+        // Quasar MC: cross-dimension portals teleport again (step 4: the client hands its render side over in
+        // ClientTeleportationManager.swapRenderWorlds).
         if (entity instanceof Portal) {
             return false;
         }
