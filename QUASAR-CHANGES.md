@@ -161,3 +161,4 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   terrain is built out to the full render distance around the exit (the camera's position after crossing), nearest
   first, with 32 compiles/uploads per frame and a third of the cores (2..6) as builders. The crossing stand-in then
   covers the whole view while the main renderer rebuilds. F3 portal line: "pre-warm N drawn / M sections, K compiling".
+- 2026-11-26: fix: your own head showed during the crossing hold (it draws your world's entities with the main camera; you were drawn around the camera). Your own body is skipped when the view's camera is at your eyes in first person.

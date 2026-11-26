@@ -212,8 +212,14 @@ public final class PortalEntities {
             SubmitNodeStorage storage = new SubmitNodeStorage();
             PoseStack pose = new PoseStack();
             int n = 0;
+            Entity self = mc.getCameraEntity();
+            boolean firstPerson = mc.options.getCameraType().isFirstPerson();
             for (Entity e : level.entitiesForRendering()) {
                 if (e.isRemoved() || e.distanceToSqr(cam) > maxDist2) continue;
+                // you, in first person, seen from your own eyes (the crossing hold draws with the main camera; a
+                // portal camera right after the teleport sits at your eyes too): the camera would be inside your head.
+                // Mirrors and portals seen from a distance keep showing you.
+                if (e == self && firstPerson && cam.distanceToSqr(e.getEyePosition(partialTick)) < 1.0) continue;
                 // the renderer's own frustum check, not the dispatcher's: occlusion-culling mods (Entity Culling)
                 // hook the dispatcher and answer for the player's eye in the player's world, which is wrong for a
                 // portal camera (mobs blinked in portal views as their culled flag flipped)
