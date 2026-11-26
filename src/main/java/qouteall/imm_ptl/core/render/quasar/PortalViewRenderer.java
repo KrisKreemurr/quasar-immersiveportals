@@ -396,6 +396,8 @@ public final class PortalViewRenderer {
         PortalEntities.crossDimensionPortals = doorways;
         if (warmPortal != null) {
             PortalWorldTerrain.requestPrewarm(warmPortal.getDestDim(), warmPortal.transformPoint(camPos));
+            PortalWorldTerrain.requestReturnView(camPos, renderDistance > 0 ? renderDistance
+                : mc.options.getEffectiveRenderDistance());
         }
         if (portals.isEmpty()) {
             return;

@@ -166,3 +166,7 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   removed), no full-screen crossing mode and no "camera through" mode for a third-person camera. Behind a portal it
   sees your world, and the portal surface as seen from there.
 - 2026-11-26: first person with the eyes just past a portal plane (before the teleport): composite mode 4 instead of 2 - looking back through the portal keeps your world, so looking along the portal splits at its plane like in third person.
+- 2026-11-26: return view. While near a portal into another world, the player's own world is also built around the
+  camera at the portal views' range (a PortalWorldTerrain for mc.level, kept only while requested). After crossing it
+  is that world's portal terrain, so the portal back shows it at once instead of loading from blank; its extractor
+  starts all-dirty, so it rebuilds in the background while drawing the old meshes.

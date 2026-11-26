@@ -174,7 +174,9 @@ public final class PortalWorldTerrain {
             while (it.hasNext()) {
                 PortalWorldTerrain w = it.next().getValue();
                 ClientLevel current = ClientWorldLoader.peekWorld(w.dimension);
-                if (current != w.level || w.level == mc.level) {
+                // the player's own world is kept only as the return view while near a portal (see requestReturnView)
+                boolean returnView = w.level == mc.level && returnFrame >= frame - 2;
+                if (current != w.level || (w.level == mc.level && !returnView)) {
                     w.dispose();
                     it.remove();
                 }
@@ -197,6 +199,19 @@ public final class PortalWorldTerrain {
             }
             else {
                 prewarmDim = null;
+            }
+            // the return view: the player's own world around the camera, at the portal views' range, so that after a
+            // crossing the portal back already shows it (it becomes that world's portal terrain)
+            if (returnFrame >= frame - 1 && mc.level != null && !ClientWorldLoader.isSwitchingDimension()) {
+                PortalWorldTerrain w = WORLDS.get(mc.level.dimension());
+                if (w == null || w.level != mc.level || w.disposed) {
+                    if (w != null) w.dispose();
+                    w = new PortalWorldTerrain(mc.level.dimension(), mc.level);
+                    WORLDS.put(mc.level.dimension(), w);
+                    LOGGER.info("[Quasar Portals] keeping a return view of {} while near a portal",
+                        mc.level.dimension().identifier());
+                }
+                w.prepare(returnCam, returnRadius);
             }
             // a few per frame: a burst of finished compiles (portal just opened) is spread over frames
             int uploads = warming ? PREWARM_UPLOADS_PER_FRAME : UPLOADS_PER_FRAME;
@@ -227,6 +242,22 @@ public final class PortalWorldTerrain {
      * {@code exitCam} (where the camera will be after crossing). Call every frame while it applies; it stops a frame
      * after the calls stop (the portal views then shrink it back to their own range).
      */
+    private static Vec3 returnCam;
+    private static int returnRadius;
+    private static long returnFrame = -10;
+
+    /**
+     * Near a portal: also build the player's own world around {@code cam} out to {@code radiusChunks} (the portal views'
+     * range). After crossing, that world is a background world and this becomes its portal terrain, so the portal
+     * back shows it at once instead of building from nothing. (While it is the player's world its changes are not
+     * tracked; after the crossing its extractor starts all-dirty, so it rebuilds in the background while drawing.)
+     */
+    static void requestReturnView(Vec3 cam, int radiusChunks) {
+        returnCam = cam;
+        returnRadius = Math.max(2, radiusChunks);
+        returnFrame = frame;
+    }
+
     static void requestPrewarm(ResourceKey<Level> dim, Vec3 exitCam) {
         prewarmDim = dim;
         prewarmCam = exitCam;
