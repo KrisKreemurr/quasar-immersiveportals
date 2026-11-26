@@ -165,3 +165,4 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
 - 2026-11-26: third-person camera stays in the player's world (user's call): no portal-as-wall camera stop (mixin
   removed), no full-screen crossing mode and no "camera through" mode for a third-person camera. Behind a portal it
   sees your world, and the portal surface as seen from there.
+- 2026-11-26: first person with the eyes just past a portal plane (before the teleport): composite mode 4 instead of 2 - looking back through the portal keeps your world, so looking along the portal splits at its plane like in third person.

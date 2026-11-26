@@ -996,7 +996,10 @@ public final class PortalViewRenderer {
             ub.putFloat(92, rect[3]);
             // portal rectangle for the per-pixel test (mode 1), camera-relative
             Vec3 po = portal.getOriginPos().subtract(cam), pw = portal.getAxisW(), ph = portal.getAxisH();
-            int mode = !fullScreen ? 0 : camThrough ? 4 : portal.getDistanceToPlane(cam) >= 0 ? 1 : 2;
+            // in front of the plane: only rays going through the portal show the other world (mode 1); just past it
+            // (eyes through, body not yet teleported): everything shows the other world except rays looking back
+            // through the portal, which keep this world (mode 4) - looking along the portal splits at its plane
+            int mode = !fullScreen ? 0 : camThrough || portal.getDistanceToPlane(cam) < 0 ? 4 : 1;
             ub.putFloat(96, (float) po.x).putFloat(100, (float) po.y).putFloat(104, (float) po.z).putFloat(108, mode);
             ub.putFloat(112, (float) pw.x).putFloat(116, (float) pw.y).putFloat(120, (float) pw.z)
                 .putFloat(124, (float) (portal.getWidth() / 2));
