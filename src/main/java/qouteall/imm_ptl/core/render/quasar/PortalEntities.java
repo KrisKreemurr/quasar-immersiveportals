@@ -147,6 +147,9 @@ public final class PortalEntities {
             double reach = Math.max(box.getXsize(), Math.max(box.getYsize(), box.getZsize())) * 0.5 + 0.1;
             // only what is actually in the doorway: within its own size of the portal rectangle
             if (portal.getDistanceToNearestPointInPortal(c) > reach) continue;
+            // a Nether portal is two portals back to back: only the one the entity is walking into from its front
+            // carries the part past the plane (from behind, that part belongs to the back-facing portal)
+            if (!portal.isInFrontOfPortal(c)) continue;
             EntityRenderState state = frameStates.get(e);
             if (state == null) {
                 state = extract(mc, erd, e, partialTick);

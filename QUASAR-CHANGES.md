@@ -142,3 +142,5 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
 - 2026-11-26: your other half: entities of the player's world standing in a cross-dimension portal's doorway (you in
   third person, mobs) are also drawn in that portal's view, moved through it (translation-only portals, i.e. Nether
   portals); the portal camera's oblique near plane cuts off the part still on this side.
+- 2026-11-26: doorway entities only go through the portal face they are entering from its front side (a Nether portal
+  is two back-to-back portals; from behind you were drawn in the front face too).
