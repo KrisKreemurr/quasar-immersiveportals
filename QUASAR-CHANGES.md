@@ -127,3 +127,7 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   frames (old terrain with the new sky, then an empty frame) never reach the screen. Hands over (0.2 s fade, alpha in
   the composite uniform's `uScreen.w`) once at most 2 sections in view lack a main-renderer mesh for 3 frames, or
   after 1.5 s.
+- 2026-11-26: crossing freeze-frame (the user's idea). While a portal is within 1.5 blocks of the camera, each
+  finished world picture (LevelRenderer.render TAIL, before hand/HUD) is copied to `quasar_crossing_freeze`; right
+  after a crossing that frozen picture covers the frame (hand/HUD stay live) until the main renderer has the view, at
+  most 0.35 s, then fades over 0.15 s. The live hold remains the fallback if the copy fails.

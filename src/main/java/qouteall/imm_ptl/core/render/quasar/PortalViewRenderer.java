@@ -193,10 +193,38 @@ public final class PortalViewRenderer {
      * from your camera - over whatever the main renderer produced while it switches worlds, then faded out once the
      * main renderer has what you are looking at. One consistent picture through the crossing instead of a flash.
      */
+    /** a portal was within reach of the camera this frame (the frame may be the last before a crossing) */
+    private static boolean nearCrossing;
+    /** the last world picture taken at a portal (before hand and HUD), shown frozen just after crossing */
+    private static GpuTexture freezeTex;
+    private static GpuTextureView freezeView;
+    private static int freezeW, freezeH;
+    private static boolean freezeValid, freezeFailed;
+
     public static void drawCrossingHold() {
         try {
             float alpha = PortalWorldTerrain.holdAlpha();
-            if (alpha <= 0f) return;
+            if (alpha <= 0f) {
+                // not crossing: while at a portal keep a copy of the finished world picture for the next crossing
+                boolean near = nearCrossing;
+                nearCrossing = false;
+                if (near && !freezeFailed) captureFreeze(Minecraft.getInstance().gameRenderer.mainRenderTarget());
+                else if (!near) freezeValid = false;
+                return;
+            }
+            nearCrossing = false;
+            if (freezeValid) {
+                // the frozen last frame before the teleport (the destination as the portal showed it)
+                Minecraft mcf = Minecraft.getInstance();
+                CameraRenderState mainF = (CameraRenderState) mainCameraMethod.invoke(null);
+                RenderTarget mt = mcf.gameRenderer.mainRenderTarget();
+                if (mainF != null && mainF.initialized && mt.width == freezeW && mt.height == freezeH
+                    && mt.getColorTextureView() != null && mt.getDepthTextureView() != null) {
+                    compositeHold(RenderSystem.getDevice().createCommandEncoder(), mainF, freezeView, alpha,
+                        mt.getColorTextureView(), mt.getDepthTextureView(), mt.width, mt.height);
+                    return;
+                }
+            }
             PortalWorldTerrain hold = PortalWorldTerrain.holdTerrain();
             Minecraft mc = Minecraft.getInstance();
             if (hold == null || mc.level == null || mainCameraMethod == null) return;
@@ -217,14 +245,39 @@ public final class PortalViewRenderer {
                     qouteall.imm_ptl.core.render.context_management.RenderStates.getPartialTick(),
                     mc.level, mc.particleEngine, hold.lastLightmap());
             }
-            compositeHold(encoder, main, t, alpha, mainColor, mainDepth, w, h);
+            compositeHold(encoder, main, t.colorView, alpha, mainColor, mainDepth, w, h);
         }
         catch (Throwable t) {
             LOGGER.warn("[Quasar Portals] crossing hold failed: {}", t.toString());
         }
     }
 
-    private static void compositeHold(CommandEncoder encoder, CameraRenderState main, Target t, float alpha,
+    private static void captureFreeze(RenderTarget mainTarget) {
+        try {
+            GpuTexture src = mainTarget.getColorTexture();
+            int w = mainTarget.width, h = mainTarget.height;
+            if (src == null || w <= 0 || h <= 0) return;
+            GpuDevice device = RenderSystem.getDevice();
+            if (freezeTex == null || freezeW != w || freezeH != h) {
+                if (freezeView != null) freezeView.close();
+                if (freezeTex != null) freezeTex.close();
+                freezeTex = device.createTexture("quasar_crossing_freeze",
+                    GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST, src.getFormat(), w, h, 1, 1);
+                freezeView = device.createTextureView(freezeTex);
+                freezeW = w;
+                freezeH = h;
+            }
+            device.createCommandEncoder().copyTextureToTexture(src, freezeTex, 0, 0, 0, 0, 0, w, h);
+            freezeValid = true;
+        }
+        catch (Throwable t) {
+            freezeFailed = true;
+            freezeValid = false;
+            LOGGER.warn("[Quasar Portals] crossing freeze-frame unavailable ({}); using the live hold", t.toString());
+        }
+    }
+
+    private static void compositeHold(CommandEncoder encoder, CameraRenderState main, GpuTextureView picture, float alpha,
                                       GpuTextureView mainColor, GpuTextureView mainDepth, int w, int h) {
         ensurePipeline();
         if (holdPipeline == null) {
@@ -263,7 +316,7 @@ public final class PortalViewRenderer {
             try (RenderPass pass = encoder.createRenderPass(() -> "quasar crossing hold",
                 mainColor, Optional.empty(), mainDepth, OptionalDouble.empty())) {
                 pass.setPipeline(RenderSystem.getCompiledPipeline(holdPipeline));
-                pass.setUniform("PortalColor", t.colorView, sampler);
+                pass.setUniform("PortalColor", picture, sampler);
                 pass.setUniform("PortalUniforms", uniforms);
                 pass.setVertexBuffer(0, vertices);
                 pass.draw(6, 1, 0, 0);
@@ -426,6 +479,7 @@ public final class PortalViewRenderer {
             
             // only the part of the screen the portal covers: its NDC rectangle (x0, y0, x1, y1)
             boolean through = crossing(portal, main.pos);
+            if (through || portal.getDistanceToNearestPointInPortal(main.pos) < 1.5) nearCrossing = true;
             float[] rect = through ? new float[]{-1f, -1f, 1f, 1f} : screenRect(mainViewProj, main.pos, portal);
             if (rect == null) continue; // off screen
             // half resolution (a quarter of the pixels, clears and shading); the composite maps by screen fraction, so
