@@ -82,3 +82,9 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
 - 2026-11-26: `stepRemoteEntities` also turns background mobs: the head eases toward the yaw the server sent
   (`lerpHeadRotationStep`, as in `LivingEntity.aiStep`) and the body turns toward the walking direction within reach of
   the head (`tickHeadTurn`, as in `LivingEntity.tick`), through the `IELivingEntity_QuasarTurn` accessor.
+
+- 2026-11-26: crossing a portal into another dimension hands the render side over (`ClientTeleportationManager
+  .swapRenderWorlds`, step 4). The entered world's `levelExtractor` field becomes the main `LevelExtractor`, the world
+  left behind takes the entered world's `SecondaryLevelExtractor` (all dirty) and is registered as foreign, and the main
+  extractor, particle engine and game renderer are pointed at the entered world (vanilla `updateLevelInEngines` minus
+  sound stop and camera reset). `MixinClientLevel` exposes the extractor field (`IEClientWorld.ip_get/setLevelExtractor`).

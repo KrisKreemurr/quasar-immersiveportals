@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import de.nick1st.imm_ptl.events.ClientCleanupEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import qouteall.imm_ptl.core.ducks.IEClientWorld;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Direction;
@@ -484,10 +485,7 @@ public class ClientTeleportationManager {
             ClientWorldLoader.getWorldRenderer(toDimension)
         );
         
-        if (Minecraft.getInstance().particleEngine != null) {
-            // avoid clearing all particles
-            if (Minecraft.getInstance().particleEngine instanceof IEParticleManager quasarPm) quasarPm.ip_setWorld(toWorld); // Quasar MC: particle mixin parked
-        }
+        swapRenderWorlds(fromWorld, toWorld);
         
         
         if (vehicle != null) {
@@ -516,6 +514,35 @@ public class ClientTeleportationManager {
         FogRendererContext.onPlayerTeleport(fromDimension, toDimension);
         
         O_O.onPlayerChangeDimensionClient(fromDimension, toDimension);
+    }
+    
+    /**
+     * Quasar MC (26.x): hands the main render side over to the world the player just entered. There is one
+     * LevelExtractor/LevelRenderer (bound to the player's world) and each background world reports to its own
+     * SecondaryLevelExtractor; crossing swaps them: the entered world reports to the main extractor, the world left
+     * behind takes the entered world's secondary extractor (fully dirty), and the main extractor, particle engine and
+     * game renderer are pointed at the entered world (vanilla Minecraft.updateLevelInEngines minus the sound stop and
+     * camera reset). The main extractor rebuilds its terrain for the new world; the world left behind is drawn through
+     * portals by PortalWorldTerrain from now on.
+     */
+    private static void swapRenderWorlds(ClientLevel fromWorld, ClientLevel toWorld) {
+        Minecraft mc = Minecraft.getInstance();
+        net.minecraft.client.renderer.extract.LevelExtractor main = mc.levelExtractor;
+        ResourceKey<Level> fromDim = fromWorld.dimension(), toDim = toWorld.dimension();
+        qouteall.imm_ptl.core.render.quasar.SecondaryLevelExtractor secondary =
+            ClientWorldLoader.SECONDARY_EXTRACTORS.remove(toDim);
+        if (secondary == null) secondary = new qouteall.imm_ptl.core.render.quasar.SecondaryLevelExtractor(mc);
+        ((IEClientWorld) toWorld).ip_setLevelExtractor(main);
+        ((IEClientWorld) fromWorld).ip_setLevelExtractor(secondary);
+        secondary.allChanged();
+        ClientWorldLoader.SECONDARY_EXTRACTORS.put(fromDim, secondary);
+        
+        main.setLevel(toWorld);
+        mc.particleEngine.setLevel(toWorld);
+        mc.gameRenderer.setLevel(toWorld);
+        qouteall.imm_ptl.core.render.quasar.PortalParticles.dispose(toWorld);
+        qouteall.imm_ptl.core.render.quasar.PortalWorldTerrain.registerForeignLevel(fromWorld);
+        LOGGER.info("[Quasar Portals] render side handed over: {} -> {}", fromDim.identifier(), toDim.identifier());
     }
     
     private static void changePlayerMotionIfCollidingWithPortal() {

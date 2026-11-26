@@ -28,4 +28,9 @@ public interface IEClientWorld {
     BlockStatePredictionHandler ip_getBlockStatePredictionHandler();
     
     void ip_setTickRateManager(TickRateManager cond);
+    
+    /** Quasar MC (26.x): the render-side listener this world reports block/section changes to. */
+    net.minecraft.client.renderer.extract.LevelExtractor ip_getLevelExtractor();
+    
+    void ip_setLevelExtractor(net.minecraft.client.renderer.extract.LevelExtractor extractor);
 }

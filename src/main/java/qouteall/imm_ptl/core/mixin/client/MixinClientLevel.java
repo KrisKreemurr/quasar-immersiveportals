@@ -78,6 +78,21 @@ public abstract class MixinClientLevel implements IEClientWorld {
     @Mutable
     private TickRateManager tickRateManager;
     
+    @Shadow
+    @Final
+    @Mutable
+    private net.minecraft.client.renderer.extract.LevelExtractor levelExtractor;
+    
+    @Override
+    public net.minecraft.client.renderer.extract.LevelExtractor ip_getLevelExtractor() {
+        return levelExtractor;
+    }
+    
+    @Override
+    public void ip_setLevelExtractor(net.minecraft.client.renderer.extract.LevelExtractor extractor) {
+        levelExtractor = extractor;
+    }
+    
     @Override
     public List<Portal> ip_getGlobalPortals() {
         return portal_globalPortals;
