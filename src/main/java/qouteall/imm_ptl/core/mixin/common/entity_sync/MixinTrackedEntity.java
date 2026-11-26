@@ -49,7 +49,46 @@ public abstract class MixinTrackedEntity implements IETrackedEntity {
     @Shadow
     private SectionPos lastSectionPos;
     
-    // Quasar MC: 26.x moved entity broadcasts; the cross-dimension packet redirects are not ported yet.
+    /**
+     * Quasar MC (26.3): every update about this entity (movement, metadata, equipment, effects, animations)
+     * reaches its watchers through these send calls. A watcher in another dimension (seeing the entity through a
+     * portal) gets it wrapped as "belongs to dimension X", so the client applies it to its background world for
+     * that dimension instead of to the world the player is in. Watchers in the same dimension get it as-is.
+     */
+    @Redirect(
+        method = {"sendToTrackingPlayers", "sendToTrackingPlayersFiltered"},
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/server/network/ServerPlayerConnection;send(Lnet/minecraft/network/protocol/Packet;)V"
+        )
+    )
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private void quasar$sendToWatcher(ServerPlayerConnection connection, Packet packet) {
+        ServerPlayer player = connection.getPlayer();
+        if (player.level() == entity.level()) {
+            connection.send(packet);
+        }
+        else {
+            PacketRedirection.sendRedirectedMessage(player, entity.level().dimension(), packet);
+        }
+    }
+    
+    /** Quasar MC: the remove packet for a watcher in another dimension goes to that watcher's background world. */
+    @Redirect(
+        method = {"broadcastRemoved", "removePlayer"},
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/server/level/ServerEntity;removePairing(Lnet/minecraft/server/level/ServerPlayer;)V"
+        )
+    )
+    private void quasar$removePairing(ServerEntity serverEntity, ServerPlayer player) {
+        if (player.level() == entity.level()) {
+            serverEntity.removePairing(player);
+        }
+        else {
+            PacketRedirection.withForceRedirect((ServerLevel) entity.level(), () -> serverEntity.removePairing(player));
+        }
+    }
     
     /**
      * @author qouteall

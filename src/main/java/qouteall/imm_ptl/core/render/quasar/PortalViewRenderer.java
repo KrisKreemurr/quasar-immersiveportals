@@ -328,7 +328,7 @@ public final class PortalViewRenderer {
                     ? PortalWorldTerrain.forDimension(portal.getDestDim()) : null;
                 if (other != null) {
                     // another dimension: its fog colour, its sky only if it has the same kind as ours, its terrain
-                    // from the background world (no far terrain, clouds or entities from there yet)
+                    // and entities from the background world (no far terrain or clouds from there yet)
                     encoder.clearColorAndDepthTextures(t.color, PortalSky.background(other.level(), virtual.pos),
                         t.depth, 0.0);
                     long ts = System.nanoTime();
@@ -344,6 +344,15 @@ public final class PortalViewRenderer {
                         RenderSystem.setShaderFog(fog);
                         drawn = other.draw(encoder, main, virtual, t.colorView, t.depthView, renderDistance);
                         frameSections += PortalWorldTerrain.lastSections;
+                        if (drawn && PortalSettings.entities) {
+                            // the destination world's mobs, items and block entities (no particles: those
+                            // only exist for the player's own world)
+                            long te = System.nanoTime();
+                            PortalEntities.draw(encoder, virtual, t.colorView, t.depthView,
+                                qouteall.imm_ptl.core.render.context_management.RenderStates.getPartialTick(),
+                                other.level(), false);
+                            frameEntityNs += System.nanoTime() - te;
+                        }
                     }
                     finally {
                         RenderSystem.setShaderFog(mainFog);

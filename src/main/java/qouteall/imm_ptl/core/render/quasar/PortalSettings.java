@@ -24,6 +24,8 @@ public final class PortalSettings {
     public static volatile boolean entities = true;
     /** particles (smoke, splashes, crits...) through portals */
     public static volatile boolean particles = true;
+    /** chests, signs, banners, beds and other block entities through portals (within the entity distance) */
+    public static volatile boolean blockEntities = true;
     /** skip redrawing portals hidden behind walls/terrain (the game's chunk visibility search) */
     public static volatile boolean occlusion = true;
     /** far LOD terrain through the nearest portals (needs Quasar Horizons) */
@@ -55,6 +57,7 @@ public final class PortalSettings {
             farTerrain = !"false".equalsIgnoreCase(p.getProperty("farTerrain", "true").trim());
             occlusion = !"false".equalsIgnoreCase(p.getProperty("hideBehindWalls", "true").trim());
             particles = !"false".equalsIgnoreCase(p.getProperty("particles", "true").trim());
+            blockEntities = !"false".equalsIgnoreCase(p.getProperty("blockEntities", "true").trim());
             entities = !"false".equalsIgnoreCase(p.getProperty("entities", "true").trim());
             entityDistance = clamp(p, "entityDistance", DEFAULT_ENTITY_DISTANCE, 1, 16);
             translucent = !"false".equalsIgnoreCase(p.getProperty("waterAndGlass", "true").trim());
@@ -78,6 +81,7 @@ public final class PortalSettings {
         p.setProperty("farTerrain", Boolean.toString(farTerrain));
         p.setProperty("hideBehindWalls", Boolean.toString(occlusion));
         p.setProperty("particles", Boolean.toString(particles));
+        p.setProperty("blockEntities", Boolean.toString(blockEntities));
         p.setProperty("entities", Boolean.toString(entities));
         p.setProperty("entityDistance", Integer.toString(entityDistance));
         p.setProperty("waterAndGlass", Boolean.toString(translucent));
@@ -109,6 +113,7 @@ public final class PortalSettings {
         translucent = true;
         entities = true;
         particles = true;
+        blockEntities = true;
         occlusion = true;
         farTerrain = true;
         farResolution = DEFAULT_FAR_RESOLUTION;

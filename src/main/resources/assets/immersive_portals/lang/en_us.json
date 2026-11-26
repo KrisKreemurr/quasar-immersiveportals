@@ -321,6 +321,8 @@
   "quasar_portals.options.far_resolution": "Far Terrain Resolution",
   "quasar_portals.options.far_resolution.value": "%s px",
   "quasar_portals.options.far_resolution.tooltip": "Sharpness of the far terrain seen through portals, in pixels per cube side. Lower is cheaper to redraw and uses less video memory (512 px: about 25 MB per portal, 256 px: about 6 MB).",
+  "quasar_portals.options.block_entities": "Block Entities Through Portals",
+  "quasar_portals.options.block_entities.tooltip": "Show chests, signs, banners, beds, heads and other block entities in portal views and mirrors, within the entity distance. Drawn together with entities (Entities Through Portals must be on).",
   "quasar_portals.options.particles": "Particles Through Portals",
   "quasar_portals.options.particles.tooltip": "Show particles (smoke, splashes, crits, torch flames...) in portal views and mirrors. Drawn together with entities (Entities Through Portals must be on)."
 }

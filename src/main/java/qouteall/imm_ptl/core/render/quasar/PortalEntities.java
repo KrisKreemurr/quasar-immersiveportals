@@ -81,9 +81,18 @@ public final class PortalEntities {
     
     static void draw(CommandEncoder encoder, CameraRenderState virtual, GpuTextureView color, GpuTextureView depth,
                      float partialTick) {
+        draw(encoder, virtual, color, depth, partialTick, Minecraft.getInstance().level, true);
+    }
+    
+    /**
+     * Draws {@code level}'s entities and block entities as seen from {@code virtual}. For a cross-dimension portal
+     * {@code level} is the background world of the destination; particles only exist for the player's world, so
+     * they are drawn only when {@code particles} is true.
+     */
+    static void draw(CommandEncoder encoder, CameraRenderState virtual, GpuTextureView color, GpuTextureView depth,
+                     float partialTick, ClientLevel level, boolean particles) {
         if (failed) return;
         Minecraft mc = Minecraft.getInstance();
-        ClientLevel level = mc.level;
         if (level == null) return;
         try {
             if (dispatcher == null) {
@@ -109,9 +118,10 @@ public final class PortalEntities {
                 erd.submit(state, virtual, state.x - cam.x, state.y - cam.y, state.z - cam.z, pose, storage);
                 n++;
             }
+            n += submitBlockEntities(mc, level, virtual, cam, maxDist2, partialTick, pose, storage);
             lastCount += n;
             boolean hasParticles = false;
-            if (PortalSettings.particles) {
+            if (particles && PortalSettings.particles) {
                 if (particleCamera == null) particleCamera = new PortalParticleCamera();
                 particleCamera.setTo(virtual);
                 particleState.reset();
@@ -151,6 +161,49 @@ public final class PortalEntities {
         }
     }
 
+    /**
+     * Chests, signs, banners, beds, skulls and other block entities within the portal entity distance of the portal
+     * camera: extracted with vanilla's dispatcher (its camera position moved to the portal camera for the distance
+     * checks, then put back) and submitted like vanilla's submitBlockEntities, relative to the portal camera.
+     */
+    private static int submitBlockEntities(Minecraft mc, ClientLevel level, CameraRenderState virtual, Vec3 cam,
+                                           double maxDist2, float partialTick, PoseStack pose, SubmitNodeStorage storage) {
+        if (!PortalSettings.blockEntities) return 0;
+        net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher bed =
+            mc.levelRenderer.blockEntityRenderDispatcher();
+        int radius = Math.max(1, PortalSettings.entityDistance);
+        int ccx = net.minecraft.util.Mth.floor(cam.x) >> 4, ccz = net.minecraft.util.Mth.floor(cam.z) >> 4;
+        int n = 0;
+        bed.prepare(cam);
+        try {
+            for (int cx = ccx - radius; cx <= ccx + radius; cx++) {
+                for (int cz = ccz - radius; cz <= ccz + radius; cz++) {
+                    net.minecraft.world.level.chunk.LevelChunk chunk = level.getChunkSource().getChunk(cx, cz, false);
+                    if (chunk == null || chunk.getBlockEntities().isEmpty()) continue;
+                    for (net.minecraft.world.level.block.entity.BlockEntity be : chunk.getBlockEntities().values()) {
+                        net.minecraft.core.BlockPos bp = be.getBlockPos();
+                        if (cam.distanceToSqr(bp.getX() + 0.5, bp.getY() + 0.5, bp.getZ() + 0.5) > maxDist2) continue;
+                        var renderer = bed.getRenderer(be);
+                        if (renderer == null) continue;
+                        net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState state =
+                            bed.tryExtractRenderState(be, partialTick, null, renderer.shouldRenderOffScreen(),
+                                virtual.cullFrustum);
+                        if (state == null) continue;
+                        pose.pushPose();
+                        pose.translate(bp.getX() - cam.x, bp.getY() - cam.y, bp.getZ() - cam.z);
+                        bed.submit(state, pose, storage, virtual);
+                        pose.popPose();
+                        n++;
+                    }
+                }
+            }
+        }
+        finally {
+            bed.prepare(mc.gameRenderer.getMainCamera().position());
+        }
+        return n;
+    }
+    
     /**
      * Extracts an entity's render state for portal views. The camera entity is extracted as if
      * the camera were in third person: first-person body mods (FirstPerson) hide the helmet and

@@ -21,3 +21,17 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   handlers that write light data into the packet listener's current world, so the Nether's light (no sky light)
   was written into the Overworld chunks at the same coordinates. Removed; `tickRemoteWorld` already polls them
   each tick with the world switched. The light engine's own `runLightUpdates()` stays.
+
+- 2026-11-25: entities through cross-dimension portals.
+  - Server (`MixinTrackedEntity`): 26.x sends every entity update through `TrackedEntity.sendToTrackingPlayers`
+    / `sendToTrackingPlayersFiltered` and removes through `ServerEntity.removePairing`. For a watcher in another
+    dimension (seeing the entity through a portal) these are now wrapped as redirected packets, so movement,
+    metadata, equipment and removal reach that watcher's background world instead of the world the player is in
+    (before, only the spawn packet was redirected: mobs appeared frozen in the background world and the client
+    logged "missing entity for data tracking"). Same-dimension watchers get plain packets as before.
+  - Client: `PortalEntities.draw` takes the world to draw; cross-dimension portal views now draw the background
+    world's entities (no particles: those exist for the player's world only).
+  - Block entities (chests, signs, banners, beds, heads...) are drawn in all portal views and mirrors within the
+    entity distance, extracted with vanilla's `BlockEntityRenderDispatcher` (camera position moved to the portal
+    camera, then restored) and submitted like vanilla's `submitBlockEntities`. New setting "Block Entities
+    Through Portals" (on by default).

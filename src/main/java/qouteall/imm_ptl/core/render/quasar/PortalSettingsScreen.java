@@ -79,6 +79,11 @@ public class PortalSettingsScreen extends Screen {
             PortalSettings.save();
             b.setMessage(particlesLabel());
         }).tooltip(Tooltip.create(Component.translatable("quasar_portals.options.particles.tooltip"))).width(WIDTH).build());
+        rows.addChild(Button.builder(blockEntitiesLabel(), b -> {
+            PortalSettings.blockEntities = !PortalSettings.blockEntities;
+            PortalSettings.save();
+            b.setMessage(blockEntitiesLabel());
+        }).tooltip(Tooltip.create(Component.translatable("quasar_portals.options.block_entities.tooltip"))).width(WIDTH).build());
         rows.addChild(Button.builder(translucentLabel(), b -> {
             PortalSettings.translucent = !PortalSettings.translucent;
             PortalSettings.save();
@@ -137,6 +142,11 @@ public class PortalSettingsScreen extends Screen {
     private static Component particlesLabel() {
         return CommonComponents.optionNameValue(Component.translatable("quasar_portals.options.particles"),
             PortalSettings.particles ? CommonComponents.OPTION_ON : CommonComponents.OPTION_OFF);
+    }
+
+    private static Component blockEntitiesLabel() {
+        return CommonComponents.optionNameValue(Component.translatable("quasar_portals.options.block_entities"),
+            PortalSettings.blockEntities ? CommonComponents.OPTION_ON : CommonComponents.OPTION_OFF);
     }
     
     private static Component translucentLabel() {
