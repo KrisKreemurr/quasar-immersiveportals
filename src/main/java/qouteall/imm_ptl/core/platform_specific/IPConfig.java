@@ -116,10 +116,11 @@ public class IPConfig {
         IPGlobal.looseMovementCheck = looseMovementCheck;
         IPGlobal.pureMirror = pureMirror;
         IPGlobal.indirectLoadingRadiusCap = indirectLoadingRadiusCap;
-        // Quasar MC: cross-dimension portals are not ported yet (the client cannot hold a second world), so
-        // nether and end portals stay vanilla whatever the config says. Lift this with cross-dimension support.
-        IPGlobal.netherPortalMode = IPGlobal.NetherPortalMode.vanilla;
+        // Quasar MC: cross-dimension portals work (views, crossing), so lit Nether portal frames become Immersive
+        // Portals portals per the config (default adaptive). End portals stay vanilla until they get their own step.
+        IPGlobal.netherPortalMode = netherPortalMode;
         IPGlobal.endPortalMode = IPGlobal.EndPortalMode.vanilla;
+        org.apache.logging.log4j.LogManager.getLogger().info("[Quasar Portals] nether portal mode: {}", netherPortalMode);
         IPGlobal.reducedPortalRendering = reducedPortalRendering;
         IPGlobal.offsetOcclusionQuery = visibilityPrediction;
         IPGlobal.netherPortalOverlay = netherPortalOverlay;

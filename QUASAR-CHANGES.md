@@ -112,3 +112,5 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   screen (full-screen quad just past the near plane), and `virtualCamera` clamps the clip plane instead of giving up.
 - 2026-11-26: `swapRenderWorlds` resets and re-samples the main camera's `EnvironmentAttributeProbe` for the entered
   world, so the first frames after crossing don't use the old world's sky/fog colours (blended per tick).
+- 2026-11-26: step 5 - Nether portals are Immersive Portals portals again: `IPConfig` applies the configured
+  `netherPortalMode` (default `adaptive`) instead of forcing vanilla. End portals still forced vanilla.
