@@ -53,3 +53,8 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
 - 2026-11-25: portal views decide entity visibility with the entity renderer's own frustum check instead of
   `EntityRenderDispatcher.shouldRender`. Occlusion-culling mods (Entity Culling) hook the dispatcher and answer for the
   player's eye in the player's world; through a portal that made mobs blink as their culled flag flipped.
+
+- 2026-11-25: background-world client ticking (`IPCGlobal.isClientRemoteTickingEnabled`) is on again. It had been
+  turned off because of the camera hack removed above. Without it, background entities never advanced their previous
+  position (mobs jumped back and forth in portal views), queued light packets of background worlds were never applied
+  (`PortalWorldTerrain` no longer polls them), and background particles never spawned or aged.
