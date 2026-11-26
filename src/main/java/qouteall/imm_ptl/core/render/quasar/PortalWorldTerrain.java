@@ -314,6 +314,9 @@ public final class PortalWorldTerrain {
     private static long standInEndNanos;
     private static long standInFrames;
     private static int staleGridFrames;
+    private static int lastVisibleCount = Integer.MAX_VALUE, readyFrames;
+    /** frames the main renderer must have its whole visible set built before the stand-in stops drawing */
+    private static final int STAND_IN_DONE_FRAMES = 10;
     private static final it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap STAND_IN_SEEN =
         new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap();
     private static final long STAND_IN_MAX_NANOS = 10_000_000_000L;
@@ -334,6 +337,8 @@ public final class PortalWorldTerrain {
         standInEndNanos = System.nanoTime() + STAND_IN_MAX_NANOS;
         standInFrames = 0;
         staleGridFrames = 0;
+        lastVisibleCount = Integer.MAX_VALUE;
+        readyFrames = 0;
         holdStartNanos = System.nanoTime();
         holdFadeNanos = 0;
         holdReadyFrames = 0;
@@ -356,7 +361,7 @@ public final class PortalWorldTerrain {
     private static int holdReadyFrames;
     /** sections in view still without a main-renderer mesh that the hold tolerates when handing over */
     private static final int HOLD_READY_UNCOVERED = 2;
-    private static final int HOLD_READY_FRAMES = 3;
+    private static final int HOLD_READY_FRAMES = 5;
     private static final long HOLD_MAX_NANOS = 1_500_000_000L;
     private static final long HOLD_FADE_NANOS = 0L; // no fade: the user wants a clean cut
 
@@ -445,14 +450,36 @@ public final class PortalWorldTerrain {
         int radius = Math.max(2, mc.options.getEffectiveRenderDistance());
         int sectionsBefore = lastSections;
         boolean ok = w.draw(encoder, main, main, color, depth, radius, false, covered);
-        int uncoveredInView = lastSections;
         lastSections = sectionsBefore; // the F3 portal line counts portal views only
-        // the crossing hold may hand over once (almost) everything in view has a main-renderer mesh
-        holdReadyFrames = ok && uncoveredInView <= HOLD_READY_UNCOVERED ? holdReadyFrames + 1 : 0;
+        // Ready = what the main renderer itself will draw is built. Not "every stand-in section is rebuilt": the
+        // stand-in (pre-warmed) holds caves and hidden terrain the main renderer never builds because it never sees
+        // them, so that test never passed (every hold ran to its time limit, every stand-in to its timeout).
+        // Main's visible list: built and settled (it stops growing) with at most a couple of sections still missing.
+        int visibleCount = -1, missing = 0;
+        try {
+            var vis = mc.levelRenderer.visibleSections();
+            if (vis != null) {
+                visibleCount = vis.size();
+                for (int i = 0; i < visibleCount; i++) {
+                    if (vis.get(i).getSectionMesh() == net.minecraft.client.renderer.chunk.CompiledSectionMesh.UNCOMPILED) missing++;
+                }
+            }
+        }
+        catch (Throwable ignored) {
+            visibleCount = -1;
+        }
+        boolean settled = visibleCount > 0 && visibleCount <= lastVisibleCount;
+        lastVisibleCount = visibleCount;
+        boolean ready = ok && gridHere && standInFrames > STAND_IN_COVER_FRAMES && settled
+            && missing <= HOLD_READY_UNCOVERED;
+        holdReadyFrames = ready ? holdReadyFrames + 1 : 0;
+        if (ready) readyFrames++; else readyFrames = 0;
         if (!ok) {
             endStandIn("draw failed");
-        } else if (w.lastUnskipped == 0 && gridHere && standInFrames > STAND_IN_COVER_FRAMES) {
-            endStandIn("main renderer caught up" + (staleGridFrames > 0 ? ", grid moved after " + staleGridFrames + " frames" : ""));
+        } else if (gridHere && standInFrames > STAND_IN_COVER_FRAMES && (w.lastUnskipped == 0
+                || (holdStartNanos == 0 && readyFrames >= STAND_IN_DONE_FRAMES && missing == 0))) {
+            endStandIn("main renderer caught up after " + standInFrames + " frames, " + visibleCount + " visible"
+                + (staleGridFrames > 0 ? ", grid moved after " + staleGridFrames + " frames" : ""));
         }
     }
 

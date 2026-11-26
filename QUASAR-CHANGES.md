@@ -171,3 +171,8 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   is that world's portal terrain, so the portal back shows it at once instead of loading from blank; its extractor
   starts all-dirty, so it rebuilds in the background while drawing the old meshes.
 - 2026-11-26: the crossing hold (drawn after the portals) no longer hides them: this frame's portal pictures are pasted again over it (the portal you came through showed the world behind it until the hold ended).
+- 2026-11-26: crossing readiness by the main renderer's own visible set. The old test (every stand-in section rebuilt
+  by main) never passed once the stand-in was pre-warmed: it holds caves/hidden terrain main never builds, so every
+  hold ran to its 1.5 s limit and every stand-in to its 10 s timeout (user log). Now: ready when main's visible list
+  has stopped growing and at most 2 of its sections are unbuilt, for 5 frames; the stand-in stops once the hold is over
+  and all of main's visible sections are built for 10 frames.
