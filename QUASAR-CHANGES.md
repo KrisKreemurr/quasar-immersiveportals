@@ -135,3 +135,5 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   the teleport the main section grid is still centred on the old position, so every lookup missed and read as
   "covered". Until the grid holds the camera's section everything counts as uncovered, and "caught up" needs more
   than 4 frames.
+- 2026-11-26: the crossing freeze-frame turns with the camera (composite mode 3 reprojects each pixel's view ray into
+  the picture's projection * rotation), and fades out over 0.25 s instead of 0.15 s.

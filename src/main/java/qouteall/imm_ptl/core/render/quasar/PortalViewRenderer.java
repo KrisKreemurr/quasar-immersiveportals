@@ -200,6 +200,8 @@ public final class PortalViewRenderer {
     private static GpuTextureView freezeView;
     private static int freezeW, freezeH;
     private static boolean freezeValid, freezeFailed;
+    /** projection * view rotation of the camera when the frozen picture was taken (for turning with the camera) */
+    private static final Matrix4f freezeViewProj = new Matrix4f();
 
     public static void drawCrossingHold() {
         try {
@@ -221,7 +223,7 @@ public final class PortalViewRenderer {
                 if (mainF != null && mainF.initialized && mt.width == freezeW && mt.height == freezeH
                     && mt.getColorTextureView() != null && mt.getDepthTextureView() != null) {
                     compositeHold(RenderSystem.getDevice().createCommandEncoder(), mainF, freezeView, alpha,
-                        mt.getColorTextureView(), mt.getDepthTextureView(), mt.width, mt.height);
+                        mt.getColorTextureView(), mt.getDepthTextureView(), mt.width, mt.height, freezeViewProj);
                     return;
                 }
             }
@@ -245,7 +247,7 @@ public final class PortalViewRenderer {
                     qouteall.imm_ptl.core.render.context_management.RenderStates.getPartialTick(),
                     mc.level, mc.particleEngine, hold.lastLightmap());
             }
-            compositeHold(encoder, main, t.colorView, alpha, mainColor, mainDepth, w, h);
+            compositeHold(encoder, main, t.colorView, alpha, mainColor, mainDepth, w, h, null);
         }
         catch (Throwable t) {
             LOGGER.warn("[Quasar Portals] crossing hold failed: {}", t.toString());
@@ -267,7 +269,10 @@ public final class PortalViewRenderer {
                 freezeW = w;
                 freezeH = h;
             }
+            CameraRenderState cam = (CameraRenderState) mainCameraMethod.invoke(null);
+            if (cam == null || !cam.initialized) return;
             device.createCommandEncoder().copyTextureToTexture(src, freezeTex, 0, 0, 0, 0, 0, w, h);
+            freezeViewProj.set(cam.projectionMatrix).mul(cam.viewRotationMatrix);
             freezeValid = true;
         }
         catch (Throwable t) {
@@ -278,7 +283,8 @@ public final class PortalViewRenderer {
     }
 
     private static void compositeHold(CommandEncoder encoder, CameraRenderState main, GpuTextureView picture, float alpha,
-                                      GpuTextureView mainColor, GpuTextureView mainDepth, int w, int h) {
+                                      GpuTextureView mainColor, GpuTextureView mainDepth, int w, int h,
+                                      Matrix4f pictureViewProj) {
         ensurePipeline();
         if (holdPipeline == null) {
             holdPipeline = RenderPipeline.builder()
