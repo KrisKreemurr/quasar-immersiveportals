@@ -29,6 +29,7 @@
     "common.debug.MixinServerLevel_Debug",
     "common.entity_sync.MixinChunkMap_E",
     "common.entity_sync.MixinMob_PortalWatchers",
+    "common.mc_util.IELivingEntity_QuasarTurn",
     "common.entity_sync.MixinPersistentEntitySectionManager",
     "common.entity_sync.MixinServerEntity",
     "common.entity_sync.MixinServerPlayer",

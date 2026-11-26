@@ -79,3 +79,6 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   portal's far side (`ImmPtlChunkTracking` watch record, loaded to the player).
 - 2026-11-26: `stepRemoteEntities` also advances `tickCount` and the walk animation (`calculateEntityAnimation`), so
   background mobs' legs move.
+- 2026-11-26: `stepRemoteEntities` also turns background mobs: the head eases toward the yaw the server sent
+  (`lerpHeadRotationStep`, as in `LivingEntity.aiStep`) and the body turns toward the walking direction within reach of
+  the head (`tickHeadTurn`, as in `LivingEntity.tick`), through the `IELivingEntity_QuasarTurn` accessor.

@@ -140,7 +140,21 @@ public class ClientWorldLoader {
             }
             e.tickCount++;
             if (e instanceof net.minecraft.world.entity.LivingEntity le) {
-                // legs swing from how far it moved this step (vanilla does this in LivingEntity.tick)
+                var turn = (qouteall.imm_ptl.core.mixin.common.mc_util.IELivingEntity_QuasarTurn) le;
+                // head: ease toward the head yaw the server sent (vanilla: LivingEntity.aiStep)
+                int steps = turn.quasar$getLerpHeadSteps();
+                if (steps > 0) {
+                    turn.quasar$lerpHeadRotationStep(steps, turn.quasar$getLerpYHeadRot());
+                    turn.quasar$setLerpHeadSteps(steps - 1);
+                }
+                // body: turn toward the walking direction, kept within reach of the head (vanilla: LivingEntity.tick)
+                double dx = le.getX() - le.xo, dz = le.getZ() - le.zo;
+                float bodyTarget = le.yBodyRot;
+                if (dx * dx + dz * dz > 0.0025) {
+                    bodyTarget = (float) (net.minecraft.util.Mth.atan2(dz, dx) * (180.0 / Math.PI)) - 90.0F;
+                }
+                turn.quasar$tickHeadTurn(bodyTarget);
+                // legs swing from how far it moved this step (vanilla: LivingEntity.tick)
                 le.calculateEntityAnimation(false);
             }
         }
