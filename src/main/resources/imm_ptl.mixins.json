@@ -83,7 +83,6 @@
     "client.render.MixinGameRenderer_PortalLightmap",
     "client.render.MixinLevelRenderer_CrossingHold",
     "client.render.MixinEntityRenderDispatcher_Doorway",
-    "client.render.MixinCamera_PortalZoom",
     "client.sound.MixinClientLevel_Sound",
     "client.sync.IEBlockStatePredictionHandler",
     "client.sync.MixinBlockStatePredictionHandler",

@@ -489,6 +489,8 @@ public final class PortalViewRenderer {
      */
     static boolean crossing(Portal portal, Vec3 cam) {
         if (portal instanceof qouteall.imm_ptl.core.portal.Mirror) return false;
+        // only a first-person camera goes through with you; a third-person camera stays in your world
+        if (!Minecraft.getInstance().options.getCameraType().isFirstPerson()) return false;
         double dist = portal.getDistanceToPlane(cam);
         if (dist >= 0.25 || dist <= -0.5) return false;
         Vec3 v = cam.subtract(portal.getOriginPos());
@@ -503,6 +505,7 @@ public final class PortalViewRenderer {
      * player's world (composite mode 4).
      */
     public static boolean cameraThrough(Portal portal, Vec3 cam) {
+        if (!CAMERA_THROUGH) return false;
         if (portal instanceof qouteall.imm_ptl.core.portal.Mirror) return false;
         Minecraft mc = Minecraft.getInstance();
         if (mc.options.getCameraType().isFirstPerson() || mc.getCameraEntity() == null) return false;
@@ -514,6 +517,9 @@ public final class PortalViewRenderer {
         return Math.abs(hit.dot(portal.getAxisW())) <= portal.getWidth() / 2
             && Math.abs(hit.dot(portal.getAxisH())) <= portal.getHeight() / 2;
     }
+
+    /** off: the user wants a third-person camera to stay in the player's world, behind the portal */
+    private static final boolean CAMERA_THROUGH = false;
 
     /** set around {@link #virtualCamera} for the portal being drawn */
     private static boolean crossingNow;
