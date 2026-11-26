@@ -118,3 +118,5 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   view only where the pixel's view ray crosses the portal rectangle (camera in front, mode 1), so standing in the
   frame looking along it shows each world on its own side. Just past the plane (before the teleport tick, mode 2)
   the destination fills the screen and its view uses the plain near plane instead of the portal clip plane.
+- 2026-11-26: portal views within 16 blocks or covering over 5% of the screen redraw every frame (others keep the
+  adaptive every-N rate); a reused picture slid against the portal frame while moving.

@@ -347,7 +347,12 @@ public final class PortalViewRenderer {
             Target t = target(i, device, Math.max(1, Math.round(w * resolutionScale)),
                 Math.max(1, Math.round(h * resolutionScale)));
             
-            boolean update = through || !t.valid || t.portalId != portal.getId() || (viewFrame + i) % updateEvery == 0;
+            // near or big portals redraw every frame: a reused picture was drawn from where the camera was, so while you
+            // move it slides against the frame around it; far/small ones keep the cheaper rate
+            boolean close = portal.getDistanceToNearestPointInPortal(main.pos) < 16.0
+                || (rect[2] - rect[0]) * (rect[3] - rect[1]) / 4f > 0.05f;
+            boolean update = through || close || !t.valid || t.portalId != portal.getId()
+                || (viewFrame + i) % updateEvery == 0;
             if (!through && isHidden(portal)) {
                 // behind something: no redraw. Keep pasting its last picture (depth-tested, so invisible while it
                 // really is hidden; if the visibility search was ever wrong, a stale view shows instead of nothing)
