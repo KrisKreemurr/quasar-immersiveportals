@@ -363,8 +363,11 @@ public final class PortalViewRenderer {
         }
 
         List<Portal> portals = new ArrayList<>();
+        List<Portal> doorways = new ArrayList<>();
         for (Entity e : mc.level.entitiesForRendering()) {
             if (!(e instanceof Portal portal) || e.isRemoved()) continue;
+            if (portal.getDestDim() != mc.level.dimension()
+                && portal.getOriginPos().distanceToSqr(camPos) < 64.0 * 64.0) doorways.add(portal);
             // another dimension: only when its background world exists (cross-dimension step 3)
             if (portal.getDestDim() != mc.level.dimension()
                 && PortalWorldTerrain.forDimension(portal.getDestDim()) == null) continue;
@@ -373,6 +376,7 @@ public final class PortalViewRenderer {
             if (!main.cullFrustum.isVisible(portal.getBoundingBox().inflate(0.1))) continue;
             portals.add(portal);
         }
+        PortalEntities.crossDimensionPortals = doorways;
         if (portals.isEmpty()) {
             return;
         }

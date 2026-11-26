@@ -128,6 +128,32 @@ public final class PortalEntities {
 
     private static qouteall.imm_ptl.core.portal.Portal visitorsThrough;
 
+    /** cross-dimension portals near the camera (set each frame by PortalViewRenderer) */
+    static volatile java.util.List<qouteall.imm_ptl.core.portal.Portal> crossDimensionPortals = java.util.List.of();
+
+    /**
+     * Main view (mixin on EntityRenderDispatcher.shouldRender): an entity standing in a cross-dimension doorway, seen
+     * from behind the face it is walking into, is not drawn. From that side the part past the plane is in the other
+     * world (not here), and the rest is behind the portal surface, which shows the other world - so none of it is
+     * visible. From the front it is drawn as usual and its other half shows in that portal's view.
+     */
+    public static boolean hiddenInMainView(Entity e, double camX, double camY, double camZ) {
+        java.util.List<qouteall.imm_ptl.core.portal.Portal> list = crossDimensionPortals;
+        if (list.isEmpty() || e instanceof qouteall.imm_ptl.core.portal.Portal) return false;
+        Vec3 cam = null;
+        for (qouteall.imm_ptl.core.portal.Portal portal : list) {
+            if (portal.isRemoved() || portal.getRotation() != null || Math.abs(portal.getScale() - 1.0) > 1e-6) continue;
+            if (!portal.getBoundingBox().inflate(2.0).intersects(e.getBoundingBox())) continue;
+            net.minecraft.world.phys.AABB box = e.getBoundingBox();
+            Vec3 c = box.getCenter();
+            double reach = Math.max(box.getXsize(), Math.max(box.getYsize(), box.getZsize())) * 0.5 + 0.1;
+            if (portal.getDistanceToNearestPointInPortal(c) > reach || !portal.isInFrontOfPortal(c)) continue;
+            if (cam == null) cam = new Vec3(camX, camY, camZ);
+            if (!portal.isInFrontOfPortal(cam)) return true;
+        }
+        return false;
+    }
+
     /** entities of the player's world in {@code portal}'s doorway, submitted at their place on the other side */
     private static int submitVisitors(Minecraft mc, EntityRenderDispatcher erd, ClientLevel there,
                                       qouteall.imm_ptl.core.portal.Portal portal,

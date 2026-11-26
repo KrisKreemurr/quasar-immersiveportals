@@ -146,3 +146,6 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   is two back-to-back portals; from behind you were drawn in the front face too).
 - 2026-11-26: doorway entities are lit with the destination world's block/sky light where their other half is (with
   the Nether's lightmap your Overworld sky light came out near black: "the body disappears").
+- 2026-11-26: an entity standing in a cross-dimension doorway is not drawn in the main view when the camera is behind
+  the face it walks into (its far half is in the other world, its near half behind the portal surface) - you were
+  visible from both sides (mixin EntityRenderDispatcher.shouldRender).
