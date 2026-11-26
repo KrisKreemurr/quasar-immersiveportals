@@ -232,6 +232,7 @@ public final class PortalWorldTerrain {
     private static PortalWorldTerrain standIn;
     private static long standInEndNanos;
     private static long standInFrames;
+    private static int staleGridFrames;
     private static final it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap STAND_IN_SEEN =
         new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap();
     private static final long STAND_IN_MAX_NANOS = 10_000_000_000L;
@@ -251,6 +252,7 @@ public final class PortalWorldTerrain {
         standIn = w;
         standInEndNanos = System.nanoTime() + STAND_IN_MAX_NANOS;
         standInFrames = 0;
+        staleGridFrames = 0;
         holdStartNanos = System.nanoTime();
         holdFadeNanos = 0;
         holdReadyFrames = 0;
@@ -329,7 +331,17 @@ public final class PortalWorldTerrain {
         }
         standInFrames++;
         BlockPos.MutableBlockPos probe = new BlockPos.MutableBlockPos();
+        // Just after a teleport the main renderer's section grid can still be centred on the old position (x8 away):
+        // every lookup misses, which must not read as "nothing to stand in for". Until the grid holds the camera's own
+        // section, every section counts as uncovered.
+        BlockPos camBlock = BlockPos.containing(main.pos);
+        BlockPos camSection = new BlockPos(camBlock.getX() & ~15, camBlock.getY() & ~15, camBlock.getZ() & ~15);
+        net.minecraft.client.renderer.chunk.SectionRenderDispatcher.RenderSection camRs =
+            ((net.minecraft.client.renderer.ViewArea) viewArea).getRenderSectionAt(camSection);
+        boolean gridHere = camRs != null && camRs.getRenderOrigin().equals(camSection);
+        if (!gridHere) staleGridFrames++;
         java.util.function.LongPredicate covered = key -> {
+            if (!gridHere) return false;
             int sx = SectionPos.x(key), sy = SectionPos.y(key), sz = SectionPos.z(key);
             probe.set(sx << 4, sy << 4, sz << 4);
             net.minecraft.client.renderer.chunk.SectionRenderDispatcher.RenderSection rs =
@@ -354,8 +366,8 @@ public final class PortalWorldTerrain {
         holdReadyFrames = ok && uncoveredInView <= HOLD_READY_UNCOVERED ? holdReadyFrames + 1 : 0;
         if (!ok) {
             endStandIn("draw failed");
-        } else if (w.lastUnskipped == 0) {
-            endStandIn("main renderer caught up");
+        } else if (w.lastUnskipped == 0 && gridHere && standInFrames > STAND_IN_COVER_FRAMES) {
+            endStandIn("main renderer caught up" + (staleGridFrames > 0 ? ", grid moved after " + staleGridFrames + " frames" : ""));
         }
     }
 

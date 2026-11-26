@@ -131,3 +131,7 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   finished world picture (LevelRenderer.render TAIL, before hand/HUD) is copied to `quasar_crossing_freeze`; right
   after a crossing that frozen picture covers the frame (hand/HUD stay live) until the main renderer has the view, at
   most 0.35 s, then fades over 0.15 s. The live hold remains the fallback if the copy fails.
+- 2026-11-26: fix: the crossing stand-in/hold/freeze ended on the first frame after almost every crossing. Right after
+  the teleport the main section grid is still centred on the old position, so every lookup missed and read as
+  "covered". Until the grid holds the camera's section everything counts as uncovered, and "caught up" needs more
+  than 4 frames.
