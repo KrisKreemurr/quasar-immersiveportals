@@ -531,7 +531,7 @@ public final class PortalViewRenderer {
                     "Portals: %d live, %d hidden (every %d), CPU %.3f ms (terrain %.3f, sky+clouds %.3f, %d entities %.3f), GPU %s, %d sections, %.0f%% of screen",
                     maxLive, maxHidden, updateEvery, sumCpu / f / 1e6, sumTerrain / f / 1e6, sumSky / f / 1e6, Math.round(sumEntities / f), sumEntity / f / 1e6,
                     gpuFrames > 0 ? String.format(java.util.Locale.ROOT, "%.3f ms", sumGpu / (double) gpuFrames / 1e6) : "n/a",
-                    Math.round(sumSections / f), sumCoverage / f * 100);
+                    Math.round(sumSections / f), sumCoverage / f * 100) + PortalParticles.debugSummary();
             }
             sumCpu = sumTerrain = sumSky = sumEntity = sumEntities = sumGpu = sumSections = frames = gpuFrames = liveFrames = 0;
             sumCoverage = 0;

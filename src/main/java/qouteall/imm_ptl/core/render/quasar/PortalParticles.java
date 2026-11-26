@@ -103,6 +103,18 @@ public final class PortalParticles {
         OBSERVERS.clear();
     }
 
+    /** For the F3 portal line: each background world's particle count and whether it has an observer. */
+    public static String debugSummary() {
+        if (ENGINES.isEmpty()) return failed ? ", other-world particles: failed" : ", other-world particles: none";
+        StringBuilder sb = new StringBuilder(", other-world particles:");
+        for (Map.Entry<ClientLevel, ParticleEngine> e : ENGINES.entrySet()) {
+            sb.append(' ').append(e.getKey().dimension().identifier().getPath())
+                .append(' ').append(e.getValue().countParticles())
+                .append(OBSERVERS.containsKey(e.getKey()) ? " (near portal)" : " (no portal near)");
+        }
+        return sb.toString();
+    }
+
     /** The main engine's particle providers (shared; they are stateless factories). */
     private static ParticleResources resources() throws ReflectiveOperationException {
         if (resources != null) return resources;
