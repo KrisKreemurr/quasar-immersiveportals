@@ -545,6 +545,17 @@ public class ClientTeleportationManager {
         }
         mc.particleEngine.setLevel(toWorld);
         mc.gameRenderer.setLevel(toWorld);
+        // The camera's environment probe (sky, fog, ambient colours) is ticked per game tick and blends the last two
+        // samples between ticks: without this it shows the old world's sky and fog until the next tick. Vanilla's
+        // world switch resets the whole camera; only the probe needs it here (the camera itself stays in place).
+        try {
+            var probe = mc.gameRenderer.mainCamera().attributeProbe();
+            probe.reset();
+            if (mc.player != null) probe.tick(toWorld, mc.player.getEyePosition());
+        }
+        catch (Throwable t) {
+            LOGGER.warn("[Quasar Portals] could not reset the camera's environment probe: {}", t.toString());
+        }
         qouteall.imm_ptl.core.render.quasar.PortalParticles.dispose(toWorld);
         qouteall.imm_ptl.core.render.quasar.PortalWorldTerrain.registerForeignLevel(fromWorld);
         LOGGER.info("[Quasar Portals] render side handed over: {} -> {}", fromDim.identifier(), toDim.identifier());

@@ -110,3 +110,5 @@ This is a modified version of Immersive Portals for NeoForge by qouteall, Nick1s
   quad was clipped away / the portal was skipped. `PortalViewRenderer.crossing(portal, cam)` (within 0.25 in front
   to 0.5 behind the plane, inside the frame, not mirrors) now draws that portal's view every frame over the whole
   screen (full-screen quad just past the near plane), and `virtualCamera` clamps the clip plane instead of giving up.
+- 2026-11-26: `swapRenderWorlds` resets and re-samples the main camera's `EnvironmentAttributeProbe` for the entered
+  world, so the first frames after crossing don't use the old world's sky/fog colours (blended per tick).
